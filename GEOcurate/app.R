@@ -265,7 +265,7 @@ server <- function(input, output, session) {
 
 observeEvent(input$reset, {
   values$metaData <- values$origData
-  values$oFile <- removeFromScript(values$oFile, len = downloadChunkLen, all = T)
+  values$oFile <- removeFromScript(values$oFile, len = values$downloadChunkLen, all = T)
   values$currChunkLen <- 0
 })  
 
@@ -476,6 +476,7 @@ observe({
   if (!is.null(input$colsToRename) && input$colsToRename != "" && (input$colsToRename %in% colnames(values$metaData))) {
     spacers <- c(" ", "\\.", "\\_")
     toSearch <- input$colsToRename
+    #print(toSearch)
     for (x in spacers) {
       toSearch <- str_split(toSearch, x)[[1]]
       sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
@@ -744,7 +745,7 @@ observe({
   })
   
   observeEvent(input$removeToSub, {
-    print(input$hotOut_rows_selected)
+    #print(input$hotOut_rows_selected)
     if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) {
     if (!identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0)) && values$tablesList[[input$colsToSub]][,"To_Replace"] != "") {
       values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-input$hotOut_rows_selected,]
@@ -777,6 +778,7 @@ observe({
     values$currChunkLen <- length(values$oFile) - before
     
     values$tablesList <- list()
+    values$DFOut <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
   })
 
 # exclude vals ------------------------------------------------------------
