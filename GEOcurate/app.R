@@ -708,9 +708,9 @@ observe({
     currentDF <- values$tablesList[[currentCol]]
     #print(currentCol)
     #print(values$tablesList[[currentCol]])
-    if(input$isRange) {
+    #if(input$isRange) {
       #add range to To_Replace and text input to New_Val
-    }
+    #}
     if(all(currentDF["To_Replace"] == "")) {
       #cat("true")
       values$tablesList[[currentCol]] <- data.frame(
@@ -759,26 +759,29 @@ observe({
   })
   
   observeEvent(input$evaluateSubs, {#print(values$tablesList)
-    values$lastData <- values$metaData
-    values$metaData <- withProgress(substituteVals(values$metaData, values$tablesList))
-
-    #WRITING COMMANDS TO R SCRIPT
-    before <- length(values$oFile)
-    values$oFile <- saveLines(commentify("substitute values"), values$oFile)
-    values$oFile <- saveLines(paste0("tablesList <- NULL"), values$oFile)
-    for (i in 1:length(values$tablesList)) {
-      values$oFile <- saveLines(paste0("tablesList[[", formatString(names(values$tablesList)[i]), "]] <- ",
-                                       "data.frame(", colnames(values$tablesList[[i]])[1], "=c(", 
-                                       paste(formatString(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
-                                       colnames(values$tablesList[[i]])[2], "=c(", 
-                                       paste(formatString(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
-    }
-    values$oFile <- saveLines("metaData <- substituteVals(metaData, tablesList)", 
-                              values$oFile)
-    values$currChunkLen <- length(values$oFile) - before
+    if (!identical(values$tablesList, list())) {
+      values$lastData <- values$metaData
+      values$metaData <- withProgress(substituteVals(values$metaData, values$tablesList))
+  
+      #WRITING COMMANDS TO R SCRIPT
+      before <- length(values$oFile)
+      values$oFile <- saveLines(commentify("substitute values"), values$oFile)
+      values$oFile <- saveLines(paste0("tablesList <- NULL"), values$oFile)
+      for (i in 1:length(values$tablesList)) {
+        values$oFile <- saveLines(paste0("tablesList[[", formatString(names(values$tablesList)[i]), "]] <- ",
+                                         "data.frame(", colnames(values$tablesList[[i]])[1], "=c(", 
+                                         paste(formatString(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
+                                         colnames(values$tablesList[[i]])[2], "=c(", 
+                                         paste(formatString(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
+      }
+      values$oFile <- saveLines("metaData <- substituteVals(metaData, tablesList)", 
+                                values$oFile)
+      values$currChunkLen <- length(values$oFile) - before
+      
+      values$tablesList <- list()
+      values$DFOut <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
     
-    values$tablesList <- list()
-    values$DFOut <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
+    }
   })
 
 # exclude vals ------------------------------------------------------------
