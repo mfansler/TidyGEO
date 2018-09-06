@@ -7,6 +7,7 @@ library(rhandsontable)
 library(shinyjs)
 library(feather)
 library(shinysky)
+library(shinyFiles)
 source("geocurateFunctions.R")
 
 # help icon to add as tag to buttons, etc ---------------------------------
@@ -238,11 +239,10 @@ ui <- fluidPage(
         tabPanel("Save file",
                  radioButtons("fileType", "File type:", choices = c("csv", "tsv", "JSON")),
                  uiOutput("nameFile"),
-                 downloadButton("downloadData", "Save"),
+                 downloadButton("downloadData", "Save")#,
                  #actionButton("showHistory", "Show History"),
-                 downloadButton("downloadRscript", "Download R script")
                  )
-      )
+        )
     )
   )
 )
@@ -259,7 +259,7 @@ server <- function(input, output, session) {
                            DFOut = data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), 
                            tablesList = list(), thes_suggest = c("no suggestions"), thes_suggest_vals = c("no suggestions"),
                            suggestions = c("no suggestions"), excludesList = list(), oFile = "source('geocurateFunctions_User.R')", downloadChunkLen = 0,
-                           currChunkLen = 0, subAllNums = F)
+                           currChunkLen = 0, subAllNums = F, volumes = c('working directory' = '.', 'home' = '~/'))
 
 # reset -------------------------------------------------------------------
 
@@ -273,7 +273,7 @@ observeEvent(input$reset, {
 
 observeEvent(input$undo, {
   values$metaData <- values$lastData
-  print(values$currChunkLen)
+  #print(values$currChunkLen)
   values$oFile <- removeFromScript(values$oFile, len = values$currChunkLen)
   values$currChunkLen <- 0
 })  
@@ -370,7 +370,7 @@ observeEvent(input$undo, {
               }
             else {
               barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = TRUE)
-              print(plotInput()$total_data[[i]])
+              #print(plotInput()$total_data[[i]])
               }
           }
         })
@@ -600,11 +600,11 @@ observe({
                 choices = colNames)
   })
   
-  observe({
-    input$colsToSub
+  observeEvent(input$colsToSub, {
+    
     values$suggestions <- if (!is.null(input$colsToSub) && input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) unique(as.character(values$metaData[,input$colsToSub]))
     #print(values$suggestions)
-  })
+  }, ignoreInit = T, ignoreNULL = T)
   
   if(F) {
   observe({
@@ -631,8 +631,8 @@ observe({
   })
   }
   
-  observe({
-    input$hotIn
+  observeEvent(input$hotIn, {
+    
     
     val <- if(!is.null(input$hotIn)) hot_to_r(input$hotIn)$To_Replace else ""
     
@@ -659,7 +659,7 @@ observe({
       #print(values$thes_suggest_vals)
     }
       #}
-  })
+  }, ignoreInit = T, ignoreNULL = T)
   
   output$thesLinkSub <- renderUI({
     if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"]), "character(0)")) {
@@ -680,12 +680,12 @@ observe({
     datatable(if(!is.null(values$tablesList[[input$colsToSub]])) values$tablesList[[input$colsToSub]] else values$DFOut, options = list(paging = F, searching = F))
   })
   
-  observe({
-    if (!is.null(input$hotIn)) {
+  observeEvent(input$hotIn, {
+    #if (!is.null(input$hotIn)) {
       values$DFIn <- hot_to_r(input$hotIn)
       #print(values$DFIn)
-    }
-  })
+    #}
+  }, ignoreInit = T, ignoreNULL = T)
 
   eventReactive(input$colsToSub, {
     currentCol <- input$colsToSub
@@ -865,11 +865,12 @@ observe({
   
   output$nameFile <- renderUI({
     fluidRow(
-      column(3, textInput("userFileName", label = NULL, value = paste0("file name.", input$fileType))),
-      column(1, offset = 0, p(input$fileType))
+      column(2, shinySaveButton("chooseFilePath", "Save file to...", title = "Please a location where the R script 
+                                will save the metadata file:", filetype = list(file=c(input$fileType)))),
+      column(5, offset = 0, textInput("userFileName", label = NULL, value = paste0("file name.", input$fileType))),
+      column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
     )
   })
-
   
   output$downloadData <- downloadHandler(
     filename = function() {
@@ -886,7 +887,7 @@ observe({
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("save data"), values$oFile)
       values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
-                                  paste0("file <- ", formatString(file))), values$oFile)
+                                  paste0("file <- ", formatString(input$userFileName))), values$oFile)
       
       if (input$fileType == "csv") {
         write.csv(myData, file, row.names = FALSE, col.names = TRUE)
@@ -921,6 +922,21 @@ observe({
     #contentType = "text/tsv"
   )
   
+  
+  
+  observe({
+    shinyFileSave(input, "chooseFilePath", roots = values$volumes)
+    
+    fileInfo <- parseSavePath(values$volumes, input$chooseFilePath)
+    
+    if(!identical(fileInfo$datapath, character(0))) {
+      updateTextInput(session, "userFileName",
+                    value = fileInfo$datapath)
+    }
+    
+    #print(paste("FilePath: ", fileInfo$datapath))
+  })
+  
   output$downloadRscript <- downloadHandler(
     filename = function() {
       paste0(input$geoID, "_Clinical_Rscript.R")
@@ -929,6 +945,57 @@ observe({
       saveToRscript(values$oFile, file)
     }
   )
+  
+  observeEvent(input$saveMetadata, {
+    if (!is.null(values$metaData)) {
+      
+      fileInfo <- parseSavePath(values$volumes, input$saveMetadata)
+      
+      file <- fileInfo$datapath
+      
+      myData <- values$metaData
+      myData <- myData[-which(grepl("evalSame", colnames(myData)))]
+      myData <- cbind(rownames(myData), myData)
+      colnames(myData)[1] <- ""
+      
+      #WRITING COMMANDS TO R SCRIPT
+      before <- length(values$oFile)
+      values$oFile <- saveLines(commentify("save data"), values$oFile)
+      values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
+                                  paste0("file <- ", formatString(input$userFileName))), values$oFile)
+      
+      if (input$fileType == "csv") {
+        write.csv(myData, file, row.names = FALSE, col.names = TRUE)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
+        
+      }
+      else if (input$fileType == "tsv") {
+        write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+                                  values$oFile)
+        
+      }
+      else if (input$fileType == "JSON") {
+        library(jsonlite)
+        library(readr)
+        
+        myData %>% toJSON() %>% write_lines(file)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
+                                    "metaData %>% toJSON() %>% write_lines(file)"), 
+                                  values$oFile)
+      }
+      
+      values$currChunkLen <- length(values$oFile) - before
+    } else {
+      showNotification("Please load some data.")
+    }
+  })
   
   observeEvent(input$showHistory, {
     saveToRscript(values$oFile)

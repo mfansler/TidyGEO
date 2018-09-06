@@ -1,4 +1,9 @@
-
+library(rdrop2)
+library(GEOquery)
+library(stringr)
+library(dplyr)
+library(readr)
+library(glue)
 
 
 
@@ -22,7 +27,6 @@ removeFromScript <- function(oFile, len, all = F) {
 }
 
 saveRscript <- function() {
-  library(rdrop2)
   token <- readRDS("droptoken.rds")
   
   filePath <- file.path(tempdir(), "script_Temp.R")
@@ -30,7 +34,6 @@ saveRscript <- function() {
 }
 
 saveData <- function(metaData, fileName) {
-  library(rdrop2)
   token <- readRDS("droptoken.rds")
   
   filePath <- file.path(tempdir(), fileName)
@@ -39,7 +42,6 @@ saveData <- function(metaData, fileName) {
 }
 
 loadData <- function(geoID) {
-  library(rdrop2)
   token <- readRDS("droptoken.rds")
   
   currPath <- paste0("/Shiny/", geoID, "_Clinical_Raw.csv")
@@ -63,7 +65,6 @@ downloadClinical <- function(geoID, toFilter, session = NULL)
 {
   #print(toFilter)
   dataSetIndex = 1
-  library(GEOquery)
   
   if (grepl("_", geoID)) {
     parts <- str_split(geoID, "_")[[1]]
@@ -301,7 +302,6 @@ createExampleCols <- function(metaData, colsToDivide, delimiter) {
 
 
 saveFileDescription <- function(geoID, filePathToSave) {
-  library(stringr)
   
   desFilePath <- paste(filePathToSave, "_Description.md", sep = "")
   if (!file.exists(desFilePath)) {  
@@ -470,7 +470,6 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements)
 }
 
 extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
-  library(stringr)
   
   if(toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
     delimiterInfo <- NULL
@@ -533,7 +532,6 @@ findOffendingChars <- function(x){
 }
 
 renameCols <- function(metaData, newNames, session) {
-  library(glue)
   #print(colsToRename)
   #print(newNames)
   updatedCols <- NULL
@@ -674,9 +672,7 @@ fixSpecialCharacters <- function(x, offendingChars)
 
 getClinicalData <- function(geoID, rawFilePath, outputRawFilePath, specs, subname = "")
 {
-  library(dplyr)
-  library(stringr)
-  library(readr)
+
   
   #geoID = "GSE10320"
   #subname = ""
@@ -719,7 +715,6 @@ getClinicalData <- function(geoID, rawFilePath, outputRawFilePath, specs, subnam
 }
 saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription = FALSE)
 {
-  library(stringr)
 
   print(paste("Saving clinical data to ", outputRawFilePath, sep=""))
     

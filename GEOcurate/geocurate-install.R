@@ -19,4 +19,6 @@ install.packages("yaml")
 
 install.packages("feather")
 devtools::install_github("AnalytixWare/ShinySky")
+
+install.packages("shinyFiles")
 }
