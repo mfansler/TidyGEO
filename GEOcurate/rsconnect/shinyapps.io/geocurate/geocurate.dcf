@@ -5,9 +5,9 @@ account: geocurate
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 253097
-bundleId: 1573327
+bundleId: 1578697
 url: https://geocurate.shinyapps.io/geocurate/
-when: 1536270395.12458
+when: 1536592627.2252
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: www/helpIcon.png
