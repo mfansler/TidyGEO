@@ -240,7 +240,11 @@ ui <- fluidPage(
         tabPanel("Save file",
                  radioButtons("fileType", "File type:", choices = c("csv", "tsv", "JSON")),
                  uiOutput("nameFile"),
-                 downloadButton("downloadData", "Save")#,
+                 fluidRow(
+                  column(2, downloadButton("downloadData", "Save")),
+                  column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
+                 )
+                 #,
                  #actionButton("showHistory", "Show History"),
                  )
         )
@@ -260,7 +264,7 @@ server <- function(input, output, session) {
                            DFOut = data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), 
                            tablesList = list(), thes_suggest = c("no suggestions"), thes_suggest_vals = c("no suggestions"),
                            suggestions = c("no suggestions"), excludesList = list(), oFile = "source('geocurateFunctions_User.R')", downloadChunkLen = 0,
-                           currChunkLen = 0, subAllNums = F, volumes = c('working directory' = '.', 'home' = '~/'))
+                           currChunkLen = 0, subAllNums = F)
 
 # reset -------------------------------------------------------------------
 
@@ -865,12 +869,7 @@ observe({
 # download data -----------------------------------------------------------
   
   output$nameFile <- renderUI({
-    fluidRow(
-      column(2, shinySaveButton("chooseFilePath", "Save file to...", title = "Please a location where the R script 
-                                will save the metadata file:", filetype = list(file=c(input$fileType)))),
-      column(5, offset = 0, textInput("userFileName", label = NULL, value = paste0("file name.", input$fileType))),
-      column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
-    )
+    textInput("userFileName", label = NULL, value = paste0("file name.", input$fileType))
   })
   
   output$downloadData <- downloadHandler(
@@ -922,21 +921,6 @@ observe({
     }#,
     #contentType = "text/tsv"
   )
-  
-  
-  
-  observe({
-    shinyFileSave(input, "chooseFilePath", roots = values$volumes)
-    
-    fileInfo <- parseSavePath(values$volumes, input$chooseFilePath)
-    
-    if(!identical(fileInfo$datapath, character(0))) {
-      updateTextInput(session, "userFileName",
-                    value = fileInfo$datapath)
-    }
-    
-    #print(paste("FilePath: ", fileInfo$datapath))
-  })
   
   output$downloadRscript <- downloadHandler(
     filename = function() {
