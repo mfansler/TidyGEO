@@ -72,185 +72,209 @@ options(shiny.autoreload = F)
 
 ui <- fluidPage(
   
-  sidebarLayout(
+  tabsetPanel(id = "masterPanel",
+    tabPanel("metaData",
+  
+      sidebarLayout(
+        
+        sidebarPanel(
+          useShinyjs(),
+          tabsetPanel(id = "sidePanel",
+                      
+                      
+    # download data -----------------------------------------------------------
     
-    sidebarPanel(
-      useShinyjs(),
-      tabsetPanel(id = "sidePanel",
-                  
-                  
-# download data -----------------------------------------------------------
-
-
-        tabPanel("1",
-          h4("Downloading the data"),
-          textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                                   helpButton('The GEO identifier for the dataset, e.g., "GSE1456"'))),
-          #this field was used only for testing: now typing GSE1456 or GSE20181 will pull up test files
-          #textInput(inputId = "testFile", label = div("Test file path: ", 
-          #                                            helpButton("Temporary test file box for the raw clinical file (works only if you are in the correct directory)"))),
-          checkboxGroupInput(inputId = "filter", label = div("Would you like to filter any of the following?", 
-                                                               helpButton("Removes columns right after downloading, according to the following specifications.")),
-                               choiceNames = list(div("All the same value", helpButton("Columns in which every value is the same are often uninformative.")), 
-                                                  div("All different values", helpButton("Columns in which every value is different are often uninformative.")), 
-                                                  div("Dates", helpButton("Removes columns in which every entry is in the format January 00 00 (for example).")),
-                                                  div("Reanalyzed by", helpButton('Removes columns in which every entry contains the phrase "reanalyzed by", which are often uninformative.')), 
-                                                  div("Web addresses", helpButton('Removes columns in which every entry is a web address beginning with "ftp:://"'))),
-                               choiceValues = list("sameVals", "allDiff", "dates", "reanalyzed", "url")),
-          actionButton(inputId = "download", label = "Download"),
-          hr(), uiOutput("nav_1_ui")
-        ),
-
-
-# split variables ---------------------------------------------------------
-
-        
-        #specify which columns to split up, and the delimiter
-        tabPanel("2",
-          #hr(),
-          h4("Formatting the data"),
-          checkboxInput(inputId = "toSplit", label = div("Contains key-value pairs separated by a delimiter",
-                                                           helpButton('e.g. <b>"RELAPSE: 1"</b>'))),
-          conditionalPanel(condition = "input.toSplit == true",
-                    uiOutput("chooseSplitVars"),
-                    checkboxInput(inputId = "allButSplit", label = tags$i("split all BUT the specified")),
-                    textInput(inputId = "delimiter", label = "Delimiter (including any spaces): ")
-                    ),
-          checkboxInput(inputId = "toDivide", label = div("Contains multiple values in one column",
-                                                          helpButton('e.g. <b>"responder;7;control"</b>'))),
-          conditionalPanel(condition = "input.toDivide == true",
-                           uiOutput("chooseDivideVars"),
-                           checkboxInput(inputId = "allButDivide", label = tags$i("split all BUT the specified")),
-                           textInput(inputId = "delimiter2", label = "Delimiter (including any spaces): ")
-                           #uiOutput("chooseNewDivideNames")
-                           #textOutput("variable1")
-                           ),
-          #specify which values should be excluded from the column
-          #option to save the specification files
-          #thesaurus stuff 
-          actionButton(inputId = "extractCols", label = "Extract columns"),
-          hr(), uiOutput("nav_2_ui")
-        ),
-
-# exclude columns ---------------------------------------------------------
-
-        
-        #specify which vars to keep
-        tabPanel("3",
-                 #hr(),
-                 #h4("Choosing the variables"),
-                 uiOutput("chooseVarsToKeep"),
-                 checkboxInput(inputId = "allButKeep", label = tags$i("keep all BUT the specified")),
-                 actionButton(inputId = "filterCols", label = "Filter columns"),
-                 hr(), uiOutput("nav_3_ui")
-        ),
-
-# rename columns ----------------------------------------------------------
-
-        
-        #renaming any columns
-        tabPanel("4",
-                 uiOutput("showCols"),
-                 #textInput("newName", "Enter a new name: "),
-                 rHandsontableOutput("newName"),
-                 uiOutput("thesLink"),
-                 #textInput.typeahead(id="newName",
-                  #                   placeholder="Enter a new name: ",
-                  #                   local=data.frame(thesaurus.preferred.feather),
-                  #                   valueKey = "Code",
-                  #                   tokens=c(1:nrow(thesaurus.preferred.feather)),
-                  #                   template = HTML("<p class='repo-language'>{{info}}</p> <p class='repo-name'>{{name}}</p>")
-                 #),
-                 actionButton("save", "Save"),
-                 actionButton("delete", "Remove"), br(),
-                 #actionButton("addPrefName", "Add name"),
-                 #actionButton('removeBtn', 'Remove name'),
-                 br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
-                 tableOutput("new_name_contents"),
-                 #verbatimTextOutput("testPrint"),
-                 actionButton(inputId = "rename", label = "Rename columns"),
-                 hr(), uiOutput("nav_4_ui")
-                 ),
-
-# substitute --------------------------------------------------------------
-
-        
-        #specify which values to substitute for other values/which values should be treated as NA
-        tabPanel("5",
-                 #hr(),
-                 #h4("Cleaning the data"),
-                 uiOutput("showColsForSub"),
-                 #actionButton("saveNA", "Save"),
-                 #actionButton('removeNA', 'Remove'),
-                 #br(), textOutput("curr_NA_vals"), br(),
-                 checkboxInput("isRange", "Specify a range of values to substitute?"),
-                 conditionalPanel(condition = "input.isRange == true",
-                                                   uiOutput("sliderSub")),
-                 conditionalPanel(condition = "input.isRange == false",
-                                  h5('Click "Add" to add rows or "Remove" to remove the last row.'),
-                                  rHandsontableOutput("hotIn")),
-                 uiOutput("thesLinkSub"),
-                 actionButton("addToSub", "Add"),
-                 actionButton("removeToSub", "Remove"),
-                 div(#style = 'overflow-x: scroll', 
-                   DTOutput("hotOut")),
-                 #uiOutput("hotOutText"),
-                 #rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 100, stretchH = "all"),
-                 actionButton("evaluateSubs", "Substitute"),
-                 hr(), uiOutput("nav_5_ui")
-        ),
-
-# exclude variables -------------------------------------------------------
-
-
-        tabPanel("6",
-                 uiOutput("showColsForExclude"),
-                 checkboxInput("isRangeExclude", "Specify a range of values"),
-                 conditionalPanel(condition = "input.isRangeExclude == true",
-                                  uiOutput("sliderExclude")),
-                 conditionalPanel(condition = "input.isRangeExclude == false",
-                                  uiOutput("showValsForExclude")),
-                 actionButton("excludeVals", "Exclude"),
-                 hr(), uiOutput("nav_6_ui")
-        )
-      )
-    ),
-
-# display metadata --------------------------------------------------------
-
     
-    mainPanel(
-      tabsetPanel(
-        tabPanel("MetaData", 
-                 br(), 
-                 fluidRow(
-                   #option to save the output file
-                 column(2, actionButton("reset", "Reset")),
-                 column(2, actionButton("undo", "Undo"), helpButton("Reset the dataset to its original state or undo the last action.")),
-                 #warning about merged datasets using dates as the criteria
-                 column(6, offset = 2, uiOutput("mergedWarning"))
-                 ), 
-                 br(), br(), 
-                 bsAlert("alert"), withSpinner(DTOutput("dataset"), type = 5)
+            tabPanel("1",
+              h4("Downloading the data"),
+              textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
+                                                       helpButton('The GEO identifier for the dataset, e.g., "GSE1456"'))),
+              #this field was used only for testing: now typing GSE1456 or GSE20181 will pull up test files
+              #textInput(inputId = "testFile", label = div("Test file path: ", 
+              #                                            helpButton("Temporary test file box for the raw clinical file (works only if you are in the correct directory)"))),
+              checkboxGroupInput(inputId = "filter", label = div("Would you like to filter any of the following?", 
+                                                                   helpButton("Removes columns right after downloading, according to the following specifications.")),
+                                   choiceNames = list(div("All the same value", helpButton("Columns in which every value is the same are often uninformative.")), 
+                                                      div("All different values", helpButton("Columns in which every value is different are often uninformative.")), 
+                                                      div("Dates", helpButton("Removes columns in which every entry is in the format January 00 00 (for example).")),
+                                                      div("Reanalyzed by", helpButton('Removes columns in which every entry contains the phrase "reanalyzed by", which are often uninformative.')), 
+                                                      div("Web addresses", helpButton('Removes columns in which every entry is a web address beginning with "ftp:://"'))),
+                                   choiceValues = list("sameVals", "allDiff", "dates", "reanalyzed", "url")),
+              checkboxGroupInput(inputId = "alsoDownload", label = div("Also,",
+                                                                       helpButton("Files to download in addition to the metadata file.")),
+                                 choiceNames = list(div("Download series matrix file",
+                                                        helpButton("Description of series matrix file")),
+                                                    div("Download platform data",
+                                                        helpButton("Description of platform data"))),
+                                 choiceValues = list("downloadExpr",
+                                                     "downloadPlatform")),
+              actionButton(inputId = "download", label = "Download"),
+              hr(), uiOutput("nav_1_ui")
+            ),
+    
+    
+    # split variables ---------------------------------------------------------
+    
+            
+            #specify which columns to split up, and the delimiter
+            tabPanel("2",
+              #hr(),
+              h4("Formatting the data"),
+              checkboxInput(inputId = "toSplit", label = div("Contains key-value pairs separated by a delimiter",
+                                                               helpButton('e.g. <b>"RELAPSE: 1"</b>'))),
+              conditionalPanel(condition = "input.toSplit == true",
+                        uiOutput("chooseSplitVars"),
+                        checkboxInput(inputId = "allButSplit", label = tags$i("split all BUT the specified")),
+                        textInput(inputId = "delimiter", label = "Delimiter (including any spaces): ")
+                        ),
+              checkboxInput(inputId = "toDivide", label = div("Contains multiple values in one column",
+                                                              helpButton('e.g. <b>"responder;7;control"</b>'))),
+              conditionalPanel(condition = "input.toDivide == true",
+                               uiOutput("chooseDivideVars"),
+                               checkboxInput(inputId = "allButDivide", label = tags$i("split all BUT the specified")),
+                               textInput(inputId = "delimiter2", label = "Delimiter (including any spaces): ")
+                               #uiOutput("chooseNewDivideNames")
+                               #textOutput("variable1")
+                               ),
+              #specify which values should be excluded from the column
+              #option to save the specification files
+              #thesaurus stuff 
+              actionButton(inputId = "extractCols", label = "Extract columns"),
+              hr(), uiOutput("nav_2_ui")
+            ),
+    
+    # exclude columns ---------------------------------------------------------
+    
+            
+            #specify which vars to keep
+            tabPanel("3",
+                     #hr(),
+                     #h4("Choosing the variables"),
+                     uiOutput("chooseVarsToKeep"),
+                     checkboxInput(inputId = "allButKeep", label = tags$i("keep all BUT the specified")),
+                     actionButton(inputId = "filterCols", label = "Filter columns"),
+                     hr(), uiOutput("nav_3_ui")
+            ),
+    
+    # rename columns ----------------------------------------------------------
+    
+            
+            #renaming any columns
+            tabPanel("4",
+                     uiOutput("showCols"),
+                     #textInput("newName", "Enter a new name: "),
+                     rHandsontableOutput("newName"),
+                     uiOutput("thesLink"),
+                     #textInput.typeahead(id="newName",
+                      #                   placeholder="Enter a new name: ",
+                      #                   local=data.frame(thesaurus.preferred.feather),
+                      #                   valueKey = "Code",
+                      #                   tokens=c(1:nrow(thesaurus.preferred.feather)),
+                      #                   template = HTML("<p class='repo-language'>{{info}}</p> <p class='repo-name'>{{name}}</p>")
+                     #),
+                     actionButton("save", "Save"),
+                     actionButton("delete", "Remove"), br(),
+                     #actionButton("addPrefName", "Add name"),
+                     #actionButton('removeBtn', 'Remove name'),
+                     br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
+                     tableOutput("new_name_contents"),
+                     #verbatimTextOutput("testPrint"),
+                     actionButton(inputId = "rename", label = "Rename columns"),
+                     hr(), uiOutput("nav_4_ui")
+                     ),
+    
+    # substitute --------------------------------------------------------------
+    
+            
+            #specify which values to substitute for other values/which values should be treated as NA
+            tabPanel("5",
+                     #hr(),
+                     #h4("Cleaning the data"),
+                     uiOutput("showColsForSub"),
+                     #actionButton("saveNA", "Save"),
+                     #actionButton('removeNA', 'Remove'),
+                     #br(), textOutput("curr_NA_vals"), br(),
+                     checkboxInput("isRange", "Specify a range of values to substitute?"),
+                     conditionalPanel(condition = "input.isRange == true",
+                                                       uiOutput("sliderSub")),
+                     conditionalPanel(condition = "input.isRange == false",
+                                      h5('Click "Add" to add rows or "Remove" to remove the last row.'),
+                                      rHandsontableOutput("hotIn")),
+                     uiOutput("thesLinkSub"),
+                     actionButton("addToSub", "Add"),
+                     actionButton("removeToSub", "Remove"),
+                     div(#style = 'overflow-x: scroll', 
+                       DTOutput("hotOut")),
+                     #uiOutput("hotOutText"),
+                     #rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 100, stretchH = "all"),
+                     actionButton("evaluateSubs", "Substitute"),
+                     hr(), uiOutput("nav_5_ui")
+            ),
+    
+    # exclude variables -------------------------------------------------------
+    
+    
+            tabPanel("6",
+                     uiOutput("showColsForExclude"),
+                     checkboxInput("isRangeExclude", "Specify a range of values"),
+                     conditionalPanel(condition = "input.isRangeExclude == true",
+                                      uiOutput("sliderExclude")),
+                     conditionalPanel(condition = "input.isRangeExclude == false",
+                                      uiOutput("showValsForExclude")),
+                     actionButton("excludeVals", "Exclude"),
+                     hr(), uiOutput("nav_6_ui")
+            )
+          )
+        ),
+    
+    # display metadata --------------------------------------------------------
+    
+        
+        mainPanel(
+          tabsetPanel(
+            tabPanel("MetaData", 
+                     br(), 
+                     fluidRow(
+                       #option to save the output file
+                     column(2, actionButton("reset", "Reset")),
+                     column(2, actionButton("undo", "Undo"), helpButton("Reset the dataset to its original state or undo the last action.")),
+                     #warning about merged datasets using dates as the criteria
+                     column(6, offset = 2, uiOutput("mergedWarning"))
+                     ), 
+                     br(), br(), 
+                     bsAlert("alert"), withSpinner(DTOutput("dataset"), type = 5)
+                     ),
+            tabPanel("Summary", #verbatimTextOutput("metaSummary")
+                     
+                     uiOutput("plots")
+                     ),
+            tabPanel("Save file",
+                     radioButtons("fileType", "File type:", choices = c("csv", "tsv", "JSON")),
+                     uiOutput("nameFile"),
+                     fluidRow(
+                      column(2, downloadButton("downloadData", "Save")),
+                      column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
+                     )
+                     #,
+                     #actionButton("showHistory", "Show History"),
+                     )
+            ) #tab panel in main panel
+        ) #main panel
+      ) #sidebar layout
+    ), #metadata tab panel
+
+# expression data ---------------------------------------------------------
+
+    tabPanel("Series data",
+             sidebarLayout(
+               sidebarPanel(
+                 actionButton(inputId = "transposeExpr", label = "Transpose")
                  ),
-        tabPanel("Summary", #verbatimTextOutput("metaSummary")
-                 
-                 uiOutput("plots")
-                 ),
-        tabPanel("Save file",
-                 radioButtons("fileType", "File type:", choices = c("csv", "tsv", "JSON")),
-                 uiOutput("nameFile"),
-                 fluidRow(
-                  column(2, downloadButton("downloadData", "Save")),
-                  column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
-                 )
-                 #,
-                 #actionButton("showHistory", "Show History"),
-                 )
-        )
-    )
-  )
-)
+               mainPanel(withSpinner(DTOutput("expressionData"), type = 5))
+               ) #sidebar layout
+             ) # expression data panel
+  ) #master panel
+) #fluidPage
 
 # server ------------------------------------------------------------------
 
@@ -260,7 +284,7 @@ server <- function(input, output, session) {
   #look for setting to get it do not disconnect
   #session$allowReconnect(TRUE)
   
-  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
+  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, exprData = NULL, newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
                            DFOut = data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), 
                            tablesList = list(), thes_suggest = c("no suggestions"), thes_suggest_vals = c("no suggestions"),
                            suggestions = c("no suggestions"), excludesList = list(), oFile = "source('geocurateFunctions_User.R')", downloadChunkLen = 0,
@@ -296,9 +320,13 @@ observeEvent(input$undo, {
       closeAlert(session, "inputError")
       closeAlert(session, "fileError")
       values$errorState <- FALSE
-      values$metaData <- withProgress(downloadClinical(input$geoID, input$filter, session 
-                                                                     #, input$testFile
-                                                                     ), message = "Downloading data")
+      allData <- withProgress(downloadClinical(input$geoID, input$filter, session = session, 
+                                               otherDownloads = input$alsoDownload), 
+                              message = "Downloading data")
+      
+      values$metaData <- allData[["metaData"]]
+      values$exprData <- allData[["expressionData"]]
+      
       #WRITING COMMANDS TO R SCRIPT
       values$oFile <- "source('geocurateFunctions_User.R')"
       values$oFile <- saveLines(commentify("download metaData"), values$oFile)
@@ -310,7 +338,7 @@ observeEvent(input$undo, {
       downloadChunkLen <- length(values$oFile)
       
       values$origData <- values$metaData
-      values$lastData <- values$metaData
+      #values$lastData <- values$metaData
     }
     })
   
@@ -1065,6 +1093,23 @@ observe({
   #observeEvent(input$nav_6_to_7_button, {
   #  updateTabsetPanel(session, 'sidePanel', selected = '7')
   #})
+  
+
+# expression data ---------------------------------------------------------
+
+  output$expressionData <- DT::renderDT({
+    if(!is.null(values$exprData)) {
+      datatable(values$exprData, rownames = TRUE)
+    }
+    else {
+      datatable(data.frame("Please download some expression data"), rownames = FALSE, colnames = "NO DATA")
+    }
+  })
+  
+  observeEvent(input$transposeExpr, {
+    #will cause R to shut down
+    #values$exprData <- t(values$exprData)
+  })
 }
 
 shinyApp(ui = ui, server = server)

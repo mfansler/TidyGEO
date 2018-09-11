@@ -41,30 +41,47 @@ saveData <- function(metaData, fileName) {
   drop_upload(filePath, path = "Shiny", dtoken = token)
 }
 
-loadData <- function(geoID) {
+loadData <- function(geoID, downloadExpr = FALSE, downloadPlatform = FALSE) {
   token <- readRDS("droptoken.rds")
   
   currPath <- paste0("/Shiny/", geoID, "_Clinical_Raw.csv")
+  expressionPath <- paste0("/Shiny/", geoID, "_Expression_Raw.csv")
   # Read all the files into a list
   filesInfo <- drop_dir("Shiny")
   #print(paste("filesInfo", filesInfo))
   filePaths <- filesInfo$path_display
   #print(paste("filePaths", filePaths))
+  allData <- NULL
   if (currPath %in% filePaths) {
     print("File found")
-    filePaths <- filePaths[which(filePaths == currPath)]
-    data <- lapply(filePaths, drop_read_csv, stringsAsFactors = FALSE, row.names = "geo_accession", dtoken = token)
+    filePath <- filePaths[which(filePaths == currPath)]
+    data <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "geo_accession", dtoken = token)
     ## Concatenate all data together into one data.frame
     data <- do.call(rbind, data)
     #print(head(as.data.frame(data)))
-    return(as.data.frame(data))
+    allData[["metaData"]] <- as.data.frame(data)
   }
+  if (downloadExpr) {
+    if (expressionPath %in% filePaths) {
+      print("Expression file found")
+      filePath <- filePaths[which(filePaths == expressionPath)]
+      exprData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "probes", dtoken = token)
+      ## Concatenate all data together into one data.frame
+      exprData <- do.call(rbind, exprData)
+      #print(head(as.data.frame(data)))
+      allData[["expressionData"]] <- as.data.frame(exprData)
+    }
+  }
+
+  return(allData)
 }
 
-downloadClinical <- function(geoID, toFilter, session = NULL)
+downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = NULL)
 {
-  #print(toFilter)
   dataSetIndex = 1
+  
+  downloadExpr <- if_else("downloadExpr" %in% otherDownloads, TRUE, FALSE)
+  downloadPlatform <- if_else("downloadPlatform" %in% otherDownloads, TRUE, FALSE)
   
   if (grepl("_", geoID)) {
     parts <- str_split(geoID, "_")[[1]]
@@ -77,13 +94,13 @@ downloadClinical <- function(geoID, toFilter, session = NULL)
   
   #Download data
   status <- tryCatch({
-    metaData <- loadData(geoID)
+    allData <- loadData(geoID, downloadExpr, downloadPlatform)
     
     incProgress(1/2)
     #print(head(metaData))
     
-    if (is.null(metaData)) {
-      metaData <- downloadData(geoID, dataSetIndex)
+    if (is.null(allData)) {
+      allData <- downloadData(geoID, dataSetIndex, downloadExpr, downloadPlatform)
     }
     "pass"
   }, error = function(e) {
@@ -103,11 +120,11 @@ downloadClinical <- function(geoID, toFilter, session = NULL)
   
   if (status == "pass") {
     incProgress(3/4)
-    metaData <- filterUninformativeCols(metaData, toFilter)
+    allData[["metaData"]] <- filterUninformativeCols(allData[["metaData"]], toFilter)
     #print(head(metaData))
 
     
-    return(metaData)
+    return(allData)
   }
   
   else if (!is.null(session)){
@@ -120,7 +137,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL)
   }
 }
 
-downloadData <- function(geoID, dataSetIndex) {
+downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, downloadPlatform = FALSE) {
   #temppath <- file.path(tempdir(), "geo/series/")
   #dir.create(temppath, showWarnings = F)
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = FALSE)
@@ -138,9 +155,17 @@ downloadData <- function(geoID, dataSetIndex) {
   
   saveData(metaData, paste0(geoID, "_Clinical_Raw.csv"))
   
-  myData <- loadData(geoID)
+  if(downloadExpr) {
+    expressionData <- assayData(expressionSet)$exprs
+    saveData(cbind("probes" = rownames(expressionData), expressionData), paste0(geoID, "_Expression_Raw.csv"))
+  } else {
+    expressionData <- NULL
+  }
+  #myData <- loadData(geoID)
+  
+  allData <- list("metaData" = metaData, "expressionData" = expressionData)
                      
-  return(myData)
+  return(allData)
 }
 
 #filter columns with all different entries or all the same entry
