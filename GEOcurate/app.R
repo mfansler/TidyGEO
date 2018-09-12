@@ -8,6 +8,7 @@ library(shinyjs)
 library(feather)
 library(shinysky)
 library(shinyFiles)
+library(tidyr)
 source("geocurateFunctions.R")
 
 
@@ -1099,7 +1100,7 @@ observe({
 
   output$expressionData <- DT::renderDT({
     if(!is.null(values$exprData)) {
-      datatable(values$exprData, rownames = TRUE)
+      datatable(head(values$exprData, n = 10)[,1:5], rownames = TRUE)
     }
     else {
       datatable(data.frame("Please download some expression data"), rownames = FALSE, colnames = "NO DATA")
@@ -1109,6 +1110,9 @@ observe({
   observeEvent(input$transposeExpr, {
     #will cause R to shut down
     #values$exprData <- t(values$exprData)
+    values$exprData <- values$exprData %>%
+      gather(newrows, valname, -probes) %>%
+      spread(probes, valname)
   })
 }
 

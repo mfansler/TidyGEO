@@ -41,7 +41,7 @@ saveData <- function(metaData, fileName) {
   drop_upload(filePath, path = "Shiny", dtoken = token)
 }
 
-loadData <- function(geoID, downloadExpr = FALSE, downloadPlatform = FALSE) {
+loadData <- function(geoID, downloadExpr = FALSE, downloadPlatform = FALSE, session = NULL) {
   token <- readRDS("droptoken.rds")
   
   currPath <- paste0("/Shiny/", geoID, "_Clinical_Raw.csv")
@@ -52,6 +52,7 @@ loadData <- function(geoID, downloadExpr = FALSE, downloadPlatform = FALSE) {
   filePaths <- filesInfo$path_display
   #print(paste("filePaths", filePaths))
   allData <- NULL
+  incProgress(1/10, message = "Downloading metadata.")
   if (currPath %in% filePaths) {
     print("File found")
     filePath <- filePaths[which(filePaths == currPath)]
@@ -61,6 +62,7 @@ loadData <- function(geoID, downloadExpr = FALSE, downloadPlatform = FALSE) {
     #print(head(as.data.frame(data)))
     allData[["metaData"]] <- as.data.frame(data)
   }
+  incProgress(1/10, message = "Downloading expression data.", detail = "This may take awhile.")
   if (downloadExpr) {
     if (expressionPath %in% filePaths) {
       print("Expression file found")
@@ -94,13 +96,13 @@ downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = N
   
   #Download data
   status <- tryCatch({
-    allData <- loadData(geoID, downloadExpr, downloadPlatform)
+    allData <- loadData(geoID, downloadExpr, downloadPlatform, session = session)
     
     incProgress(1/2)
     #print(head(metaData))
     
     if (is.null(allData)) {
-      allData <- downloadData(geoID, dataSetIndex, downloadExpr, downloadPlatform)
+      allData <- downloadData(geoID, dataSetIndex, downloadExpr, downloadPlatform, session = session)
     }
     "pass"
   }, error = function(e) {
@@ -137,9 +139,11 @@ downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = N
   }
 }
 
-downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, downloadPlatform = FALSE) {
+downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, downloadPlatform = FALSE, session = NULL) {
   #temppath <- file.path(tempdir(), "geo/series/")
   #dir.create(temppath, showWarnings = F)
+  
+  incProgress(1/10, message = "Downloading data from GEO.")
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = FALSE)
   
   
@@ -151,11 +155,13 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, downloadPlat
   expressionSet <- expressionSet[[dataSetIndex]]
   
   # Extract meta data frame
+  incProgress(1/10, message = "Extracting metadata.")
   metaData <- pData(expressionSet)
   
   saveData(metaData, paste0(geoID, "_Clinical_Raw.csv"))
   
   if(downloadExpr) {
+    incProgress(1/10, message = "Extracting expression data.", detail = "This may take awhile.")
     expressionData <- assayData(expressionSet)$exprs
     saveData(cbind("probes" = rownames(expressionData), expressionData), paste0(geoID, "_Expression_Raw.csv"))
   } else {
