@@ -271,9 +271,12 @@ ui <- fluidPage(
                sidebarPanel(
                  actionButton(inputId = "transposeExpr", label = "Transpose")
                  ),
-               mainPanel(withSpinner(DTOutput("expressionData"), type = 5))
+               mainPanel(
+                 withSpinner(DTOutput("expressionData"), type = 5),
+                 withSpinner(DTOutput("featureData"), type = 5)
+                 ) #main panel
                ) #sidebar layout
-             ) # expression data panel
+             ) # expression data tab panel
   ) #master panel
 ) #fluidPage
 
@@ -285,7 +288,7 @@ server <- function(input, output, session) {
   #look for setting to get it do not disconnect
   #session$allowReconnect(TRUE)
   
-  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, exprData = NULL, newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
+  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, exprData = NULL, ftData = NULL, newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
                            DFOut = data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), 
                            tablesList = list(), thes_suggest = c("no suggestions"), thes_suggest_vals = c("no suggestions"),
                            suggestions = c("no suggestions"), excludesList = list(), oFile = "source('geocurateFunctions_User.R')", downloadChunkLen = 0,
@@ -327,6 +330,7 @@ observeEvent(input$undo, {
       
       values$metaData <- allData[["metaData"]]
       values$exprData <- allData[["expressionData"]]
+      values$ftData <- allData[["featureData"]]
       
       #WRITING COMMANDS TO R SCRIPT
       values$oFile <- "source('geocurateFunctions_User.R')"
@@ -1110,10 +1114,22 @@ observe({
   observeEvent(input$transposeExpr, {
     #will cause R to shut down
     #values$exprData <- t(values$exprData)
-    values$exprData <- values$exprData %>%
-      gather(newrows, valname, -probes) %>%
-      spread(probes, valname)
+    #values$exprData <- values$exprData %>%
+    #  gather(newrows, valname, -probes) %>%
+    #  spread(probes, valname)
   })
+  
+
+# feature data ------------------------------------------------------------
+
+  output$featureData <- DT::renderDT({
+    if(!is.null(values$ftData)) {
+      datatable(values$ftData, rownames = TRUE)
+    }
+    else {
+      datatable(data.frame("Please download some feature data"), rownames = FALSE, conames = "NO DATA")
+    }
+  })  
 }
 
 shinyApp(ui = ui, server = server)
