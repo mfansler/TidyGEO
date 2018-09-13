@@ -76,6 +76,9 @@ downloadData <- function(geoID, dataSetIndex, fileName) {
 #filter columns with all different entries or all the same entry
 filterUninformativeCols <- function(metaData, toFilter = list("none"))
 {
+  #filter out duplicates
+  metaData <- metaData[!duplicated(as.list(metaData))]
+  
   filteredData <- as.data.frame(row.names(metaData))
   dataToFilter <- matrix(nrow = nrow(metaData), ncol = 1)
   
@@ -94,12 +97,14 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       isReanalyzed <- if("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
       isURL <- if("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
       isDate <- if("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
+      isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
       uniqueVals <- unique(as.factor(as.character(toupper(temp))))
       notAllSame <- if("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
       notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && metaData[i] != rownames(metaData)) {
+      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && 
+         !all(isTooLong) && metaData[i] != rownames(metaData)) {
         filteredData <- cbind(filteredData, metaData[,i])
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1
@@ -113,16 +118,6 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
   row.names(filteredData) <- row.names(metaData)
   colnames(filteredData) <- colNames
   
-  #check if any columns are duplicates
-  for (column in colnames(filteredData)) {
-    columns <- colnames(filteredData)[-which(colnames(filteredData) == column)]
-    for (thisCol in columns) {
-      isIdentical <- identical(filteredData[[column]], filteredData[[thisCol]])
-      if (isIdentical) {
-        filteredData <- filteredData[,which(colnames(filteredData) != thisCol)]
-      }
-    }
-  }
   return(filteredData)
 }
 

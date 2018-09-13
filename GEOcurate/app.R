@@ -1124,7 +1124,7 @@ observe({
 
   output$featureData <- DT::renderDT({
     if(!is.null(values$ftData)) {
-      datatable(values$ftData, rownames = TRUE)
+      datatable(values$ftData[which(rownames(values$ftData) %in% rownames(head(values$exprData, n = 10))),], rownames = TRUE)
     }
     else {
       datatable(data.frame("Please download some feature data"), rownames = FALSE, conames = "NO DATA")

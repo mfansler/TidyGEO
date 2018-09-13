@@ -135,7 +135,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = N
       
       incProgress(1/8, message = "Filtering feature data columns.")
       allData[["featureData"]] <- filterUninformativeCols(allData[["featureData"]], 
-                                                          c("sameVals", "url", "dates")) %>% select(-evalSame, -GB_ACC)
+                                                          c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
     }
     return(allData)
   }
@@ -193,6 +193,8 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
 #filter columns with all different entries or all the same entry
 filterUninformativeCols <- function(metaData, toFilter = list("none"))
 {
+  metaData <- metaData[!duplicated(as.list(metaData))]
+  
   filteredData <- as.data.frame(row.names(metaData))
   dataToFilter <- matrix(nrow = nrow(metaData), ncol = 1)
   
@@ -211,6 +213,7 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       isReanalyzed <- if("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
       isURL <- if("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
       isDate <- if("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
+      isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
       if(all(grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp))) {
         
@@ -249,7 +252,7 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       notAllSame <- if("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
       notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && metaData[i] != rownames(metaData)) {
+      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(isTooLong) && metaData[i] != rownames(metaData)) {
         filteredData <- cbind(filteredData, metaData[,i])
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1
@@ -263,16 +266,6 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
   row.names(filteredData) <- row.names(metaData)
   colnames(filteredData) <- colNames
   
-  #check if any columns are duplicates
-  for (column in colnames(filteredData)) {
-    columns <- colnames(filteredData)[-which(colnames(filteredData) == column)]
-    for (thisCol in columns) {
-      isIdentical <- identical(filteredData[[column]], filteredData[[thisCol]])
-      if (isIdentical) {
-        filteredData <- filteredData[,which(colnames(filteredData) != thisCol)]
-      }
-    }
-  }
   if (!("evalSame" %in% colnames(metaData))) {
     filteredData <- cbind(filteredData, evalSame)
   }
