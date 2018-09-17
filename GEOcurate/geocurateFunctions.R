@@ -215,6 +215,8 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       isDate <- if("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
       isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
+      isTooLong <- sum(isTooLong) > (length(temp) / 2)
+      
       if(all(grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp))) {
         
         uniqueDates <- unique(temp)
@@ -252,7 +254,7 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       notAllSame <- if("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
       notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(isTooLong) && metaData[i] != rownames(metaData)) {
+      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !isTooLong && metaData[i] != rownames(metaData)) {
         filteredData <- cbind(filteredData, metaData[,i])
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1

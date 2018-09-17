@@ -273,6 +273,8 @@ ui <- fluidPage(
                  ),
                mainPanel(
                  withSpinner(DTOutput("expressionData"), type = 5),
+                 checkboxInput("useExistingExprLabels", "Keep the existing row names"),
+                 uiOutput("exprLabels"),
                  withSpinner(DTOutput("featureData"), type = 5)
                  ) #main panel
                ) #sidebar layout
@@ -288,7 +290,8 @@ server <- function(input, output, session) {
   #look for setting to get it do not disconnect
   #session$allowReconnect(TRUE)
   
-  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, exprData = NULL, ftData = NULL, newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
+  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, exprData = NULL, exprToDisplay = NULL, ftData = NULL, ftToDisplay = NULL, 
+                           newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
                            DFOut = data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), 
                            tablesList = list(), thes_suggest = c("no suggestions"), thes_suggest_vals = c("no suggestions"),
                            suggestions = c("no suggestions"), excludesList = list(), oFile = "source('geocurateFunctions_User.R')", downloadChunkLen = 0,
@@ -330,7 +333,9 @@ observeEvent(input$undo, {
       
       values$metaData <- allData[["metaData"]]
       values$exprData <- allData[["expressionData"]]
+      values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
       values$ftData <- allData[["featureData"]]
+      values$ftToDisplay <- values$ftData[which(rownames(values$ftData) %in% rownames(head(values$exprData, n = 10))),]
       
       #WRITING COMMANDS TO R SCRIPT
       values$oFile <- "source('geocurateFunctions_User.R')"
@@ -1103,11 +1108,12 @@ observe({
 # expression data ---------------------------------------------------------
 
   output$expressionData <- DT::renderDT({
-    if(!is.null(values$exprData)) {
-      datatable(head(values$exprData, n = 10)[,1:5], rownames = TRUE)
+    if(!is.null(values$exprToDisplay)) {
+      datatable(values$exprToDisplay, options = list(dom = "ft"))
     }
     else {
-      datatable(data.frame("Please download some expression data"), rownames = FALSE, colnames = "NO DATA")
+      datatable(data.frame("Please download some expression data", rownames = FALSE, 
+                           colnames = "NO DATA", options = list(dom = "ft")))
     }
   })
   
@@ -1123,11 +1129,19 @@ observe({
 # feature data ------------------------------------------------------------
 
   output$featureData <- DT::renderDT({
-    if(!is.null(values$ftData)) {
-      datatable(values$ftData[which(rownames(values$ftData) %in% rownames(head(values$exprData, n = 10))),], rownames = TRUE)
+    if(!is.null(values$ftToDisplay)) {
+      datatable(values$ftToDisplay, options = list(dom = "ft", columnDefs = list(list(
+        targets = 1:length(values$ftToDisplay),
+        render = JS(
+          "function(data, type, row, meta) {",
+          "return type === 'display' && data.length > 30 ?",
+          "'<span title=\"' + data + '\">' + data.substr(0, 30) + '...</span>' : data;",
+          "}")
+      ))))
     }
     else {
-      datatable(data.frame("Please download some feature data"), rownames = FALSE, conames = "NO DATA")
+      datatable(data.frame("Please download some feature data"), rownames = FALSE, 
+                colnames = "NO DATA", options = list(dom = "ft"))
     }
   })  
 }
