@@ -772,6 +772,8 @@ saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription
 }
 
 quickTranspose <- function(dataToTranspose) {
+  dataToTranspose$probes <- rownames(dataToTranspose)
+  
   dataToTranspose %>%
     gather(newrows, valname, -probes) %>%
     spread(probes, valname) %>%
@@ -781,9 +783,9 @@ quickTranspose <- function(dataToTranspose) {
 replaceRowNames <- function(data, replacement, replaceCol) {
   
   dataWRowNames <- cbind(probes = rownames(data), data)
-  replacementWRowNames <- cbind(probes = rownames(replacement), replacement) %>%
-    rename(replacement=replaceCol) %>%
-    select(probes, replacement)
+  replacementWRowNames <- as.data.frame(cbind(probes = rownames(replacement), replacement)) %>%
+    rename(replace=replaceCol) %>%
+    select(probes, replace)
   
   if (nrow(data) == nrow(replacement)) {
     
@@ -791,14 +793,22 @@ replaceRowNames <- function(data, replacement, replaceCol) {
     orderedReplacement <- arrange(replacementWRowNames, probes)
     
     if (all(orderedRowNames$probes == orderedReplacement$probes)) {
-      rownames(orderedRowNames) <- orderedReplacement$replacement
+      rownames(orderedRowNames) <- orderedReplacement$replace
       return(select(orderedRowNames, -probes))
     }
   }
   
-  mergedData <- merge(data, replacement, by = "probes") %>%
-    tibble::column_to_rownames("replacement") %>%
+  
+  mergedData <- merge(dataWRowNames, replacementWRowNames, by = "probes") %>%
+    tibble::column_to_rownames("replace") %>%
     select(-probes)
   
   return(mergedData)
+}
+
+findExprLabelColumns <- function(ftData) {
+  allDiff <- as.logical(lapply(ftData, function(x){
+    length(unique(x)) == nrow(ftData)
+  }))
+  return(colnames(ftData[allDiff]))
 }

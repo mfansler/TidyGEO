@@ -274,6 +274,7 @@ ui <- fluidPage(
                  conditionalPanel(condition = "input.useExistingExprLabels == false",
                                   uiOutput("exprLabels")),
                  checkboxInput("transposeExpr", label = "Transpose the data"),
+                 actionButton(inputId = "undoEvalExpr", label = "Undo"),
                  actionButton(inputId = "previewExpr", label = "Preview")
                  ),
                mainPanel(
@@ -293,12 +294,35 @@ server <- function(input, output, session) {
   #look for setting to get it do not disconnect
   #session$allowReconnect(TRUE)
   
-  values <- reactiveValues(metaData = NULL, origData = NULL, lastData = NULL, exprData = NULL, exprToDisplay = NULL, ftData = NULL, ftToDisplay = NULL, 
-                           newName = NULL, newNames = NULL, NAvalsList = list(), DFIn = data.frame(), 
-                           DFOut = data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), 
-                           tablesList = list(), thes_suggest = c("no suggestions"), thes_suggest_vals = c("no suggestions"),
-                           suggestions = c("no suggestions"), excludesList = list(), oFile = "source('geocurateFunctions_User.R')", downloadChunkLen = 0,
-                           currChunkLen = 0, subAllNums = F)
+  values <-
+    reactiveValues(
+      metaData = NULL,
+      origData = NULL,
+      lastData = NULL,
+      exprData = NULL,
+      exprToDisplay = NULL,
+      lastExprToDisplay = NULL,
+      ftData = NULL,
+      ftToDisplay = NULL,
+      newName = NULL,
+      newNames = NULL,
+      NAvalsList = list(),
+      DFIn = data.frame(),
+      DFOut = data.frame(
+        To_Replace = "",
+        New_Val = "",
+        stringsAsFactors = FALSE
+      ),
+      tablesList = list(),
+      thes_suggest = c("no suggestions"),
+      thes_suggest_vals = c("no suggestions"),
+      suggestions = c("no suggestions"),
+      excludesList = list(),
+      oFile = "source('geocurateFunctions_User.R')",
+      downloadChunkLen = 0,
+      currChunkLen = 0,
+      subAllNums = F
+    )
 
 # reset -------------------------------------------------------------------
 
@@ -337,6 +361,7 @@ observeEvent(input$undo, {
       values$metaData <- allData[["metaData"]]
       values$exprData <- allData[["expressionData"]]
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
+      values$lastExprToDisplay <- values$exprToDisplay
       values$ftData <- allData[["featureData"]]
       values$ftToDisplay <- values$ftData[which(rownames(values$ftData) %in% rownames(head(values$exprData, n = 10))),]
       
@@ -1115,8 +1140,8 @@ observe({
       datatable(values$exprToDisplay, options = list(dom = "ft"))
     }
     else {
-      datatable(data.frame("Please download some expression data", rownames = FALSE, 
-                           colnames = "NO DATA", options = list(dom = "ft")))
+      datatable(data.frame("Please download some expression data"), rownames = FALSE, 
+                           colnames = "NO DATA", options = list(dom = "ft"))
     }
   })
   
@@ -1130,13 +1155,24 @@ observe({
   
   output$exprLabels <- renderUI({
     selectInput("colForExprLabels", label = "Please select a column to replace the probe set IDs", 
-                choices = colnames(values$ftToDisplay))
+                choices = findExprLabelColumns(values$ftToDisplay))
   })
   
   observeEvent(input$previewExpr, {
-    values$exprToDisplay <- quickTranspose(values$exprToDisplay)
     
-    values$exprToDisplay <- replaceRowNames(values$exprToDisplay, values$ftToDisplay[,input$colForExprLabels])
+    values$lastExprToDisplay <- values$exprToDisplay
+    
+    if(!input$useExistingExprLabels) {
+      values$exprToDisplay <- replaceRowNames(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels)
+    }
+    
+    if(input$transposeExpr) {
+      values$exprToDisplay <- quickTranspose(values$exprToDisplay)
+    }
+  })
+  
+  observeEvent(input$undoEvalExpr, {
+    values$exprToDisplay <- values$lastExprToDisplay
   })
   
 
