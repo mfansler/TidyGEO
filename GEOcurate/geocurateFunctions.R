@@ -53,7 +53,7 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
   filePaths <- filesInfo$path_display
   #print(paste("filePaths", filePaths))
   allData <- NULL
-  incProgress(1/8, message = "Downloading metadata.")
+  incProgress(1/8, message = "Downloading metadata.", detail = "")
   if (currPath %in% filePaths) {
     print("File found")
     filePath <- filePaths[which(filePaths == currPath)]
@@ -74,7 +74,7 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
       #print(head(as.data.frame(data)))
       allData[["expressionData"]] <- as.data.frame(exprData)
     }
-    incProgress(1/8, message = "Downloading feature data.")
+    incProgress(1/8, message = "Downloading feature data.", detail = "")
     if (featurePath %in% filePaths) {
       print("Features file found")
       filePath <- filePaths[which(filePaths == featurePath)]
@@ -127,13 +127,13 @@ downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = N
   #metaData <- cbind(SampleID = rownames(metaData), metaData)
   
   if (status == "pass") {
-    incProgress(1/8, message = "Filtering columns.")
+    incProgress(1/8, message = "Filtering columns.", detail = "")
     allData[["metaData"]] <- filterUninformativeCols(allData[["metaData"]], toFilter)
     
     if(downloadExpr) {
       head(allData[["featureData"]])
       
-      incProgress(1/8, message = "Filtering feature data columns.")
+      incProgress(1/8, message = "Filtering feature data columns.", detail = "")
       allData[["featureData"]] <- filterUninformativeCols(allData[["featureData"]], 
                                                           c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
     }
@@ -154,7 +154,7 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
   #temppath <- file.path(tempdir(), "geo/series/")
   #dir.create(temppath, showWarnings = F)
   
-  incProgress(1/8, message = "Downloading data from GEO.")
+  incProgress(1/8, message = "Downloading data from GEO.", detail = "")
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
   
   
@@ -176,7 +176,7 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
     expressionData <- assayData(expressionSet)$exprs
     saveData(cbind("probes" = rownames(expressionData), expressionData), paste0(geoID, "_Expression_Raw.csv"))
     
-    incProgress(1/7, message = "Extracting feature data.")
+    incProgress(1/7, message = "Extracting feature data.", detail = "")
     featureData <- fData(expressionSet)
     saveData(featureData, paste0(geoID, "_Features_Raw.csv"))
   } else {
@@ -769,4 +769,36 @@ saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription
     saveFileDescription(geoID, str_split(outputRawFilePath, "\\.")[[1]][1])
 
 
+}
+
+quickTranspose <- function(dataToTranspose) {
+  dataToTranspose %>%
+    gather(newrows, valname, -probes) %>%
+    spread(probes, valname) %>%
+    tibble::column_to_rownames("newrows")
+}
+
+replaceRowNames <- function(data, replacement, replaceCol) {
+  
+  dataWRowNames <- cbind(probes = rownames(data), data)
+  replacementWRowNames <- cbind(probes = rownames(replacement), replacement) %>%
+    rename(replacement=replaceCol) %>%
+    select(probes, replacement)
+  
+  if (nrow(data) == nrow(replacement)) {
+    
+    orderedRowNames <- arrange(dataWRowNames, probes)
+    orderedReplacement <- arrange(replacementWRowNames, probes)
+    
+    if (all(orderedRowNames$probes == orderedReplacement$probes)) {
+      rownames(orderedRowNames) <- orderedReplacement$replacement
+      return(select(orderedRowNames, -probes))
+    }
+  }
+  
+  mergedData <- merge(data, replacement, by = "probes") %>%
+    tibble::column_to_rownames("replacement") %>%
+    select(-probes)
+  
+  return(mergedData)
 }

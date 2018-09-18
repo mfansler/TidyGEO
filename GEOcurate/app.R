@@ -269,12 +269,15 @@ ui <- fluidPage(
     tabPanel("Series data",
              sidebarLayout(
                sidebarPanel(
-                 actionButton(inputId = "transposeExpr", label = "Transpose")
+                 #actionButton(inputId = "transposeExpr", label = "Transpose"),
+                 checkboxInput("useExistingExprLabels", "Keep probe set IDs (row names)"),
+                 conditionalPanel(condition = "input.useExistingExprLabels == false",
+                                  uiOutput("exprLabels")),
+                 checkboxInput("transposeExpr", label = "Transpose the data"),
+                 actionButton(inputId = "previewExpr", label = "Preview")
                  ),
                mainPanel(
                  withSpinner(DTOutput("expressionData"), type = 5),
-                 checkboxInput("useExistingExprLabels", "Keep the existing row names"),
-                 uiOutput("exprLabels"),
                  withSpinner(DTOutput("featureData"), type = 5)
                  ) #main panel
                ) #sidebar layout
@@ -1123,6 +1126,17 @@ observe({
     #values$exprData <- values$exprData %>%
     #  gather(newrows, valname, -probes) %>%
     #  spread(probes, valname)
+  })
+  
+  output$exprLabels <- renderUI({
+    selectInput("colForExprLabels", label = "Please select a column to replace the probe set IDs", 
+                choices = colnames(values$ftToDisplay))
+  })
+  
+  observeEvent(input$previewExpr, {
+    values$exprToDisplay <- quickTranspose(values$exprToDisplay)
+    
+    values$exprToDisplay <- replaceRowNames(values$exprToDisplay, values$ftToDisplay[,input$colForExprLabels])
   })
   
 
