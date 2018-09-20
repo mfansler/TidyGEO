@@ -771,38 +771,45 @@ saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription
 }
 
 quickTranspose <- function(dataToTranspose) {
-  dataToTranspose$probes <- rownames(dataToTranspose)
   
+  incProgress()
   dataToTranspose %>%
-    gather(newrows, valname, -probes) %>%
-    spread(probes, valname) %>%
-    tibble::column_to_rownames("newrows")
+    gather(newrows, valname, -ID) %>%
+    spread(ID, valname) %>%
+    rename(ID = "newrows")
+  incProgress()
 }
 
-replaceRowNames <- function(data, replacement, replaceCol) {
+replaceID <- function(data, replacement, replaceCol) {
   
-  dataWRowNames <- cbind(probes = rownames(data), data)
-  replacementWRowNames <- as.data.frame(cbind(probes = rownames(replacement), replacement)) %>%
+  dataWRowNames <- data
+  replacementWRowNames <- replacement %>%
     rename(replace=replaceCol) %>%
-    select(probes, replace)
+    select(ID, replace)
+  
+  incProgress()
   
   if (nrow(data) == nrow(replacement)) {
     
-    orderedRowNames <- arrange(dataWRowNames, probes)
-    orderedReplacement <- arrange(replacementWRowNames, probes)
+    orderedRowNames <- arrange(dataWRowNames, ID)
+    orderedReplacement <- arrange(replacementWRowNames, ID)
+    incProgress()
     
-    if (all(orderedRowNames$probes == orderedReplacement$probes)) {
-      rownames(orderedRowNames) <- orderedReplacement$replace
-      return(select(orderedRowNames, -probes))
+    if (all(orderedRowNames$ID == orderedReplacement$ID)) {
+      orderedRowNames$ID <- orderedReplacement$replace
+      incProgress()
+      return(orderedRowNames)
     }
+  } else {
+    
+    incProgress()
+    mergedData <- merge(dataWRowNames, replacementWRowNames, by = "ID") %>%
+      select(-ID) %>%
+      rename(ID = "replace")
+    incProgress()
+    
+    return(mergedData)
   }
-  
-  
-  mergedData <- merge(dataWRowNames, replacementWRowNames, by = "probes") %>%
-    tibble::column_to_rownames("replace") %>%
-    select(-probes)
-  
-  return(mergedData)
 }
 
 findExprLabelColumns <- function(ftData) {
