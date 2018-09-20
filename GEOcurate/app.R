@@ -91,9 +91,6 @@ ui <- fluidPage(
               h4("Downloading the data"),
               textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                        helpButton('The GEO identifier for the dataset, e.g., "GSE1456"'))),
-              #this field was used only for testing: now typing GSE1456 or GSE20181 will pull up test files
-              #textInput(inputId = "testFile", label = div("Test file path: ", 
-              #                                            helpButton("Temporary test file box for the raw clinical file (works only if you are in the correct directory)"))),
               checkboxGroupInput(inputId = "filter", label = div("Would you like to filter any of the following?", 
                                                                    helpButton("Removes columns right after downloading, according to the following specifications.")),
                                    choiceNames = list(div("All the same value", helpButton("Columns in which every value is the same are often uninformative.")), 
@@ -102,14 +99,8 @@ ui <- fluidPage(
                                                       div("Reanalyzed by", helpButton('Removes columns in which every entry contains the phrase "reanalyzed by", which are often uninformative.')), 
                                                       div("Web addresses", helpButton('Removes columns in which every entry is a web address beginning with "ftp:://"'))),
                                    choiceValues = list("sameVals", "allDiff", "dates", "reanalyzed", "url")),
-              checkboxGroupInput(inputId = "alsoDownload", label = div("Also,",
-                                                                       helpButton("Files to download in addition to the metadata file.")),
-                                 choiceNames = list(div("Download series matrix file",
-                                                        helpButton("Description of series matrix file")),
-                                                    div("Download platform data",
-                                                        helpButton("Description of platform data"))),
-                                 choiceValues = list("downloadExpr",
-                                                     "downloadPlatform")),
+              checkboxInput(inputId = "alsoDownload", label = div("Also download series matrix file,",
+                                                                       helpButton("Files to download in addition to the metadata file."))),
               actionButton(inputId = "download", label = "Download"),
               hr(), uiOutput("nav_1_ui")
             ),
@@ -270,10 +261,9 @@ ui <- fluidPage(
     tabPanel("Series data",
              sidebarLayout(
                sidebarPanel(
-                 #actionButton(inputId = "transposeExpr", label = "Transpose"),
-                 checkboxInput("useExistingExprLabels", "Keep probe set IDs (row names)"),
-                 conditionalPanel(condition = "input.useExistingExprLabels == false",
-                                  uiOutput("exprLabels")),
+                 #actionButton(inputId = "transposeExpr", label = "Transpose")
+                 uiOutput("exprLabels"),
+                 uiOutput("summarizeOptions"),
                  checkboxInput("transposeExpr", label = "Transpose the data"),
                  actionButton(inputId = "undoEvalExpr", label = "Undo"),
                  actionButton(inputId = "previewExpr", label = "Preview")
@@ -356,7 +346,7 @@ observeEvent(input$undo, {
       closeAlert(session, "fileError")
       values$errorState <- FALSE
       allData <- withProgress(downloadClinical(input$geoID, input$filter, session = session, 
-                                               otherDownloads = input$alsoDownload), 
+                                               downloadExpr = input$alsoDownload), 
                               message = "Downloading data")
       
       values$metaData <- allData[["metaData"]]
@@ -364,7 +354,8 @@ observeEvent(input$undo, {
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
       values$lastExprToDisplay <- values$exprToDisplay
       values$ftData <- allData[["featureData"]]
-      values$ftToDisplay <- values$ftData[which(rownames(values$ftData) %in% rownames(head(values$exprData, n = 10))),]
+      print(which(values$ftData[,"ID"] %in% values$exprToDisplay[,"ID"]))
+      values$ftToDisplay <- values$ftData[which(values$ftData[,"ID"] %in% values$exprToDisplay[,"ID"]),]
       
       #WRITING COMMANDS TO R SCRIPT
       values$oFile <- "source('geocurateFunctions_User.R')"
@@ -1138,7 +1129,7 @@ observe({
 
   output$expressionData <- DT::renderDT({
     if(!is.null(values$exprToDisplay)) {
-      datatable(values$exprToDisplay, options = list(dom = "ft"))
+      datatable(values$exprToDisplay, rownames = FALSE, options = list(dom = "ft"))
     }
     else {
       datatable(data.frame("Please download some expression data"), rownames = FALSE, 
@@ -1156,7 +1147,14 @@ observe({
   
   output$exprLabels <- renderUI({
     selectInput("colForExprLabels", label = "Please select a column to replace the probe set IDs", 
-                choices = findExprLabelColumns(values$ftToDisplay))
+                choices = colnames(values$ftToDisplay))
+  })
+  
+  output$summarizeOptions <- renderUI({
+    if(!input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay)) {
+      selectInput("howToSummarize", label = "It looks like this column contains multiple values for one expression ID.
+                  How would you like to summarize the data?", choices = c("mean", "median", "max", "min", "keep all"))
+    }
   })
   
   observeEvent(input$previewExpr, {
@@ -1181,11 +1179,13 @@ observe({
 
   output$featureData <- DT::renderDT({
     if(!is.null(values$ftToDisplay)) {
-      datatable(values$ftToDisplay, options = list(dom = "ft", columnDefs = list(list(
-        targets = 1:length(values$ftToDisplay),
+      datatable(values$ftToDisplay, rownames = FALSE, options = list(dom = "ft", columnDefs = list(list(
+        targets = "_all",
+        #Makes it so that the table will only display the first 30 chars.
+        #See https://rstudio.github.io/DT/options.html
         render = JS(
           "function(data, type, row, meta) {",
-          "return type === 'display' && data.length > 30 ?",
+          "return type === 'display' && typeof data === 'string' && data.length > 30 ?",
           "'<span title=\"' + data + '\">' + data.substr(0, 30) + '...</span>' : data;",
           "}")
       ))))
