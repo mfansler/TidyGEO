@@ -57,7 +57,7 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
   if (currPath %in% filePaths) {
     print("File found")
     filePath <- filePaths[which(filePaths == currPath)]
-    data <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "geo_accession", dtoken = token)
+    data <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "geo_accession", check.names = FALSE, dtoken = token)
     ## Concatenate all data together into one data.frame
     data <- do.call(rbind, data)
     #print(head(as.data.frame(data)))
@@ -68,7 +68,7 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
     if (expressionPath %in% filePaths) {
       print("Expression file found")
       filePath <- filePaths[which(filePaths == expressionPath)]
-      exprData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "probes", dtoken = token)
+      exprData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, check.names = FALSE, dtoken = token)
       ## Concatenate all data together into one data.frame
       exprData <- do.call(rbind, exprData)
       #print(head(as.data.frame(data)))
@@ -78,7 +78,7 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
     if (featurePath %in% filePaths) {
       print("Features file found")
       filePath <- filePaths[which(filePaths == featurePath)]
-      ftData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "ID", dtoken = token)
+      ftData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, check.names = FALSE, dtoken = token)
       ftData <- do.call(rbind, ftData)
       allData[["featureData"]] <- as.data.frame(ftData)
     }
@@ -87,12 +87,9 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
   return(allData)
 }
 
-downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = NULL)
+downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE)
 {
   dataSetIndex = 1
-  
-  downloadExpr <- if_else("downloadExpr" %in% otherDownloads, TRUE, FALSE)
-  downloadPlatform <- if_else("downloadPlatform" %in% otherDownloads, TRUE, FALSE)
   
   if (grepl("_", geoID)) {
     parts <- str_split(geoID, "_")[[1]]
@@ -136,6 +133,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL, otherDownloads = N
       incProgress(1/8, message = "Filtering feature data columns.", detail = "")
       allData[["featureData"]] <- filterUninformativeCols(allData[["featureData"]], 
                                                           c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
+      print(paste("Class of ftData ID", class(allData[["featureData"]][,"ID"])))
     }
     return(allData)
   }
@@ -174,7 +172,8 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
   if(downloadExpr) {
     incProgress(1/8, message = "Extracting expression data.", detail = "This may take awhile.")
     expressionData <- assayData(expressionSet)$exprs
-    saveData(cbind("probes" = rownames(expressionData), expressionData), paste0(geoID, "_Expression_Raw.csv"))
+    expressionData <- cbind("ID" = rownames(expressionData), expressionData)
+    saveData(expressionData, paste0(geoID, "_Expression_Raw.csv"))
     
     incProgress(1/7, message = "Extracting feature data.", detail = "")
     featureData <- fData(expressionSet)
@@ -255,7 +254,7 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
       if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !isTooLong && metaData[i] != rownames(metaData)) {
-        filteredData <- cbind(filteredData, metaData[,i])
+        filteredData <- cbind(filteredData, metaData[,i], stringsAsFactors = FALSE)
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1
       }
@@ -264,7 +263,7 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
   if (unFilteredCount == 0) {
     print("No informative columns found.")
   }
-  filteredData <- as.data.frame(filteredData[,2:ncol(filteredData)])
+  filteredData <- as.data.frame(filteredData[,2:ncol(filteredData)], stringsAsFactors = FALSE)
   row.names(filteredData) <- row.names(metaData)
   colnames(filteredData) <- colNames
   
