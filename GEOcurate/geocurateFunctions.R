@@ -49,9 +49,7 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
   featurePath <- paste0("/Shiny/", geoID, "_Features_Raw.csv")
   # Read all the files into a list
   filesInfo <- drop_dir("Shiny")
-  #print(paste("filesInfo", filesInfo))
   filePaths <- filesInfo$path_display
-  #print(paste("filePaths", filePaths))
   allData <- NULL
   incProgress(1/8, message = "Downloading metadata.", detail = "")
   if (currPath %in% filePaths) {
@@ -60,7 +58,6 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
     data <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "geo_accession", check.names = FALSE, dtoken = token)
     ## Concatenate all data together into one data.frame
     data <- do.call(rbind, data)
-    #print(head(as.data.frame(data)))
     allData[["metaData"]] <- as.data.frame(data)
   }
   if (downloadExpr) {
@@ -71,7 +68,6 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
       exprData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, check.names = FALSE, dtoken = token)
       ## Concatenate all data together into one data.frame
       exprData <- do.call(rbind, exprData)
-      #print(head(as.data.frame(data)))
       allData[["expressionData"]] <- as.data.frame(exprData)
     }
     incProgress(1/8, message = "Downloading feature data.", detail = "")
@@ -133,7 +129,6 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
       incProgress(1/8, message = "Filtering feature data columns.", detail = "")
       allData[["featureData"]] <- filterUninformativeCols(allData[["featureData"]], 
                                                           c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
-      print(paste("Class of ftData ID", class(allData[["featureData"]][,"ID"])))
     }
     return(allData)
   }
@@ -773,14 +768,20 @@ saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription
 quickTranspose <- function(dataToTranspose) {
   
   incProgress()
-  dataToTranspose %>%
+  transposed <- dataToTranspose %>%
     gather(newrows, valname, -ID) %>%
     spread(ID, valname) %>%
     rename(ID = "newrows")
+  
   incProgress()
+  return(transposed)
 }
 
 replaceID <- function(data, replacement, replaceCol) {
+  
+  if (replaceCol == "ID") {
+    return(data)
+  }
   
   dataWRowNames <- data
   replacementWRowNames <- replacement %>%

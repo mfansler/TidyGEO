@@ -74,8 +74,8 @@ options(shiny.autoreload = F)
 
 ui <- fluidPage(
   
-  navbarPage("GEOcurate",
-             tabPanel("Meta data",
+  navbarPage(title = "GEOcurate",
+             tabPanel(title = "Meta data",
                       
                       sidebarLayout(
                         
@@ -225,7 +225,7 @@ ui <- fluidPage(
                         
                         mainPanel(
                           tabsetPanel(
-                            tabPanel("Data", 
+                            tabPanel(title = "Data", 
                                      br(), 
                                      fluidRow(
                                        #option to save the output file
@@ -241,7 +241,7 @@ ui <- fluidPage(
                                      
                                      uiOutput("plots")
                             ),
-                            tabPanel("Save file",
+                            tabPanel(title = "Save file",
                                      radioButtons("fileType", "File type:", choices = c("csv", "tsv", "JSON")),
                                      uiOutput("nameFile"),
                                      fluidRow(
@@ -258,8 +258,8 @@ ui <- fluidPage(
              
              # expression data ---------------------------------------------------------
              
-             tabPanel("Series data",
-                      tabsetPanel("expressionPanel",
+             tabPanel(title = "Series data",
+                      tabsetPanel(id = "expressionPanel",
                                   tabPanel("1",
                                            sidebarLayout(
                                              sidebarPanel(
@@ -339,7 +339,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$undo, {
     values$metaData <- values$lastData
-    #print(values$currChunkLen)
     values$oFile <- removeFromScript(values$oFile, len = values$currChunkLen)
     values$currChunkLen <- 0
   })  
@@ -366,7 +365,6 @@ server <- function(input, output, session) {
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
       values$previewExprData <- values$exprToDisplay
       values$ftData <- allData[["featureData"]]
-      print(which(values$ftData[,"ID"] %in% values$exprToDisplay[,"ID"]))
       values$ftToDisplay <- values$ftData[which(values$ftData[,"ID"] %in% values$exprToDisplay[,"ID"]),]
       
       #WRITING COMMANDS TO R SCRIPT
@@ -445,7 +443,6 @@ server <- function(input, output, session) {
             }
             else {
               barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = TRUE)
-              #print(plotInput()$total_data[[i]])
             }
           }
         })
@@ -551,20 +548,16 @@ server <- function(input, output, session) {
     if (!is.null(input$colsToRename) && input$colsToRename != "" && (input$colsToRename %in% colnames(values$metaData))) {
       spacers <- c(" ", "\\.", "\\_")
       toSearch <- input$colsToRename
-      #print(toSearch)
       for (x in spacers) {
         toSearch <- str_split(toSearch, x)[[1]]
         sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
-        #print(toSearch)
         toSearch <- paste(toSearch, collapse = sep)
       }
       synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
       values$thes_suggest <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-      #print(values$thes_suggest)
       #find newName %in% synonyms
       # look up the matching indices in preferred names
     }
-    #print(values$suggestions)
   })
   
   #observeEvent(input$showCols, output$cols <- renderUI({
@@ -586,7 +579,6 @@ server <- function(input, output, session) {
   observe({
     if (!is.null(input$newName)) {
       values$newName <- hot_to_r(input$newName)[which(colnames(hot_to_r(input$newName)) == "Enter a new name: "),]
-      #print(values$DFIn)
     }
   })
   
@@ -619,8 +611,7 @@ server <- function(input, output, session) {
     data.frame(names(values$newNames), values$newNames)
   })
   
-  observeEvent(input$rename, ({ 
-    #print(values$newNames)
+  observeEvent(input$rename, ({
     #values$newNames <- c(values$newNames, input[[paste("newName", newNameCount(), sep = "")]])
     values$lastData <- values$metaData
     values$metaData <- renameCols(values$metaData, values$newNames, session)
@@ -637,7 +628,6 @@ server <- function(input, output, session) {
     values$currChunkLen <- length(values$oFile) - before
     
     values$newNames <- NULL
-    #print("reachedEnd")
   }))
   
   
@@ -678,33 +668,7 @@ server <- function(input, output, session) {
   observeEvent(input$colsToSub, {
     
     values$suggestions <- if (!is.null(input$colsToSub) && input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) unique(as.character(values$metaData[,input$colsToSub]))
-    #print(values$suggestions)
   }, ignoreInit = T, ignoreNULL = T)
-  
-  if(F) {
-    observe({
-      values$DFIn
-      if ("To_Replace" %in% colnames(values$DFIn)) {
-        val <- values$DFIn$To_Replace
-        #for (val in vals) {
-        #print(val)
-        if (!is.null(val) && val != "") {
-          spacers <- c(" ", "\\.", "\\_")
-          toSearch <- val
-          for (x in spacers) {
-            toSearch <- str_split(toSearch, x)[[1]]
-            sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
-            toSearch <- paste(toSearch, collapse = sep)
-          }
-          #print(toSearch)
-          synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-          values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-          #print(values$thes_suggest_vals)
-        }
-        #}
-      }
-    })
-  }
   
   observeEvent(input$hotIn, {
     
@@ -726,12 +690,10 @@ server <- function(input, output, session) {
           sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
           toSearch <- paste(toSearch, collapse = sep)
         }
-        #print(toSearch)
         synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
         values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
       }
       
-      #print(values$thes_suggest_vals)
     }
     #}
   }, ignoreInit = T, ignoreNULL = T)
@@ -758,47 +720,33 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$hotIn, {
-    #if (!is.null(input$hotIn)) {
     values$DFIn <- hot_to_r(input$hotIn)
-    #print(values$DFIn)
-    #}
   }, ignoreInit = T, ignoreNULL = T)
   
   eventReactive(input$colsToSub, {
     currentCol <- input$colsToSub
-    #print(currentCol)
-    #print(values$tablesList[[currentCol]])
     if(!("To_Replace" %in% colnames(values$tablesList[[currentCol]]))) {
-      #cat("true")
       values$tablesList[[currentCol]] <- data.frame(To_Replace = "", stringsAsFactors = FALSE)
-      #print(values$tablesList[currentCol])
       values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], New_Val = "")
     }
     values$DFOut <- values$tablesList[[currentCol]]
   }) 
   
   observeEvent(input$addToSub, {
-    #print(input$colsToSub)
     if (!is.null(input$colsToSub) && input$colsToSub != "") {
       #format the table correctly according to the colsToSub selected
       currentCol <- input$colsToSub
       currentDF <- values$tablesList[[currentCol]]
-      #print(currentCol)
-      #print(values$tablesList[[currentCol]])
       #if(input$isRange) {
       #add range to To_Replace and text input to New_Val
       #}
       if(all(currentDF["To_Replace"] == "")) {
-        #cat("true")
         values$tablesList[[currentCol]] <- data.frame(
           To_Replace = if(input$isRange) paste("RANGE:", paste(input$slideInSub, collapse = "-")) else values$DFIn["To_Replace"], 
           stringsAsFactors = FALSE)
-        #print(values$tablesList[currentCol])
         values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], 
                                                  New_Val = if(input$isRange) input$newRangeVal else values$DFIn["New_Val"], stringsAsFactors = F)
       }
-      #print(values$DFIn[["To_Replace"]])
-      #print(currentDF[["To_Replace"]])
       #if the values are not there, add them to the end of the table
       else if((values$DFIn[["To_Replace"]] %in% currentDF[["To_Replace"]]) || 
               (paste("RANGE:", paste(input$slideInSub, collapse = "-")) %in% currentDF[["To_Replace"]])) {
@@ -812,8 +760,6 @@ server <- function(input, output, session) {
         values$tablesList[[currentCol]] <- currentDF
       }
       else {
-        #print(values$tablesList[[currentCol]])
-        #print(values$DFIn[1])
         values$tablesList[[currentCol]] <- rbind(values$tablesList[[currentCol]], 
                                                  if(input$isRange) c(paste("RANGE:", paste(input$slideInSub, collapse = "-")), 
                                                                      input$newRangeVal) else values$DFIn[1,])
@@ -822,7 +768,6 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$removeToSub, {
-    #print(input$hotOut_rows_selected)
     if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) {
       if (!identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0)) && values$tablesList[[input$colsToSub]][,"To_Replace"] != "") {
         values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-input$hotOut_rows_selected,]
@@ -835,7 +780,7 @@ server <- function(input, output, session) {
     }
   })
   
-  observeEvent(input$evaluateSubs, {#print(values$tablesList)
+  observeEvent(input$evaluateSubs, {
     if (!identical(values$tablesList, list())) {
       values$lastData <- values$metaData
       values$metaData <- withProgress(substituteVals(values$metaData, values$tablesList))
@@ -892,7 +837,6 @@ server <- function(input, output, session) {
   output$showValsForExclude <- renderUI({
     valNames <- unique(as.character(values$metaData[,input$col_valsToExclude]))
     valNames[which(is.na(valNames))] <- "NA"
-    #print(valNames)
     checkboxGroupInput(inputId = "valsToExclude", 
                        label = div("Which variables would you like to exclude?", 
                                    helpButton("Excluding a variable will remove the entire row that contains that variable.")),
@@ -917,7 +861,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$excludeVals, {
     
-    #print(values$excludesList)
     values$lastData <- values$metaData
     values$metaData <- withProgress(excludeVars(values$metaData, values$excludesList))
     
@@ -1174,10 +1117,10 @@ server <- function(input, output, session) {
   
   observeEvent(input$previewExpr, {
     
-    values$previewExprData <- replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels)
+    values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels))
     
     if(input$transposeExpr) {
-      values$previewExprData <- quickTranspose(values$exprToDisplay)
+      values$previewExprData <- withProgress(quickTranspose(values$exprToDisplay))
     }
     
     updateTabsetPanel(session, "expressionPanel", selected = "2")
