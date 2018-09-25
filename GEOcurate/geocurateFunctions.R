@@ -87,6 +87,10 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
 {
   dataSetIndex = 1
   
+  showModal(modalDialog(
+    textInput("testModal", "Enter some text")
+  ))
+  
   if (grepl("_", geoID)) {
     parts <- str_split(geoID, "_")[[1]]
     geoID <- parts[1]
