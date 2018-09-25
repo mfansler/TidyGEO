@@ -187,7 +187,7 @@ ui <- fluidPage(
                                                #actionButton("saveNA", "Save"),
                                                #actionButton('removeNA', 'Remove'),
                                                #br(), textOutput("curr_NA_vals"), br(),
-                                               checkboxInput("isRange", "Specify a range of values to substitute?"),
+                                               checkboxInput(inputId = "isRange", label = "Specify a range of values to substitute?"),
                                                conditionalPanel(condition = "input.isRange == true",
                                                                 uiOutput("sliderSub")),
                                                conditionalPanel(condition = "input.isRange == false",
@@ -266,11 +266,9 @@ ui <- fluidPage(
                                                #actionButton(inputId = "transposeExpr", label = "Transpose")
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
-                                               checkboxInput("transposeExpr", 
+                                               checkboxInput(inputId = "transposeExpr", 
                                                              label = div("Transpose the data", 
-                                                                         helpButton("Cause the values in the ID column to become
-                                                                                    the column names and the column names to be values
-                                                                                    in the ID column."))),
+                                                                         helpButton("Values in the ID column become the column names and column names become the ID column."))),
                                                hr(),
                                                actionButton(inputId = "previewExpr", label = "Preview")
                                              ),
@@ -1117,15 +1115,17 @@ server <- function(input, output, session) {
   })
   
   output$exprLabels <- renderUI({
-    selectInput("colForExprLabels", label = "Please select a column to replace the probe set IDs", 
+    selectInput("colForExprLabels", label = div("Please select a column to the expression IDs", 
+                                                helpButton("To keep the same ID column, please choose ID.")), 
                 choices = colnames(values$ftToDisplay))
   })
   
   output$summarizeOptions <- renderUI({
     if(!is.null(input$colForExprLabels) && 
        !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay)) {
-      selectInput("howToSummarize", label = "It looks like this column contains multiple values for one expression ID.
-                  How would you like to summarize the data?", choices = c("mean", "median", "max", "min", "keep all"))
+      selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
+                  How would you like to summarize the data?", helpButton("Groups the data by ID and takes the specified measurement for the group.")), 
+                  choices = c("mean", "median", "max", "min", "keep all"))
     }
   })
   
