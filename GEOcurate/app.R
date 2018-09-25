@@ -267,10 +267,19 @@ ui <- fluidPage(
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
                                                checkboxInput("transposeExpr", label = "Transpose the data"),
+                                               hr(),
                                                actionButton(inputId = "previewExpr", label = "Preview")
                                              ),
                                              mainPanel(
+                                               fluidRow(
+                                                 column(5, textInput("searchBox", "Search:")),
+                                                 column(1, actionButton("searchButton", label = icon("search"))),
+                                                 #bottom-aligns the search button 
+                                                 #https://stackoverflow.com/questions/28960189/bottom-align-a-button-in-r-shiny
+                                                 tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
+                                               ),
                                                withSpinner(DTOutput("expressionData"), type = 5),
+                                               hr(),
                                                withSpinner(DTOutput("featureData"), type = 5)
                                              ) #main panel
                                            ) #sidebar layout
@@ -365,7 +374,8 @@ server <- function(input, output, session) {
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
       values$previewExprData <- values$exprToDisplay
       values$ftData <- allData[["featureData"]]
-      values$ftToDisplay <- values$ftData[which(values$ftData[,"ID"] %in% values$exprToDisplay[,"ID"]),]
+      values$ftToDisplay <- values$ftData %>%
+        filter(ID %in% values$exprToDisplay[,"ID"])
       
       #WRITING COMMANDS TO R SCRIPT
       values$oFile <- "source('geocurateFunctions_User.R')"
@@ -1083,23 +1093,23 @@ server <- function(input, output, session) {
   
   
   # expression data ---------------------------------------------------------
+   
+  
+  observeEvent(input$searchButton, {
+    values$exprToDisplay <- values$exprData %>% 
+      filter(str_detect(ID, input$searchBox))
+    values$ftToDisplay <- values$ftData %>% 
+      filter(ID %in% values$exprToDisplay[,"ID"])
+  })
   
   output$expressionData <- DT::renderDT({
     if(!is.null(values$exprToDisplay)) {
-      datatable(values$exprToDisplay, rownames = FALSE, options = list(dom = "ft"))
+      datatable(values$exprToDisplay, rownames = FALSE, options = list(dom = "tp"))
     }
     else {
       datatable(data.frame("Please download some expression data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "ft"))
+                colnames = "NO DATA", options = list(dom = "tp"))
     }
-  })
-  
-  observeEvent(input$transposeExpr, {
-    #will cause R to shut down
-    #values$exprData <- t(values$exprData)
-    #values$exprData <- values$exprData %>%
-    #  gather(newrows, valname, -probes) %>%
-    #  spread(probes, valname)
   })
   
   output$exprLabels <- renderUI({
@@ -1130,7 +1140,7 @@ server <- function(input, output, session) {
   
   output$featureData <- DT::renderDT({
     if(!is.null(values$ftToDisplay)) {
-      datatable(values$ftToDisplay, rownames = FALSE, options = list(dom = "ft", columnDefs = list(list(
+      datatable(values$ftToDisplay, rownames = FALSE, options = list(dom = "tp", columnDefs = list(list(
         targets = "_all",
         #Makes it so that the table will only display the first 30 chars.
         #See https://rstudio.github.io/DT/options.html
@@ -1143,7 +1153,7 @@ server <- function(input, output, session) {
     }
     else {
       datatable(data.frame("Please download some feature data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "ft"))
+                colnames = "NO DATA", options = list(dom = "tp"))
     }
   }) 
   
@@ -1151,10 +1161,10 @@ server <- function(input, output, session) {
   
   output$exprPreview <- DT::renderDT({
     if(!is.null(values$previewExprData)) {
-      datatable(values$previewExprData, rownames = FALSE, options = list(dom = "ft"))
+      datatable(values$previewExprData, rownames = FALSE, options = list(dom = "tp"))
     } else {
       datatable(data.frame("Please download some expression data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "ft"))
+                colnames = "NO DATA", options = list(dom = "tp"))
     }
   })  
   
