@@ -266,13 +266,17 @@ ui <- fluidPage(
                                                #actionButton(inputId = "transposeExpr", label = "Transpose")
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
-                                               checkboxInput("transposeExpr", label = "Transpose the data"),
+                                               checkboxInput("transposeExpr", 
+                                                             label = div("Transpose the data", 
+                                                                         helpButton("Cause the values in the ID column to become
+                                                                                    the column names and the column names to be values
+                                                                                    in the ID column."))),
                                                hr(),
                                                actionButton(inputId = "previewExpr", label = "Preview")
                                              ),
                                              mainPanel(
                                                fluidRow(
-                                                 column(5, textInput("searchBox", "Search:")),
+                                                 column(5, textInput("searchBox", "Search ID column:")),
                                                  column(1, actionButton("searchButton", label = icon("search"))),
                                                  #bottom-aligns the search button 
                                                  #https://stackoverflow.com/questions/28960189/bottom-align-a-button-in-r-shiny
@@ -1127,10 +1131,10 @@ server <- function(input, output, session) {
   
   observeEvent(input$previewExpr, {
     
-    values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels))
+    values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels, input$howToSummarize))
     
     if(input$transposeExpr) {
-      values$previewExprData <- withProgress(quickTranspose(values$exprToDisplay))
+      values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
     }
     
     updateTabsetPanel(session, "expressionPanel", selected = "2")

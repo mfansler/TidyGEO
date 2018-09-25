@@ -768,16 +768,23 @@ saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription
 quickTranspose <- function(dataToTranspose) {
   
   incProgress()
-  transposed <- dataToTranspose %>%
-    gather(newrows, valname, -ID) %>%
-    spread(ID, valname) %>%
-    rename(ID = "newrows")
+  if (any(duplicated(dataToTranspose$ID))) {
+    transposed <- dataToTranspose
+    
+    showNotification("Data cannot be transposed because the ID column is not all unique. Please specify a summarize option.")
+    
+  } else {
+    transposed <- dataToTranspose %>%
+      gather(newrows, valname, -ID) %>%
+      spread(ID, valname) %>%
+      rename(ID = "newrows")
+  }
   
   incProgress()
   return(transposed)
 }
 
-replaceID <- function(data, replacement, replaceCol) {
+replaceID <- function(data, replacement, replaceCol, summaryOption) {
   
   if (replaceCol == "ID") {
     return(data)
@@ -790,27 +797,34 @@ replaceID <- function(data, replacement, replaceCol) {
   
   incProgress()
   
-  if (nrow(data) == nrow(replacement)) {
-    
-    orderedRowNames <- arrange(dataWRowNames, ID)
-    orderedReplacement <- arrange(replacementWRowNames, ID)
-    incProgress()
-    
-    if (all(orderedRowNames$ID == orderedReplacement$ID)) {
-      orderedRowNames$ID <- orderedReplacement$replace
-      incProgress()
-      return(orderedRowNames)
+  mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
+    select(-ID) %>%
+    rename(ID = "replace") %>%
+    select(ID, everything())
+  
+  if (!is.null(summaryOption)) {
+    if (summaryOption == "mean") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(mean) %>%
+        ungroup()
+    } else if (summaryOption == "median") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(median) %>%
+        ungroup()
+    } else if (summaryOption == "max") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(max) %>%
+        ungroup()
+    } else if (summaryOption == "min") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(min) %>%
+        ungroup()
     }
-  } else {
-    
-    incProgress()
-    mergedData <- merge(dataWRowNames, replacementWRowNames, by = "ID") %>%
-      select(-ID) %>%
-      rename(ID = "replace")
-    incProgress()
-    
-    return(mergedData)
   }
+  
+  incProgress()
+    
+  return(mergedData)
 }
 
 findExprLabelColumns <- function(ftData) {
