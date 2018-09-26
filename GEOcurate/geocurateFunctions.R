@@ -87,9 +87,9 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
 {
   dataSetIndex = 1
   
-  showModal(modalDialog(
-    textInput("testModal", "Enter some text")
-  ))
+  #showModal(modalDialog(
+  #  textInput("testModal", "Enter some text")
+  #))
   
   if (grepl("_", geoID)) {
     parts <- str_split(geoID, "_")[[1]]
@@ -795,15 +795,19 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   }
   
   dataWRowNames <- data
+  
+  #print(head(replacement))
+  #print(replaceCol)
+  
   replacementWRowNames <- replacement %>%
-    rename(replace=replaceCol) %>%
+    dplyr::rename(replace=replaceCol) %>%
     select(ID, replace)
   
   incProgress()
   
   mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
     select(-ID) %>%
-    rename(ID = "replace") %>%
+    dplyr::rename(ID = "replace") %>%
     select(ID, everything())
   
   if (!is.null(summaryOption)) {
