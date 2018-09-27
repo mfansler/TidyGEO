@@ -242,7 +242,9 @@ ui <- fluidPage(
                                      uiOutput("plots")
                             ),
                             tabPanel(title = "Save file",
-                                     radioButtons("fileType", "File type:", choices = c("csv", "tsv", "JSON")),
+                                     radioButtons("fileType", "File type:", 
+                                                  choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
+                                                              "JSON" = "JSON", "Excel" = "xlsx")),
                                      uiOutput("nameFile"),
                                      fluidRow(
                                        column(2, downloadButton("downloadData", "Save")),
@@ -270,7 +272,9 @@ ui <- fluidPage(
                                                              label = div("Transpose the data", 
                                                                          helpButton("Values in the ID column become the column names and column names become the ID column."))),
                                                hr(),
-                                               actionButton(inputId = "previewExpr", label = "Preview")
+                                               fluidRow(
+                                                 column(2, offset = 7, actionButton(inputId = "previewExpr", label = "Preview"))
+                                               )
                                              ),
                                              mainPanel(
                                                fluidRow(
@@ -289,6 +293,15 @@ ui <- fluidPage(
                                   tabPanel("2",
                                            sidebarLayout(
                                              sidebarPanel(
+                                               radioButtons("expression_fileType", "File type:", 
+                                                                     choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
+                                                                                 "JSON" = "JSON", "Excel" = "xlsx")),
+                                                        uiOutput("expression_nameFile"),
+                                                        fluidRow(
+                                                          column(1, downloadButton("expression_downloadData", "Save")),
+                                                          column(1, offset = 3, downloadButton("expression_downloadRscript", "Download Rscript"))
+                                                        ),
+                                               hr(),
                                                actionButton(inputId = "undoEvalExpr", label = "Undo")
                                              ),
                                              mainPanel(
@@ -896,12 +909,12 @@ server <- function(input, output, session) {
   # download data -----------------------------------------------------------
   
   output$nameFile <- renderUI({
-    textInput("userFileName", label = NULL, value = paste0("file name.", input$fileType))
+    textInput("userFileName", label = div("File name: ", helpButton("If you are downloading an R script, this will make sure the script knows where to save the data. Please specify the full path.")), 
+              value = paste0("file name.", input$fileType))
   })
   
   output$downloadData <- downloadHandler(
     filename = function() {
-      #paste(input$geoID, "_Clinical.", input$fileType, sep = "")
       input$userFileName
     },
     content = function(file) {
@@ -942,11 +955,19 @@ server <- function(input, output, session) {
                                     "metaData %>% toJSON() %>% write_lines(file)"), 
                                   values$oFile)
       }
+      else if (input$fileType == "xlsx") {
+        library(xlsx)
+        
+        write.xlsx(myData, file, row.names = FALSE, showNA = FALSE)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(c("library(xlsx)", "write.xlsx(metaData, file, row.names = FALSE, showNA = FALSE)"), 
+                                  values$oFile)
+      }
       
       values$currChunkLen <- length(values$oFile) - before
       
-    }#,
-    #contentType = "text/tsv"
+    }
   )
   
   output$downloadRscript <- downloadHandler(
@@ -958,56 +979,56 @@ server <- function(input, output, session) {
     }
   )
   
-  observeEvent(input$saveMetadata, {
-    if (!is.null(values$metaData)) {
-      
-      fileInfo <- parseSavePath(values$volumes, input$saveMetadata)
-      
-      file <- fileInfo$datapath
-      
-      myData <- values$metaData
-      myData <- myData[-which(grepl("evalSame", colnames(myData)))]
-      myData <- cbind(rownames(myData), myData)
-      colnames(myData)[1] <- ""
-      
-      #WRITING COMMANDS TO R SCRIPT
-      before <- length(values$oFile)
-      values$oFile <- saveLines(commentify("save data"), values$oFile)
-      values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
-                                  paste0("file <- ", formatString(input$userFileName))), values$oFile)
-      
-      if (input$fileType == "csv") {
-        write.csv(myData, file, row.names = FALSE, col.names = TRUE)
-        
-        #WRITING COMMANDS TO R SCRIPT
-        values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
-        
-      }
-      else if (input$fileType == "tsv") {
-        write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
-        
-        #WRITING COMMANDS TO R SCRIPT
-        values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
-                                  values$oFile)
-        
-      }
-      else if (input$fileType == "JSON") {
-        library(jsonlite)
-        library(readr)
-        
-        myData %>% toJSON() %>% write_lines(file)
-        
-        #WRITING COMMANDS TO R SCRIPT
-        values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
-                                    "metaData %>% toJSON() %>% write_lines(file)"), 
-                                  values$oFile)
-      }
-      
-      values$currChunkLen <- length(values$oFile) - before
-    } else {
-      showNotification("Please load some data.")
-    }
-  })
+  #observeEvent(input$saveMetadata, {
+  #  if (!is.null(values$metaData)) {
+  #    
+  #    fileInfo <- parseSavePath(values$volumes, input$saveMetadata)
+  #    
+  #   file <- fileInfo$datapath
+  #    
+  #    myData <- values$metaData
+  #   myData <- myData[-which(grepl("evalSame", colnames(myData)))]
+  #    myData <- cbind(rownames(myData), myData)
+  #    colnames(myData)[1] <- ""
+  #    
+  #    #WRITING COMMANDS TO R SCRIPT
+  #    before <- length(values$oFile)
+  #    values$oFile <- saveLines(commentify("save data"), values$oFile)
+  #    values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
+  #                                paste0("file <- ", formatString(input$userFileName))), values$oFile)
+  #    
+  #    if (input$fileType == "csv") {
+  #      write.csv(myData, file, row.names = FALSE, col.names = TRUE)
+  #      
+  #      #WRITING COMMANDS TO R SCRIPT
+  #      values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
+  #      
+  #    }
+  #    else if (input$fileType == "tsv") {
+  #      write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+  #      
+  #      #WRITING COMMANDS TO R SCRIPT
+  #      values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+  #                                values$oFile)
+  #      
+  #    }
+  #    else if (input$fileType == "JSON") {
+  #      library(jsonlite)
+  #     library(readr)
+  #      
+  #      myData %>% toJSON() %>% write_lines(file)
+  #      
+  #      #WRITING COMMANDS TO R SCRIPT
+  #      values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
+  #                                  "metaData %>% toJSON() %>% write_lines(file)"), 
+  #                                values$oFile)
+  #    }
+  #    
+  #    values$currChunkLen <- length(values$oFile) - before
+  #  } else {
+  #    showNotification("Please load some data.")
+  #  }
+  #})
   
   observeEvent(input$showHistory, {
     saveToRscript(values$oFile)
@@ -1131,10 +1152,12 @@ server <- function(input, output, session) {
   
   observeEvent(input$previewExpr, {
     
-    values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels, input$howToSummarize))
-    
-    if(input$transposeExpr) {
-      values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
+    if(!is.null(values$exprToDisplay)) {
+      values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels, input$howToSummarize))
+      
+      if(input$transposeExpr) {
+        values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
+      }
     }
     
     updateTabsetPanel(session, "expressionPanel", selected = "2")
@@ -1161,7 +1184,7 @@ server <- function(input, output, session) {
     }
   }) 
   
-  # preview and download expression data ------------------------------------
+  # preview expression data ------------------------------------
   
   output$exprPreview <- DT::renderDT({
     if(!is.null(values$previewExprData)) {
@@ -1176,6 +1199,69 @@ server <- function(input, output, session) {
     values$previewExprData <- values$exprToDisplay
     updateTabsetPanel(session, "expressionPanel", selected = "1")
   })
+  
+  # download expression data -----------------------------------------------------------
+  
+  output$expression_nameFile <- renderUI({
+    textInput("expression_userFileName", label = div("File name: ", helpButton("If you are downloading an R script, this will make sure the script knows where to save the data. Please specify the full path.")), 
+              value = paste0("file name.", input$fileType))
+  })
+  
+  output$expression_downloadData <- downloadHandler(
+    filename = function() {
+      input$expression_userFileName
+    },
+    content = function(file) {
+      
+      if (input$expression_fileType == "csv") {
+        write.csv(values$exprData, file, row.names = FALSE, col.names = TRUE)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        #values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
+        
+      }
+      else if (input$expression_fileType == "tsv") {
+        write.table(values$exprData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        #values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+        #                          values$oFile)
+        
+      }
+      else if (input$expression_fileType == "JSON") {
+        library(jsonlite)
+        library(readr)
+        
+        values$exprData %>% toJSON() %>% write_lines(file)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        #values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
+        #                            "metaData %>% toJSON() %>% write_lines(file)"), 
+        #                          values$oFile)
+      }
+      else if (input$fileType == "xlsx") {
+        library(xlsx)
+        
+        write.xlsx(values$exprData, file, row.names = FALSE, showNA = FALSE)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        #values$oFile <- saveLines(c("library(xlsx)", "write.xlsx(metaData, file, row.names = FALSE, showNA = FALSE)"), 
+        #                          values$oFile)
+      }
+      
+      values$currChunkLen <- length(values$oFile) - before
+      
+    }
+  )
+  
+  output$expression_downloadRscript <- downloadHandler(
+    filename = function() {
+      paste0(input$geoID, "_Expression_Rscript.R")
+    },
+    content = function(file) {
+      saveToRscript(values$oFile, file)
+    }
+  )
 }
 
 shinyApp(ui = ui, server = server)

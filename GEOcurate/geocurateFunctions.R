@@ -8,9 +8,11 @@ library(glue)
 
 
 saveLines <- function(strings, oFile) {
-  for (el in strings) {
-    oFile <- c(oFile, el)
-  }
+  #for (el in strings) {
+    #oFile <- c(oFile, el)
+  #}
+  #
+  oFile <- c(oFile, strings)
   
   return(oFile)
 }
