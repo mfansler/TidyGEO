@@ -22,4 +22,6 @@ devtools::install_github("AnalytixWare/ShinySky")
 
 install.packages("shinyFiles")
 
+install.packages("xlsx")
+
 }
