@@ -73,6 +73,18 @@ downloadData <- function(geoID, dataSetIndex, fileName) {
   return(metaData)
 }
 
+downloadExpression <- function(geoID, dataSetIndex) {
+  expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE)
+  
+  expressionSet <- expressionSet[[dataSetIndex]]
+  
+  
+  expressionData <- assayData(expressionSet)$exprs
+  expressionData <- cbind("ID" = rownames(expressionData), expressionData)
+  
+  return(expressionData)
+}
+
 #filter columns with all different entries or all the same entry
 filterUninformativeCols <- function(metaData, toFilter = list("none"))
 {

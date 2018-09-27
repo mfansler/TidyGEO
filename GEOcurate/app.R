@@ -318,8 +318,10 @@ server <- function(input, output, session) {
       suggestions = c("no suggestions"),
       excludesList = list(),
       oFile = "source('geocurateFunctions_User.R')",
+      expression_oFile = "source('geocurateFunctions_User.R')",
       downloadChunkLen = 0,
       currChunkLen = 0,
+      expression_currChunkLen = 0,
       subAllNums = F
     )
   
@@ -373,6 +375,14 @@ server <- function(input, output, session) {
       }
       values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter)"), values$oFile)
       downloadChunkLen <- length(values$oFile)
+      
+      if(input$alsoDownload) {
+        #WRITING COMMANDS TO EXPRESSION R SCRIPT
+        values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
+        values$expression_oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)),
+                                               "expressionData <- downloadExpression(geoID)"), 
+                                             values$expression_oFile)
+      }
       
       values$origData <- values$metaData
     }
@@ -1042,9 +1052,22 @@ server <- function(input, output, session) {
     if(!is.null(values$exprToDisplay)) {
       values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels, input$howToSummarize))
       
+      before <- length(values$expression_oFile)
+      
+      #WRITING COMMANDS TO EXPRESSION RSCRIPT
+      values$expression_oFile <- saveLines(paste0("expressionData <- replaceID(expressionData, featureData, ", 
+                                                  formatString(input$colForExprLabels), 
+                                                  formatString(input$howToSummarize)), values$expression_oFile)
       if(input$transposeExpr) {
         values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
+        
+        #WRITING COMMANDS TO EXPRESSION RSCRIPT
+        values$expression_oFile <- saveLines("expressionData <- quickTranspose(expressionData)", values$expression_oFile)
       }
+      
+      after <- length(values$expression_oFile)
+      
+      values$expression_currChunkLen <- after - before
     }
     
     updateTabsetPanel(session, "expressionPanel", selected = "2")
@@ -1084,6 +1107,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$undoEvalExpr, {
     values$previewExprData <- values$exprToDisplay
+    values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_currChunkLen)
+    values$expression_currChunkLen <- 0
+    
     updateTabsetPanel(session, "expressionPanel", selected = "1")
   })
   
