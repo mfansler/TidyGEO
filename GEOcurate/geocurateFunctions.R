@@ -89,10 +89,6 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
 {
   dataSetIndex = 1
   
-  #showModal(modalDialog(
-  #  textInput("testModal", "Enter some text")
-  #))
-  
   if (grepl("_", geoID)) {
     parts <- str_split(geoID, "_")[[1]]
     geoID <- parts[1]
@@ -123,8 +119,6 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
     }
   )
   
-  #metaData <- cbind(SampleID = rownames(metaData), metaData)
-  
   if (status == "pass") {
     incProgress(1/8, message = "Filtering columns.", detail = "")
     allData[["metaData"]] <- filterUninformativeCols(allData[["metaData"]], toFilter)
@@ -150,8 +144,6 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
 }
 
 downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NULL) {
-  #temppath <- file.path(tempdir(), "geo/series/")
-  #dir.create(temppath, showWarnings = F)
   
   incProgress(1/8, message = "Downloading data from GEO.", detail = "")
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
@@ -161,7 +153,6 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
     stop(paste("The dataSetIndex value was ", dataSetIndex, " but there are only ", length(expressionSet), " objects in GEO.", sep=""))
   
   # Retrieve data values depending on the platform
-  #if (length(expressionSet) > 1) idx <- grep("GPL6947", attr(expressionSet, "names")) else idx <- 1
   expressionSet <- expressionSet[[dataSetIndex]]
   
   # Extract meta data frame
@@ -183,7 +174,6 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
     expressionData <- NULL
     featureData <- NULL
   }
-  #myData <- loadData(geoID)
   
   allData <- list("metaData" = metaData, "expressionData" = expressionData, "featureData" = featureData)
                      
@@ -224,29 +214,21 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
         for (uniqueDate in uniqueDates) {
           #count the number of rows that have this date and store it in a list
           dateCounts[[uniqueDate]] <- length(which(temp == uniqueDate))
-          #print(dateCounts)
         }
         
         m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[1,i], perl=TRUE)
         prev <- regmatches(metaData[1,i], m)
         
         for (j in 1:length(metaData[,i])) {
+          #extract the actual date part
+          m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[j,i], perl=TRUE)
+          myDate <- regmatches(metaData[j,i], m)
           
-          #if(metaData[j,i] == "NA" || metaData[j,i] == "") {
-          #  evalSame[j] <- "NA"
-          #}
-          
-          #else {
-            #extract the actual date part
-            m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[j,i], perl=TRUE)
-            myDate <- regmatches(metaData[j,i], m)
-            
-            #the date is not the same as the previous one and the current date and the previous date represent a substantial amount of the entries
-            if (myDate != prev && (dateCounts[[metaData[j,i]]] > (nrow(metaData)/3)) && (dateCounts[[metaData[j-1,i]]] > (nrow(metaData)/3))) {
-              evalSame[j] <- 1
-            }
-            prev <- myDate
-          #}
+          #the date is not the same as the previous one and the current date and the previous date represent a substantial amount of the entries
+          if (myDate != prev && (dateCounts[[metaData[j,i]]] > (nrow(metaData)/3)) && (dateCounts[[metaData[j-1,i]]] > (nrow(metaData)/3))) {
+            evalSame[j] <- 1
+          }
+          prev <- myDate
         }
       }
       
@@ -275,7 +257,6 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
 }
 
 isAllNum <- function(metaData) {
-  #print(metaData[,1])
   vals <- unique(metaData[,1])
   temp <- suppressWarnings(as.numeric(as.character(metaData[,1])))
   isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
@@ -289,7 +270,6 @@ isAllUnique <- function(metaData) {
 
 printVarsSummary <- function(metaData) {
   summFrame <- data.frame(a="", b="", stringsAsFactors = FALSE)
-  #print(colnames(metaData))
   for (variable in colnames(metaData)) {
     if(variable == "evalSame")
       next
@@ -299,8 +279,6 @@ printVarsSummary <- function(metaData) {
     naCount <- sum(is.na(metaData[,variable]))
     temp <- as.numeric(as.character(metaData[,variable]))
     isNum <- all(is.numeric(temp)) && all(!is.na(temp))
-    #print(metaData[,variable])
-    #print(isNum)
     if (all(isNum)) {
       metaData[,variable] <- as.numeric(as.character(metaData[,variable]))
       descript <- paste("Values range from", min(metaData[,variable]),
@@ -311,7 +289,6 @@ printVarsSummary <- function(metaData) {
     }
     else {
       uniqueVals <- unique(metaData[,variable])
-      #print(uniqueVals)
       if (length(uniqueVals) == length(rownames(metaData))) {
         descript <- "All values are unique.\nThis variable might not be informative."
         NAdescript <- "NA Count"
@@ -321,7 +298,6 @@ printVarsSummary <- function(metaData) {
       else {
         descript <- c("Unique values", "NA Count")
         summFrame <- rbind(summFrame, descript)
-        #print(as.character(uniqueVals[[1]]))
         descript <- c(as.character(uniqueVals[1]), naCount)
         summFrame <- rbind(summFrame, descript)
         for (i in 2:length(uniqueVals)) {
@@ -385,8 +361,6 @@ saveFileDescription <- function(geoID, filePathToSave) {
     }
   }
 }
-
-
 
 extractColNames <- function(inputDataFrame, delimiterInfo)
 {
@@ -478,17 +452,14 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements)
 {
   incProgress()
   
-  #print(numElements)
   targetCols <- colsToDivide
   for (colName in targetCols) {
     targetCol <- metaData[,colName]
     if (numElements[[colName]] > 1) {
       colNames <- NULL
-      #print(numElements[[colName]])
       for (i in 1:numElements[[colName]]) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
       }
-      #print(colNames)
       newData <- data.frame(matrix(nrow = length(targetCol), ncol = length(colNames)))
       colnames(newData) <- colNames
       for (index in 1:length(targetCol)) {
@@ -515,7 +486,6 @@ extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, 
   
   if(toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
     delimiterInfo <- NULL
-    #print(colsToSplit)
     if (allButSplit) {
       colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
       colsToSplit <- colsToSplit[-which(colsToSplit == "evalSame")]
@@ -523,7 +493,6 @@ extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, 
     for (col in colsToSplit) {
       delimiterInfo <- c(delimiterInfo, col, delimiter)
     }
-    #print(delimiterInfo)
     metaData <- extractColNames(metaData, delimiterInfo)
     
   }
@@ -574,8 +543,6 @@ findOffendingChars <- function(x){
 }
 
 renameCols <- function(metaData, newNames, session) {
-  #print(colsToRename)
-  #print(newNames)
   updatedCols <- NULL
   for (colName in colnames(metaData)) {
     if (colName %in% names(newNames)) {
@@ -586,7 +553,6 @@ renameCols <- function(metaData, newNames, session) {
                                     newNames[colName], 
                                     "because they might cause problems later:", 
                                     collapse(names(offendingChars[which(offendingChars == T)]), sep = ", ")))
-        #newNames[colName] <- fixSpecialCharacters(newNames[colName], names(offendingChars[which(offendingChars == T)]))
       }
       updatedCols <- c(updatedCols, newNames[colName])
     }
@@ -594,25 +560,19 @@ renameCols <- function(metaData, newNames, session) {
       updatedCols <- c(updatedCols, colName)
     }
   }
-  #print(updatedCols)
   updatedCols <- make.names(updatedCols)
   colnames(metaData) <- updatedCols
+  
   return(metaData)
-  
-  
 }
 
 
 substituteVals <- function(classAndClinical, subSpecs)
 {
-  #print(subSpecs)
   for(colToSub in names(subSpecs)) {
     subs <- subSpecs[[colToSub]]
-    #print(subs)
     toSub <- subs$To_Replace
-    #print(toSub)
     newVal <- if (subs$New_Val == "NA" || subs$New_Val == "") NA else as.character(subs$New_Val)
-    #print(newVal)
     for (i in 1:length(toSub)) {
       if (grepl("RANGE", toSub[i])) {
         mySub <- str_split(toSub[i], "RANGE: ")[[1]][2]
@@ -641,25 +601,7 @@ cleanValues <- function(data, specs, unknownVal = "?")
     names2 <- c(names2, fixSpecialCharacters(name))
   }
   colnames(data) <- names2
-  
-  if (FALSE) {
-  for (variable in specs$Name) {
-    NAVals <- as.character(specs[which(specs$Name == variable), "NA Vals"])
-    NAVals <- str_replace_all(NAVals, "([\\[\\]\\'])", "")
-    NAVals <- str_split(NAVals, ", ")[[1]]
-    for (j in 1:nrow(data)) {
-      if (toupper(as.character(data[j,variable])) %in% c("NA","UNKNOWN", "NOT KNOWN", "N/A","MISSING", "--", "NON CASE", "NOT AVAILABLE", "_", "NONE","?")) {
-        data[j,variable] <- unknownVal
-      }
-      if (as.character(data[j,variable]) %in% NAVals) {
-        data[j,variable] <- unknownVal
-      }
-    }
-  }
-  }
 
-
-  
   return(data)
 }
 
@@ -674,7 +616,6 @@ excludeVars <- function(metaData, specs) {
       #exclude the nas in the column
     }
     if (!identical(toExclude, character(0))) {
-      #print(toExclude[which(!toExclude %in% metaData[,variable])])
       for(el in toExclude[which(!toExclude %in% metaData[,variable])]) {
         if (grepl("exclude", el)) {
           el <- str_split(el, "exclude: ")[[1]][2]
@@ -693,9 +634,7 @@ excludeVars <- function(metaData, specs) {
           metaData <- metaData[which(as.numeric(metaData[,variable]) <= bounds[2]),]
         }
       }
-      #print(metaData)
       toExclude <- toExclude[which(toExclude %in% metaData[,variable])]
-      #print(toExclude)
       metaData <- if (!identical(toExclude, character(0))) metaData[which(!(metaData[,variable] %in% toExclude)),] else metaData
     }
   }
@@ -797,9 +736,6 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   }
   
   dataWRowNames <- data
-  
-  #print(head(replacement))
-  #print(replaceCol)
   
   replacementWRowNames <- replacement %>%
     dplyr::rename(replace=replaceCol) %>%

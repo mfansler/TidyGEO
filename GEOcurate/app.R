@@ -111,7 +111,6 @@ ui <- fluidPage(
                                       
                                       #specify which columns to split up, and the delimiter
                                       tabPanel("2",
-                                               #hr(),
                                                h4("Formatting the data"),
                                                checkboxInput(inputId = "toSplit", label = div("Contains key-value pairs separated by a delimiter",
                                                                                               helpButton('e.g. <b>"RELAPSE: 1"</b>'))),
@@ -126,12 +125,7 @@ ui <- fluidPage(
                                                                 uiOutput("chooseDivideVars"),
                                                                 checkboxInput(inputId = "allButDivide", label = tags$i("split all BUT the specified")),
                                                                 textInput(inputId = "delimiter2", label = "Delimiter (including any spaces): ")
-                                                                #uiOutput("chooseNewDivideNames")
-                                                                #textOutput("variable1")
                                                ),
-                                               #specify which values should be excluded from the column
-                                               #option to save the specification files
-                                               #thesaurus stuff 
                                                actionButton(inputId = "extractCols", label = "Extract columns"),
                                                hr(), uiOutput("nav_2_ui")
                                       ),
@@ -141,8 +135,6 @@ ui <- fluidPage(
                                       
                                       #specify which vars to keep
                                       tabPanel("3",
-                                               #hr(),
-                                               #h4("Choosing the variables"),
                                                uiOutput("chooseVarsToKeep"),
                                                checkboxInput(inputId = "allButKeep", label = tags$i("keep all BUT the specified")),
                                                actionButton(inputId = "filterCols", label = "Filter columns"),
@@ -155,23 +147,12 @@ ui <- fluidPage(
                                       #renaming any columns
                                       tabPanel("4",
                                                uiOutput("showCols"),
-                                               #textInput("newName", "Enter a new name: "),
                                                rHandsontableOutput("newName"),
                                                uiOutput("thesLink"),
-                                               #textInput.typeahead(id="newName",
-                                               #                   placeholder="Enter a new name: ",
-                                               #                   local=data.frame(thesaurus.preferred.feather),
-                                               #                   valueKey = "Code",
-                                               #                   tokens=c(1:nrow(thesaurus.preferred.feather)),
-                                               #                   template = HTML("<p class='repo-language'>{{info}}</p> <p class='repo-name'>{{name}}</p>")
-                                               #),
                                                actionButton("save", "Save"),
                                                actionButton("delete", "Remove"), br(),
-                                               #actionButton("addPrefName", "Add name"),
-                                               #actionButton('removeBtn', 'Remove name'),
                                                br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
                                                tableOutput("new_name_contents"),
-                                               #verbatimTextOutput("testPrint"),
                                                actionButton(inputId = "rename", label = "Rename columns"),
                                                hr(), uiOutput("nav_4_ui")
                                       ),
@@ -181,12 +162,7 @@ ui <- fluidPage(
                                       
                                       #specify which values to substitute for other values/which values should be treated as NA
                                       tabPanel("5",
-                                               #hr(),
-                                               #h4("Cleaning the data"),
                                                uiOutput("showColsForSub"),
-                                               #actionButton("saveNA", "Save"),
-                                               #actionButton('removeNA', 'Remove'),
-                                               #br(), textOutput("curr_NA_vals"), br(),
                                                checkboxInput(inputId = "isRange", label = "Specify a range of values to substitute?"),
                                                conditionalPanel(condition = "input.isRange == true",
                                                                 uiOutput("sliderSub")),
@@ -198,8 +174,6 @@ ui <- fluidPage(
                                                actionButton("removeToSub", "Remove"),
                                                div(#style = 'overflow-x: scroll', 
                                                  DTOutput("hotOut")),
-                                               #uiOutput("hotOutText"),
-                                               #rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 100, stretchH = "all"),
                                                actionButton("evaluateSubs", "Substitute"),
                                                hr(), uiOutput("nav_5_ui")
                                       ),
@@ -250,8 +224,6 @@ ui <- fluidPage(
                                        column(2, downloadButton("downloadData", "Save")),
                                        column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
                                      )
-                                     #,
-                                     #actionButton("showHistory", "Show History"),
                             )
                           ) #tab panel in main panel
                         ) #main panel
@@ -403,7 +375,6 @@ server <- function(input, output, session) {
       downloadChunkLen <- length(values$oFile)
       
       values$origData <- values$metaData
-      #values$lastData <- values$metaData
     }
   })
   
@@ -563,7 +534,6 @@ server <- function(input, output, session) {
     values$currChunkLen <- length(values$oFile) - before
   }
   }))
-  #values$metaData <- eventReactive(input$toDivide, {})
   
   
   # rename columns ----------------------------------------------------------
@@ -580,16 +550,9 @@ server <- function(input, output, session) {
       }
       synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
       values$thes_suggest <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-      #find newName %in% synonyms
-      # look up the matching indices in preferred names
     }
   })
   
-  #observeEvent(input$showCols, output$cols <- renderUI({
-  #  for (col in output$colnames) {
-  #    textOutput(col)
-  #  }
-  #}))
   output$showCols <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
@@ -616,14 +579,6 @@ server <- function(input, output, session) {
     }
   })
   
-  #newNameCount <- reactive(input$addPrefName)
-  
-  #observeEvent(input$addPrefName, {
-  #  cat(newNameCount())
-  #  insertUI("#colsToRename", where = "beforeEnd", ui = textInput(paste("newName",newNameCount(), sep = ""), "Enter a new name: "))
-  #  values$newNames <- c(values$newNames, input[[paste("newName", newNameCount() - 1, sep = "")]])
-  #})
-  
   observeEvent(input$save, {
     values$newNames[[input$colsToRename]] <- if (!is.null(values$newName)) values$newName else input$colsToRename
   })
@@ -637,7 +592,6 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$rename, ({
-    #values$newNames <- c(values$newNames, input[[paste("newName", newNameCount(), sep = "")]])
     values$lastData <- values$metaData
     values$metaData <- renameCols(values$metaData, values$newNames, session)
     
@@ -654,15 +608,6 @@ server <- function(input, output, session) {
     
     values$newNames <- NULL
   }))
-  
-  
-  #observeEvent(input$removeBtn, {
-  #  removeUI(
-  ## pass in appropriate div id
-  #    selector = paste0('#', paste("newName",length(values$newNames)+1, sep = ""))
-  #  )
-  #  values$newNames <<- values$newNames[-length(values$newNames)]
-  #})
   
   
   # substitute vals ---------------------------------------------------------
@@ -762,9 +707,6 @@ server <- function(input, output, session) {
       #format the table correctly according to the colsToSub selected
       currentCol <- input$colsToSub
       currentDF <- values$tablesList[[currentCol]]
-      #if(input$isRange) {
-      #add range to To_Replace and text input to New_Val
-      #}
       if(all(currentDF["To_Replace"] == "")) {
         values$tablesList[[currentCol]] <- data.frame(
           To_Replace = if(input$isRange) paste("RANGE:", paste(input$slideInSub, collapse = "-")) else values$DFIn["To_Replace"], 
@@ -979,57 +921,6 @@ server <- function(input, output, session) {
     }
   )
   
-  #observeEvent(input$saveMetadata, {
-  #  if (!is.null(values$metaData)) {
-  #    
-  #    fileInfo <- parseSavePath(values$volumes, input$saveMetadata)
-  #    
-  #   file <- fileInfo$datapath
-  #    
-  #    myData <- values$metaData
-  #   myData <- myData[-which(grepl("evalSame", colnames(myData)))]
-  #    myData <- cbind(rownames(myData), myData)
-  #    colnames(myData)[1] <- ""
-  #    
-  #    #WRITING COMMANDS TO R SCRIPT
-  #    before <- length(values$oFile)
-  #    values$oFile <- saveLines(commentify("save data"), values$oFile)
-  #    values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
-  #                                paste0("file <- ", formatString(input$userFileName))), values$oFile)
-  #    
-  #    if (input$fileType == "csv") {
-  #      write.csv(myData, file, row.names = FALSE, col.names = TRUE)
-  #      
-  #      #WRITING COMMANDS TO R SCRIPT
-  #      values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
-  #      
-  #    }
-  #    else if (input$fileType == "tsv") {
-  #      write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
-  #      
-  #      #WRITING COMMANDS TO R SCRIPT
-  #      values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
-  #                                values$oFile)
-  #      
-  #    }
-  #    else if (input$fileType == "JSON") {
-  #      library(jsonlite)
-  #     library(readr)
-  #      
-  #      myData %>% toJSON() %>% write_lines(file)
-  #      
-  #      #WRITING COMMANDS TO R SCRIPT
-  #      values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
-  #                                  "metaData %>% toJSON() %>% write_lines(file)"), 
-  #                                values$oFile)
-  #    }
-  #    
-  #    values$currChunkLen <- length(values$oFile) - before
-  #  } else {
-  #    showNotification("Please load some data.")
-  #  }
-  #})
-  
   observeEvent(input$showHistory, {
     saveToRscript(values$oFile)
     saveRscript()
@@ -1040,7 +931,6 @@ server <- function(input, output, session) {
   #1  
   output$nav_1_ui <- renderUI({
     fluidRow(
-      #actionButton('nav_4_to_3_button', 'Back'),
       column(2, offset = 8, actionButton('nav_1_to_2_button', 'Next'))
     )
   })
@@ -1110,9 +1000,6 @@ server <- function(input, output, session) {
   observeEvent(input$nav_6_to_5_button, {
     updateTabsetPanel(session, 'sidePanel', selected = '5')
   })
-  #observeEvent(input$nav_6_to_7_button, {
-  #  updateTabsetPanel(session, 'sidePanel', selected = '7')
-  #})
   
   
   # expression data ---------------------------------------------------------
