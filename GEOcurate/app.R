@@ -448,7 +448,7 @@ server <- function(input, output, session) {
               
             }
             else {
-              barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = TRUE)
+              barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = FALSE)
             }
           }
         })
@@ -1126,11 +1126,16 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       
+      #WRITING COMMANDS TO R SCRIPT
+      before <- length(values$expression_oFile)
+      values$oFile <- saveLines(commentify("save expression data"), values$oFile)
+      values$oFile <- saveLines(paste0("file <- ", formatString(filename)), values$oFile)
+      
       if (input$expression_fileType == "csv") {
         write.csv(values$exprData, file, row.names = FALSE, col.names = TRUE)
         
         #WRITING COMMANDS TO R SCRIPT
-        #values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
+        values$expression_oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
         
       }
       else if (input$expression_fileType == "tsv") {
@@ -1162,7 +1167,7 @@ server <- function(input, output, session) {
         #                          values$oFile)
       }
       
-      values$currChunkLen <- length(values$oFile) - before
+      values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
       
     }
   )

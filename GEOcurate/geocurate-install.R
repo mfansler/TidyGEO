@@ -9,6 +9,9 @@ install.packages("rhandsontable")
 source("https://bioconductor.org/biocLite.R")
 biocLite("GEOquery")
 
+source("https://bioconductor.org/biocLite.R")
+biocLite("BiocUpgrade")
+
 install.packages("dplyr")
 install.packages("stringr")
 install.packages("readr")
@@ -23,5 +26,12 @@ devtools::install_github("AnalytixWare/ShinySky")
 install.packages("shinyFiles")
 
 install.packages("xlsx")
+
+bioc <- local({
+  env <- new.env()
+  on.exit(rm(env))
+  evalq(source("http://bioconductor.org/biocLite.R", local = TRUE), env)
+  biocinstallRepos()
+})
 
 }
