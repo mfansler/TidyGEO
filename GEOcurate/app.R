@@ -1,3 +1,7 @@
+#setRepositories(addURLs = c(CRAN="https://cran.rstudio.com/", CRANextra="https://www.stats.ox.ac.uk/pub/RWin", 
+#BioCsoft="https://bioconductor.org/packages/3.6/bioc", BioCexp="https://bioconductor.org/packages/3.6/data/experiment",
+#BioCann="https://bioconductor.org/packages/3.6/data/annotation"))
+
 library(shiny)
 library(DT)
 library(shinycssloaders)
@@ -237,12 +241,9 @@ ui <- fluidPage(
                                   tabPanel("1",
                                            sidebarLayout(
                                              sidebarPanel(
-                                               #actionButton(inputId = "transposeExpr", label = "Transpose")
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
-                                               checkboxInput(inputId = "transposeExpr", 
-                                                             label = div("Transpose the data", 
-                                                                         helpButton("Values in the ID column become the column names and column names become the ID column."))),
+                                               uiOutput("transposeCheckbox"),
                                                hr(),
                                                fluidRow(
                                                  column(2, offset = 7, actionButton(inputId = "previewExpr", label = "Preview"))
@@ -1039,11 +1040,27 @@ server <- function(input, output, session) {
   })
   
   output$summarizeOptions <- renderUI({
-    if(!is.null(input$colForExprLabels) && 
+    if(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
        !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay)) {
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                   How would you like to summarize the data?", helpButton("Groups the data by ID and takes the specified measurement for the group.")), 
                   choices = c("mean", "median", "max", "min", "keep all"))
+    }
+  })
+  
+  output$transposeCheckbox <- renderUI({
+    textColor <- if_else(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
+                           !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay),
+                         "color:gray", "color:black")
+    checkboxInput(inputId = "transposeExpr", 
+                  label = div(style = textColor, "Transpose the data", 
+                              helpButton("Values in the ID column become the column names and column names become the ID column.")))
+  })
+  
+  observe({
+    if(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
+       !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay)) {
+      shinyjs::disable("transposeCheckbox")
     }
   })
   

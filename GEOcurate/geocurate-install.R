@@ -2,7 +2,7 @@ if (FALSE) {
 devtools::install_github('andrewsali/shinycssloaders')
 install.packages("shiny")
 install.packages("DT")
-#install.packages("shinyjs")
+install.packages("shinyjs")
 install.packages("shinyBS")
 install.packages("rhandsontable")
 
@@ -20,7 +20,9 @@ install.packages("RCurl")
 #install.packages("digest")
 install.packages("yaml")
 
-install.packages("feather")
+install.packages("Rtools")
+devtools::install_github("wesm/feather/R")
+install.packages("devtools")
 devtools::install_github("AnalytixWare/ShinySky")
 
 install.packages("shinyFiles")
@@ -37,4 +39,15 @@ bioc <- local({
 install.packages("Rcpp")
 install.packages("later")
 
+install.packages("installr")
+library(installr)
+
+install.packages("DT")
+install.packages("RColorBrewer")
+install.packages("assertive")
+install.packages("data.table")
+install.packages("fs")
+install.packages("rJava")
+install.packages("rdrop2")
+install.packages("splitstackshape")
 }
