@@ -7,7 +7,7 @@ install.packages("shinyBS")
 install.packages("rhandsontable")
 
 source("https://bioconductor.org/biocLite.R")
-biocLite("GEOquery")
+BiocInstaller::biocLite("GEOquery")
 
 source("https://bioconductor.org/biocLite.R")
 biocLite("BiocUpgrade")
@@ -33,5 +33,8 @@ bioc <- local({
   evalq(source("http://bioconductor.org/biocLite.R", local = TRUE), env)
   biocinstallRepos()
 })
+
+install.packages("Rcpp")
+install.packages("later")
 
 }
