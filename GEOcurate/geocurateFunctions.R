@@ -43,7 +43,7 @@ saveData <- function(metaData, fileName) {
   drop_upload(filePath, path = "Shiny", dtoken = token)
 }
 
-loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
+loadDataFromDropbox <- function(geoID, downloadExpr = FALSE, session = NULL) {
   token <- readRDS("droptoken.rds")
   
   currPath <- paste0("/Shiny/", geoID, "_Clinical_Raw.csv")
@@ -85,25 +85,23 @@ loadData <- function(geoID, downloadExpr = FALSE, session = NULL) {
   return(allData)
 }
 
-downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE)
+downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE) {
+  
+  expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
+  
+  platforms <- sapply(expressionSet, annotation)
+  
+  return(list("expressionSet"=expressionSet, "platforms"=platforms))
+}
+
+initialDownload <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE)
 {
-  dataSetIndex = 1
-  
-  if (grepl("_", geoID)) {
-    parts <- str_split(geoID, "_")[[1]]
-    geoID <- parts[1]
-    subname <- parts[2]
-    if (subname == "U133A") {
-      dataSetIndex = 2
-    }
-  }
-  
   #Download data
   status <- tryCatch({
-    allData <- loadData(geoID, downloadExpr, session = session)
+    allData <- loadDataFromDropbox(geoID, downloadExpr, session = session)
     
     if (is.null(allData)) {
-      allData <- downloadData(geoID, dataSetIndex, downloadExpr, session = session)
+      allData <- downloadDataFromGEO(geoID, dataSetIndex, downloadExpr, session = session)
     }
     "pass"
   }, error = function(e) {
@@ -143,10 +141,12 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
   }
 }
 
-downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NULL) {
+downloadDataFromGEO <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NULL) {
   
   incProgress(1/8, message = "Downloading data from GEO.", detail = "")
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
+  
+  unname(sapply(expressionSet, annotation))
   
   
   if (dataSetIndex > length(expressionSet))
@@ -180,6 +180,29 @@ downloadData <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NU
   return(allData)
 }
 
+processData <- function(expressionSet, index, toFilter, extractExprData = FALSE) {
+  
+  expressionSet <- expressionSet[[index]]
+  metaData <- pData(expressionSet)
+  metaData <- filterUninformativeCols(metaData, toFilter)
+  
+  if(extractExprData) {
+    expressionData <- assayData(expressionSet)$exprs
+    expressionData <- cbind("ID" = rownames(expressionData), expressionData)
+    
+    featureData <- fData(expressionSet)
+    #featureData <- cbind("ID" = rownames(featureData), featureData)
+    #featureData <- filterUninformativeCols(featureData, 
+    #                                       c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
+    
+  } else {
+    expressionData <- NULL
+    featureData <- NULL
+  }
+  
+  return(list("metaData" = metaData, "expressionData" = expressionData, "featureData" = featureData))
+}
+
 #filter columns with all different entries or all the same entry
 filterUninformativeCols <- function(metaData, toFilter = list("none"))
 {
@@ -203,9 +226,9 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       isReanalyzed <- if("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
       isURL <- if("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
       isDate <- if("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
-      isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
+      #isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
-      isTooLong <- sum(isTooLong) > (length(temp) / 2)
+      #isTooLong <- sum(isTooLong) > (length(temp) / 2)
       
       if(all(grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp))) {
         
@@ -236,7 +259,9 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       notAllSame <- if("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
       notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !isTooLong && metaData[i] != rownames(metaData)) {
+      # && !isTooLong
+      
+      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && metaData[i] != rownames(metaData)) {
         filteredData <- cbind(filteredData, metaData[,i], stringsAsFactors = FALSE)
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1
@@ -663,7 +688,7 @@ getClinicalData <- function(geoID, rawFilePath, outputRawFilePath, specs, subnam
   #replicatedData = F
   
   
-  metaData <- downloadClinical(rawFilePath)
+  metaData <- initialDownload(rawFilePath)
   metaData <- metaData[specs$Name]
     
   # Fix column names

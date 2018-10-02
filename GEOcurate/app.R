@@ -296,6 +296,7 @@ server <- function(input, output, session) {
   
   values <-
     reactiveValues(
+      allData = NULL,
       metaData = NULL,
       origData = NULL,
       lastData = NULL,
@@ -355,15 +356,29 @@ server <- function(input, output, session) {
       closeAlert(session, "inputError")
       closeAlert(session, "fileError")
       values$errorState <- FALSE
-      allData <- withProgress(downloadClinical(input$geoID, input$filter, session = session, 
+      #try downloading the data from Dropbox (this will pull up example files)
+      #if the data doesn't exist there, download it from GEO
+      #return a list of the platforms for the dataset
+      #if there is more than one platform
+      #have the user choose which dataset to use
+      #process the data using the index they chose
+      #return the feature data, expression data, and metadata to display
+      
+      
+      values$allData <- withProgress(downloadClinical(input$geoID, input$filter, session = session, 
                                                downloadExpr = input$alsoDownload), 
                               message = "Downloading data")
       
-      values$metaData <- allData[["metaData"]]
-      values$exprData <- allData[["expressionData"]]
+      showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+                                         choiceNames = unname(values$allData[["platforms"]]), 
+                                         choiceValues = names(values$allData[["platforms"]])), 
+                            footer = actionButton(inputId = "usePlatform", label = "Use platform")))
+      if(F) {
+      values$metaData <- extractedData[["metaData"]]
+      values$exprData <- extractedData[["expressionData"]]
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
       values$previewExprData <- values$exprToDisplay
-      values$ftData <- allData[["featureData"]]
+      values$ftData <- extractedData[["featureData"]]
       values$ftToDisplay <- values$ftData %>%
         filter(ID %in% values$exprToDisplay[,"ID"])
       
@@ -386,7 +401,45 @@ server <- function(input, output, session) {
       }
       
       values$origData <- values$metaData
+      }
     }
+  })
+  
+  observeEvent(input$usePlatform, {
+    
+    removeModal()
+    
+    extractedData <- processData(values$allData[["expressionSet"]], input$platformIndex, input$toFilter, input$alsoDownload)
+    
+    values$metaData <- extractedData[["metaData"]]
+    if (input$alsoDownload) {
+      values$exprData <- extractedData[["expressionData"]]
+      values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
+      values$previewExprData <- values$exprToDisplay
+      values$ftData <- extractedData[["featureData"]]
+      values$ftToDisplay <- values$ftData %>%
+        filter(ID %in% values$exprToDisplay[,"ID"])
+    }
+    
+    #WRITING COMMANDS TO R SCRIPT
+    values$oFile <- "source('geocurateFunctions_User.R')"
+    values$oFile <- saveLines(commentify("download metaData"), values$oFile)
+    values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
+    for (i in 1:length(input$filter)) {
+      values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", formatString(input$filter[i])), values$oFile)
+    }
+    values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter)"), values$oFile)
+    downloadChunkLen <- length(values$oFile)
+    
+    if(input$alsoDownload) {
+      #WRITING COMMANDS TO EXPRESSION R SCRIPT
+      values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
+      values$expression_oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)),
+                                             "expressionData <- downloadExpression(geoID)"), 
+                                           values$expression_oFile)
+    }
+    
+    values$origData <- values$metaData
   })
   
   output$dataset <- DT::renderDT({
@@ -1094,14 +1147,14 @@ server <- function(input, output, session) {
   
   output$featureData <- DT::renderDT({
     if(!is.null(values$ftToDisplay)) {
-      datatable(values$ftToDisplay, rownames = FALSE, options = list(dom = "tp", columnDefs = list(list(
+      datatable(values$ftToDisplay, rownames = FALSE, options = list(scrollX = TRUE, dom = "tp", columnDefs = list(list(
         targets = "_all",
         #Makes it so that the table will only display the first 30 chars.
         #See https://rstudio.github.io/DT/options.html
         render = JS(
           "function(data, type, row, meta) {",
-          "return type === 'display' && typeof data === 'string' && data.length > 30 ?",
-          "'<span title=\"' + data + '\">' + data.substr(0, 30) + '...</span>' : data;",
+          "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
+          "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
           "}")
       ))))
     }

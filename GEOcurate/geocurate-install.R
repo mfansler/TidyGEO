@@ -20,7 +20,6 @@ install.packages("RCurl")
 #install.packages("digest")
 install.packages("yaml")
 
-install.packages("Rtools")
 devtools::install_github("wesm/feather/R")
 install.packages("devtools")
 devtools::install_github("AnalytixWare/ShinySky")
