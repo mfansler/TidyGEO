@@ -17,19 +17,9 @@ loadData <- function(fileName) {
   }
 }
 
-downloadClinical <- function(geoID, toFilter, fileName = NA)
+downloadClinical <- function(geoID, toFilter, dataSetIndex, fileName = NA)
 {
-  dataSetIndex = 1
   library(GEOquery)
-  
-  if (grepl("_", geoID)) {
-    parts <- str_split(geoID, "_")[[1]]
-    geoID <- parts[1]
-    subname <- parts[2]
-    if (subname == "U133A") {
-      dataSetIndex = 2
-    }
-  }
   
   #Download data
   status <- tryCatch({
@@ -59,12 +49,6 @@ downloadClinical <- function(geoID, toFilter, fileName = NA)
 downloadData <- function(geoID, dataSetIndex, fileName) {
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = FALSE)
   
-  
-  if (dataSetIndex > length(expressionSet))
-    stop(paste("The dataSetIndex value was ", dataSetIndex, " but there are only ", length(expressionSet), " objects in GEO.", sep=""))
-  
-  # Retrieve data values depending on the platform
-  #if (length(expressionSet) > 1) idx <- grep("GPL6947", attr(expressionSet, "names")) else idx <- 1
   expressionSet <- expressionSet[[dataSetIndex]]
   
   # Extract meta data frame

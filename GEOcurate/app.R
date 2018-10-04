@@ -1,6 +1,5 @@
-#setRepositories(addURLs = c(CRAN="https://cran.rstudio.com/", CRANextra="https://www.stats.ox.ac.uk/pub/RWin", 
-#BioCsoft="https://bioconductor.org/packages/3.6/bioc", BioCexp="https://bioconductor.org/packages/3.6/data/experiment",
-#BioCann="https://bioconductor.org/packages/3.6/data/annotation"))
+source("https://bioconductor.org/biocLite.R")
+options(repos = BiocInstaller::biocinstallRepos())
 
 library(shiny)
 library(DT)
@@ -391,14 +390,15 @@ server <- function(input, output, session) {
       for (i in 1:length(input$filter)) {
         values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", formatString(input$filter[i])), values$oFile)
       }
-      values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter)"), values$oFile)
+      values$oFile <- saveLines(paste0("dataSetIndex <- ", input$platformIndex))
+      values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
       downloadChunkLen <- length(values$oFile)
       
       if(input$alsoDownload) {
         #WRITING COMMANDS TO EXPRESSION R SCRIPT
         values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
         values$expression_oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)),
-                                               "expressionData <- downloadExpression(geoID)"), 
+                                               "expressionData <- downloadExpression(geoID, dataSetIndex)"), 
                                              values$expression_oFile)
       }
       
@@ -804,7 +804,11 @@ server <- function(input, output, session) {
   observeEvent(input$removeToSub, {
     if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) {
       if (!identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0)) && values$tablesList[[input$colsToSub]][,"To_Replace"] != "") {
-        values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-input$hotOut_rows_selected,]
+        toRemove <- 1
+        if (!is.null(input$hotOut_rows_selected)) {
+          toRemove <- input$hotOut_rows_selected
+        }
+        values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-toRemove,]
         values$DFOut <- values$tablesList[[input$colsToSub]]
       }
       if (identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0))) {

@@ -10,7 +10,7 @@ source("https://bioconductor.org/biocLite.R")
 BiocInstaller::biocLite("GEOquery")
 
 source("https://bioconductor.org/biocLite.R")
-biocLite("BiocUpgrade")
+BiocInstaller::biocLite("BiocUpgrade")
 
 install.packages("dplyr")
 install.packages("stringr")
