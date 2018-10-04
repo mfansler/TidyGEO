@@ -1,6 +1,4 @@
-.First <- function() {
-  print("I've been read")
-}
+print("I've been read")
 
 local({
   r <- getOption("repos")

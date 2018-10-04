@@ -369,9 +369,11 @@ server <- function(input, output, session) {
                                                downloadExpr = input$alsoDownload), 
                               message = "Downloading data")
       
+      platforms <- sapply(values$allData, annotation)
+      
       showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-                                         choiceNames = unname(values$allData[["platforms"]]), 
-                                         choiceValues = names(values$allData[["platforms"]])), 
+                                         choiceNames = unname(platforms), 
+                                         choiceValues = names(platforms)), 
                             footer = actionButton(inputId = "usePlatform", label = "Use platform")))
       if(F) {
       values$metaData <- extractedData[["metaData"]]
@@ -409,7 +411,7 @@ server <- function(input, output, session) {
     
     removeModal()
     
-    extractedData <- processData(values$allData[["expressionSet"]], input$platformIndex, input$toFilter, input$alsoDownload)
+    extractedData <- withProgress(processData(values$allData, input$platformIndex, input$filter, input$alsoDownload))
     
     values$metaData <- extractedData[["metaData"]]
     if (input$alsoDownload) {
@@ -438,7 +440,8 @@ server <- function(input, output, session) {
                                              "expressionData <- downloadExpression(geoID)"), 
                                            values$expression_oFile)
     }
-    
+    values$allData <- NULL
+    extractedData <- NULL
     values$origData <- values$metaData
   })
   

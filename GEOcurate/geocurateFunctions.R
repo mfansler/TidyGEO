@@ -43,6 +43,33 @@ saveData <- function(metaData, fileName) {
   drop_upload(filePath, path = "Shiny", dtoken = token)
 }
 
+saveDataRDS <- function(data, fileName) {
+  token <- readRDS("droptoken.rds")
+  
+  filePath <- file.path(tempdir(), fileName)
+  write_rds(x = data, path = filePath)
+  drop_upload(filePath, path = "Shiny", dtoken = token)
+}
+
+loadRdsFromDropbox <- function(geoID) {
+  token <- readRDS("droptoken.rds")
+  
+  currPath <- paste0("/Shiny/", geoID, ".rds")
+  localPath <- file.path(tempdir(), paste0(geoID, ".rds"))
+  
+  filesInfo <- drop_dir("Shiny")
+  filePaths <- filesInfo$path_display
+  allData <- NULL
+  if(currPath %in% filePaths) {
+    print("RDS found")
+    filePath <- filePaths[which(filePaths == currPath)]
+    drop_download(path = filePath, local_path = localPath, dtoken = token, overwrite = TRUE)
+    data <- read_rds(localPath)
+    return(data)
+  }
+  return(NULL)
+}
+
 loadDataFromDropbox <- function(geoID, downloadExpr = FALSE, session = NULL) {
   token <- readRDS("droptoken.rds")
   
@@ -87,11 +114,34 @@ loadDataFromDropbox <- function(geoID, downloadExpr = FALSE, session = NULL) {
 
 downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE) {
   
-  expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
+  expressionSet <- loadRdsFromDropbox(geoID)
   
-  platforms <- sapply(expressionSet, annotation)
+  if(is.null(expressionSet)) {
+    status <- tryCatch({
+      expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
+      saveDataRDS(expressionSet, paste0(geoID, ".rds"))
+      "pass"
+    }, error = function(e){
+        if (grepl("open\\.connection", paste0(e))) {
+          return(paste0("Trouble establishing connection to GEO. Please try again later."))
+        }
+        else if (grepl("file\\.exists", paste0(e))) {
+          return(paste0("File not found. Please enter a valid ID."))
+        }
+        else {
+          return(paste(e))
+        }
+      }
+    )
+    if (status != "pass" && !is.null(session)) {
+      createAlert(session, "alert", "fileError", title = "Error",
+                  content = unlist(status), append = FALSE)
+    }
+  }
   
-  return(list("expressionSet"=expressionSet, "platforms"=platforms))
+  #platforms <- sapply(expressionSet, annotation)
+  
+  return(expressionSet)
 }
 
 initialDownload <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE)
@@ -183,14 +233,22 @@ downloadDataFromGEO <- function(geoID, dataSetIndex, downloadExpr = FALSE, sessi
 processData <- function(expressionSet, index, toFilter, extractExprData = FALSE) {
   
   expressionSet <- expressionSet[[index]]
-  metaData <- pData(expressionSet)
+  incProgress(message = "Extracting metadata.")
+  metaData <- as.data.frame(pData(expressionSet), stringsAsFactors = FALSE)
+  incProgress(message = "Filtering metadata.")
   metaData <- filterUninformativeCols(metaData, toFilter)
   
   if(extractExprData) {
+    incProgress(message = "Extracting expression data.")
     expressionData <- assayData(expressionSet)$exprs
-    expressionData <- cbind("ID" = rownames(expressionData), expressionData)
-    
-    featureData <- fData(expressionSet)
+    expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
+
+    incProgress(message = "Extracting feature data.")
+    featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
+    hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
+    if(all(hasNA) != FALSE) {
+      featureData <- featureData[, -which(hasNA)]
+    }
     #featureData <- cbind("ID" = rownames(featureData), featureData)
     #featureData <- filterUninformativeCols(featureData, 
     #                                       c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
