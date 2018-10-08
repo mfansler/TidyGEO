@@ -374,36 +374,7 @@ server <- function(input, output, session) {
                                          choiceNames = unname(platforms), 
                                          choiceValues = names(platforms)), 
                             footer = actionButton(inputId = "usePlatform", label = "Use platform")))
-      if(F) {
-      values$metaData <- extractedData[["metaData"]]
-      values$exprData <- extractedData[["expressionData"]]
-      values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
-      values$previewExprData <- values$exprToDisplay
-      values$ftData <- extractedData[["featureData"]]
-      values$ftToDisplay <- values$ftData %>%
-        filter(ID %in% values$exprToDisplay[,"ID"])
       
-      #WRITING COMMANDS TO R SCRIPT
-      values$oFile <- "source('geocurateFunctions_User.R')"
-      values$oFile <- saveLines(commentify("download metaData"), values$oFile)
-      values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
-      for (i in 1:length(input$filter)) {
-        values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", formatString(input$filter[i])), values$oFile)
-      }
-      values$oFile <- saveLines(paste0("dataSetIndex <- ", input$platformIndex))
-      values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
-      downloadChunkLen <- length(values$oFile)
-      
-      if(input$alsoDownload) {
-        #WRITING COMMANDS TO EXPRESSION R SCRIPT
-        values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
-        values$expression_oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)),
-                                               "expressionData <- downloadExpression(geoID, dataSetIndex)"), 
-                                             values$expression_oFile)
-      }
-      
-      values$origData <- values$metaData
-      }
     }
   })
   
@@ -430,12 +401,14 @@ server <- function(input, output, session) {
     for (i in 1:length(input$filter)) {
       values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", formatString(input$filter[i])), values$oFile)
     }
+    values$oFile <- saveLines(paste0("dataSetIndex <- ", input$platformIndex), values$oFile)
     values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter)"), values$oFile)
     downloadChunkLen <- length(values$oFile)
     
     if(input$alsoDownload) {
       #WRITING COMMANDS TO EXPRESSION R SCRIPT
       values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
+      values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", input$platformIndex), values$expression_oFile)
       values$expression_oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)),
                                              "expressionData <- downloadExpression(geoID)"), 
                                            values$expression_oFile)
@@ -1133,8 +1106,8 @@ server <- function(input, output, session) {
       
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
       values$expression_oFile <- saveLines(paste0("expressionData <- replaceID(expressionData, featureData, ", 
-                                                  formatString(input$colForExprLabels), 
-                                                  formatString(input$howToSummarize)), values$expression_oFile)
+                                                  formatString(input$colForExprLabels), ", ",
+                                                  formatString(input$howToSummarize), ")"), values$expression_oFile)
       if(input$transposeExpr) {
         values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
         
@@ -1194,7 +1167,7 @@ server <- function(input, output, session) {
   
   output$expression_nameFile <- renderUI({
     textInput("expression_userFileName", label = div("File name: ", helpButton("If you are downloading an R script, this will make sure the script knows where to save the data. Please specify the full path.")), 
-              value = paste0("file name.", input$fileType))
+              value = paste0("file name.", input$expression_fileType))
   })
   
   output$expression_downloadData <- downloadHandler(
@@ -1205,22 +1178,22 @@ server <- function(input, output, session) {
       
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$expression_oFile)
-      values$oFile <- saveLines(commentify("save expression data"), values$oFile)
-      values$oFile <- saveLines(paste0("file <- ", formatString(filename)), values$oFile)
+      values$expression_oFile <- saveLines(commentify("save expression data"), values$expression_oFile)
+      values$expression_oFile <- saveLines(paste0("file <- ", formatString(filename)), values$expression_oFile)
       
       if (input$expression_fileType == "csv") {
         write.csv(values$exprData, file, row.names = FALSE, col.names = TRUE)
         
         #WRITING COMMANDS TO R SCRIPT
-        values$expression_oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
+        values$expression_oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE, col.names = TRUE)"), values$expression_oFile)
         
       }
       else if (input$expression_fileType == "tsv") {
         write.table(values$exprData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
         
         #WRITING COMMANDS TO R SCRIPT
-        #values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
-        #                          values$oFile)
+        values$expression_oFile <- saveLines("write.table(expressionData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+                                  values$expression_oFile)
         
       }
       else if (input$expression_fileType == "JSON") {
@@ -1230,18 +1203,18 @@ server <- function(input, output, session) {
         values$exprData %>% toJSON() %>% write_lines(file)
         
         #WRITING COMMANDS TO R SCRIPT
-        #values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
-        #                            "metaData %>% toJSON() %>% write_lines(file)"), 
-        #                          values$oFile)
+        values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
+                                    "expressionData %>% toJSON() %>% write_lines(file)"), 
+                                  values$expression_oFile)
       }
-      else if (input$fileType == "xlsx") {
+      else if (input$expression_fileType == "xlsx") {
         library(xlsx)
         
         write.xlsx(values$exprData, file, row.names = FALSE, showNA = FALSE)
         
         #WRITING COMMANDS TO R SCRIPT
-        #values$oFile <- saveLines(c("library(xlsx)", "write.xlsx(metaData, file, row.names = FALSE, showNA = FALSE)"), 
-        #                          values$oFile)
+        values$expression_oFile <- saveLines(c("library(xlsx)", "write.xlsx(expressionData, file, row.names = FALSE, showNA = FALSE)"), 
+                                  values$expression_oFile)
       }
       
       values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
@@ -1254,7 +1227,7 @@ server <- function(input, output, session) {
       paste0(input$geoID, "_Expression_Rscript.R")
     },
     content = function(file) {
-      saveToRscript(values$oFile, file)
+      saveToRscript(values$expression_oFile, file)
     }
   )
 }
