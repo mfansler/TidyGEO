@@ -5,13 +5,8 @@ library(dplyr)
 library(readr)
 library(glue)
 
-
-
 saveLines <- function(strings, oFile) {
-  #for (el in strings) {
-    #oFile <- c(oFile, el)
-  #}
-  #
+  
   oFile <- c(oFile, strings)
   
   return(oFile)
@@ -26,21 +21,6 @@ saveToRscript <- function(oFile, filePath = file.path(tempdir(), "script_Temp.R"
 removeFromScript <- function(oFile, len, all = F) {
   length(oFile) <- if(all) len else length(oFile) - len
   return(oFile)
-}
-
-saveRscript <- function() {
-  token <- readRDS("droptoken.rds")
-  
-  filePath <- file.path(tempdir(), "script_Temp.R")
-  drop_upload(filePath, path = "Shiny", dtoken = token)
-}
-
-saveData <- function(metaData, fileName) {
-  token <- readRDS("droptoken.rds")
-  
-  filePath <- file.path(tempdir(), fileName)
-  write.csv(metaData, filePath, row.names = FALSE)
-  drop_upload(filePath, path = "Shiny", dtoken = token)
 }
 
 saveDataRDS <- function(data, fileName) {
@@ -70,48 +50,6 @@ loadRdsFromDropbox <- function(geoID) {
   return(NULL)
 }
 
-loadDataFromDropbox <- function(geoID, downloadExpr = FALSE, session = NULL) {
-  token <- readRDS("droptoken.rds")
-  
-  currPath <- paste0("/Shiny/", geoID, "_Clinical_Raw.csv")
-  expressionPath <- paste0("/Shiny/", geoID, "_Expression_Raw.csv")
-  featurePath <- paste0("/Shiny/", geoID, "_Features_Raw.csv")
-  # Read all the files into a list
-  filesInfo <- drop_dir("Shiny")
-  filePaths <- filesInfo$path_display
-  allData <- NULL
-  incProgress(1/8, message = "Downloading metadata.", detail = "")
-  if (currPath %in% filePaths) {
-    print("File found")
-    filePath <- filePaths[which(filePaths == currPath)]
-    data <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, row.names = "geo_accession", check.names = FALSE, dtoken = token)
-    ## Concatenate all data together into one data.frame
-    data <- do.call(rbind, data)
-    allData[["metaData"]] <- as.data.frame(data)
-  }
-  if (downloadExpr) {
-    incProgress(1/8, message = "Downloading expression data.", detail = "This may take awhile.")
-    if (expressionPath %in% filePaths) {
-      print("Expression file found")
-      filePath <- filePaths[which(filePaths == expressionPath)]
-      exprData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, check.names = FALSE, dtoken = token)
-      ## Concatenate all data together into one data.frame
-      exprData <- do.call(rbind, exprData)
-      allData[["expressionData"]] <- as.data.frame(exprData)
-    }
-    incProgress(1/8, message = "Downloading feature data.", detail = "")
-    if (featurePath %in% filePaths) {
-      print("Features file found")
-      filePath <- filePaths[which(filePaths == featurePath)]
-      ftData <- lapply(filePath, drop_read_csv, stringsAsFactors = FALSE, check.names = FALSE, dtoken = token)
-      ftData <- do.call(rbind, ftData)
-      allData[["featureData"]] <- as.data.frame(ftData)
-    }
-  }
-
-  return(allData)
-}
-
 downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE) {
   
   expressionSet <- loadRdsFromDropbox(geoID)
@@ -139,95 +77,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
     }
   }
   
-  #platforms <- sapply(expressionSet, annotation)
-  
   return(expressionSet)
-}
-
-initialDownload <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE)
-{
-  #Download data
-  status <- tryCatch({
-    allData <- loadDataFromDropbox(geoID, downloadExpr, session = session)
-    
-    if (is.null(allData)) {
-      allData <- downloadDataFromGEO(geoID, dataSetIndex, downloadExpr, session = session)
-    }
-    "pass"
-  }, error = function(e) {
-    if (grepl("open\\.connection", paste0(e))) {
-      return(paste0("Trouble establishing connection to GEO. Please try again later."))
-      }
-    else if (grepl("file\\.exists", paste0(e))) {
-      return(paste0("File not found. Please enter a valid ID."))
-    }
-    else {
-      return(paste(e))
-    }
-    }
-  )
-  
-  if (status == "pass") {
-    incProgress(1/8, message = "Filtering columns.", detail = "")
-    allData[["metaData"]] <- filterUninformativeCols(allData[["metaData"]], toFilter)
-    
-    if(downloadExpr) {
-      head(allData[["featureData"]])
-      
-      incProgress(1/8, message = "Filtering feature data columns.", detail = "")
-      allData[["featureData"]] <- filterUninformativeCols(allData[["featureData"]], 
-                                                          c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
-    }
-    return(allData)
-  }
-  
-  else if (!is.null(session)){
-    print(status)
-    createAlert(session, "alert", "fileError", title = "Error",
-                content = unlist(status), append = FALSE)
-    
-    return(NULL)
-    
-  }
-}
-
-downloadDataFromGEO <- function(geoID, dataSetIndex, downloadExpr = FALSE, session = NULL) {
-  
-  incProgress(1/8, message = "Downloading data from GEO.", detail = "")
-  expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
-  
-  unname(sapply(expressionSet, annotation))
-  
-  
-  if (dataSetIndex > length(expressionSet))
-    stop(paste("The dataSetIndex value was ", dataSetIndex, " but there are only ", length(expressionSet), " objects in GEO.", sep=""))
-  
-  # Retrieve data values depending on the platform
-  expressionSet <- expressionSet[[dataSetIndex]]
-  
-  # Extract meta data frame
-  incProgress(1/8, message = "Extracting metadata.")
-  metaData <- pData(expressionSet)
-  
-  saveData(metaData, paste0(geoID, "_Clinical_Raw.csv"))
-  
-  if(downloadExpr) {
-    incProgress(1/8, message = "Extracting expression data.", detail = "This may take awhile.")
-    expressionData <- assayData(expressionSet)$exprs
-    expressionData <- cbind("ID" = rownames(expressionData), expressionData)
-    saveData(expressionData, paste0(geoID, "_Expression_Raw.csv"))
-    
-    incProgress(1/7, message = "Extracting feature data.", detail = "")
-    featureData <- fData(expressionSet)
-    saveData(featureData, paste0(geoID, "_Features_Raw.csv"))
-  } else {
-    expressionData <- NULL
-    featureData <- NULL
-  }
-  
-  allData <- list("metaData" = metaData, "expressionData" = expressionData, "featureData" = featureData)
-                     
-  return(allData)
 }
 
 processData <- function(expressionSet, index, toFilter, extractExprData = FALSE) {
@@ -245,13 +95,15 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
 
     incProgress(message = "Extracting feature data.")
     featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
-    hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
-    if(all(hasNA) != FALSE) {
+    hasNA <- as.logical(apply(featureData, 2, function(x) 
+    {
+      return(any(is.na(x)) || any(x == ""))
+    }
+    ))
+    if(any(hasNA)) {
+      print("reached")
       featureData <- featureData[, -which(hasNA)]
     }
-    #featureData <- cbind("ID" = rownames(featureData), featureData)
-    #featureData <- filterUninformativeCols(featureData, 
-    #                                       c("sameVals", "url", "dates", "tooLong")) %>% select(-evalSame, -GB_ACC)
     
   } else {
     expressionData <- NULL
@@ -391,58 +243,6 @@ printVarsSummary <- function(metaData) {
     summFrame <- rbind(summFrame, c("", ""))
   }
   return(summFrame)
-}
-
-
-createExampleCols <- function(metaData, colsToDivide, delimiter) {
-  for (col in colsToDivide) {
-    divideExamples[[col]] <- str_split(metaData[1, col], delimiter)[[1]]
-  }
-  return(divideExamples)
-}
-
-
-saveFileDescription <- function(geoID, filePathToSave) {
-  
-  desFilePath <- paste(filePathToSave, "_Description.md", sep = "")
-  if (!file.exists(desFilePath)) {  
-    url <- paste("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geoID, "&targ=self&form=text&view=quick", sep = "")
-    tempFile <- paste("Clinical_Raw/", geoID, "__ncbi.txt", sep= "")
-    if (!file.exists(tempFile)) {
-      download.file(url, tempFile, method = "auto")
-    }
-    summaryFile <- suppressMessages(suppressWarnings(read.table(tempFile, sep = "\t", col.names = "data", quote = NULL)))
-    
-    toFind <- c("!Series_title", "!Series_platform_organism", "!Series_type", "!Series_summary", "!Series_pubmed_id")
-    titles <- c("## Title", "## Organism", "## Experiment type", "## Summary", "## Citation")
-    valuesList <- NULL
-    for (term in toFind) {
-      value = NULL
-      searchResults <- summaryFile[which(grepl(term, summaryFile$data)),]
-      if (length(searchResults) == 0) {
-        value = "NA"
-      }
-      else {
-        for (item in searchResults) {
-          item <- toString(item)
-          item <- str_split(item, " = ")
-          value <- str_trim(paste(value, item[[1]][2], sep = " "))
-        }
-        if(term == "!Series_pubmed_id") {
-          value <- paste("[PubMed article]", "(https://www.ncbi.nlm.nih.gov/pubmed/", value, ")", sep = "")
-        }
-      }
-      valuesList <- append(valuesList, value)
-    }
-    
-    if (!dir.exists(dirname(desFilePath)))
-      dir.create(dirname(desFilePath), recursive = TRUE)
-    
-    for(i in 1:length(titles)) {
-      write(c(titles[i], valuesList[i]), file = desFilePath, append = TRUE, sep = "\n")
-      write("", file = desFilePath, append = TRUE, sep = "\n")
-    }
-  }
 }
 
 extractColNames <- function(inputDataFrame, delimiterInfo)
@@ -694,9 +494,6 @@ excludeVars <- function(metaData, specs) {
     if (any(toExclude == "NA") && any(is.na(metaData[,variable]))) {
       toExclude <- toExclude[-which(toExclude == "NA")]
       metaData <- metaData[-which(is.na(metaData[,variable])),]
-      #take the nas out of toExclude
-      #exclude all the stuff in toExclude
-      #exclude the nas in the column
     }
     if (!identical(toExclude, character(0))) {
       for(el in toExclude[which(!toExclude %in% metaData[,variable])]) {
@@ -733,66 +530,6 @@ fixSpecialCharacters <- function(x, offendingChars)
   return(x)
 }
 
-
-getClinicalData <- function(geoID, rawFilePath, outputRawFilePath, specs, subname = "")
-{
-
-  
-  #geoID = "GSE10320"
-  #subname = ""
-  #titledValues = F
-  #colNames = "Relapse"
-  #columnFilter="characteristics"
-  #replicatedData = F
-  
-  
-  metaData <- initialDownload(rawFilePath)
-  metaData <- metaData[specs$Name]
-    
-  # Fix column names
-  colNames <- NULL
-  for (varName in colnames(metaData)){
-    preferredName <- specs$PreferredName[which(specs$Name == varName)]
-    if (!is.na(preferredName)){
-      colNames <- c(colNames, specs$PreferredName[which(specs$Name == varName)])
-    }
-    else {
-      colNames <- c(colNames, varName)
-    }
-  }
-  colnames(metaData) <- colNames
-  
-  
-  metaData <- cleanValues(metaData, specs, unknownVal = NA)
-  
-  metaData <- excludeVars(metaData, specs)
-
-  subSpecs <- specs[which(!is.na(specs$Substitutions)),]
-  metaData <- substituteVals(metaData, subSpecs)
-  
-  metaData <- cbind(SampleID = rownames(metaData), metaData)
-    
-  saveClinicalData(geoID, metaData, outputRawFilePath, TRUE) 
-  
-  
-  return(metaData)
-}
-saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription = FALSE)
-{
-
-  print(paste("Saving clinical data to ", outputRawFilePath, sep=""))
-    
-  if (!dir.exists(dirname(outputRawFilePath)))
-    dir.create(dirname(outputRawFilePath), recursive=TRUE, showWarnings=FALSE)
-    
-  write.table(metaData, outputRawFilePath, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
-    
-  if (saveDescription) 
-    saveFileDescription(geoID, str_split(outputRawFilePath, "\\.")[[1]][1])
-
-
-}
-
 quickTranspose <- function(dataToTranspose) {
   
   incProgress()
@@ -805,7 +542,7 @@ quickTranspose <- function(dataToTranspose) {
     transposed <- dataToTranspose %>%
       gather(newrows, valname, -ID) %>%
       spread(ID, valname) %>%
-      rename(ID = "newrows")
+      dplyr::rename(ID = "newrows")
   }
   
   incProgress()

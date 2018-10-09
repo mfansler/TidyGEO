@@ -1,3 +1,9 @@
+
+library(GEOquery)
+library(stringr)
+library(glue)
+library(dplyr)
+
 saveData <- function(metaData, outputRawFilePath) {
   if (!dir.exists(dirname(outputRawFilePath)))
     dir.create(dirname(outputRawFilePath), recursive=TRUE, showWarnings=FALSE)
@@ -19,14 +25,13 @@ loadData <- function(fileName) {
 
 downloadClinical <- function(geoID, toFilter, dataSetIndex, fileName = NA)
 {
-  library(GEOquery)
   
   #Download data
   status <- tryCatch({
     fileName <- paste0(geoID, "_Clinical_Raw.txt")
     metaData <- loadData(geoID)
     if (is.null(metaData)) {
-      metaData <- downloadData(geoID, dataSetIndex, fileName)
+      metaData <- downloadData(geoID, dataSetIndex)
     }
     "pass"
   }, error = function(e) {
@@ -46,7 +51,7 @@ downloadClinical <- function(geoID, toFilter, dataSetIndex, fileName = NA)
  return(metaData)
 }
 
-downloadData <- function(geoID, dataSetIndex, fileName) {
+downloadData <- function(geoID, dataSetIndex) {
   expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = FALSE)
   
   expressionSet <- expressionSet[[dataSetIndex]]
@@ -64,9 +69,16 @@ downloadExpression <- function(geoID, dataSetIndex) {
   
   
   expressionData <- assayData(expressionSet)$exprs
-  expressionData <- cbind("ID" = rownames(expressionData), expressionData)
+  expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
   
-  return(expressionData)
+  
+  featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
+  hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
+  if(all(hasNA) != FALSE) {
+    featureData <- featureData[, -which(hasNA)]
+  }
+  
+  return(list("expressionData"=expressionData, "featureData"=featureData))
 }
 
 #filter columns with all different entries or all the same entry
@@ -131,7 +143,6 @@ isAllUnique <- function(metaData) {
 }
 
 saveFileDescription <- function(geoID, filePathToSave) {
-  library(stringr)
   
   desFilePath <- paste(filePathToSave, "_Description.md", sep = "")
   if (!file.exists(desFilePath)) {  
@@ -291,7 +302,6 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements)
 }
 
 extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
-  library(stringr)
   
   if(toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
     delimiterInfo <- NULL
@@ -349,7 +359,6 @@ findOffendingChars <- function(x){
 }
 
 renameCols <- function(metaData, newNames) {
-  library(glue)
   updatedCols <- NULL
   for (colName in colnames(metaData)) {
     if (colName %in% names(newNames)) {
@@ -440,7 +449,6 @@ fixSpecialCharacters <- function(x, offendingChars)
 
 saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription = FALSE)
 {
-  library(stringr)
 
   print(paste("Saving clinical data to ", outputRawFilePath, sep=""))
     
@@ -453,4 +461,62 @@ saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription
     saveFileDescription(geoID, str_split(outputRawFilePath, "\\.")[[1]][1])
 
 
+}
+
+quickTranspose <- function(dataToTranspose) {
+  
+  if (any(duplicated(dataToTranspose$ID))) {
+    transposed <- dataToTranspose
+    
+    print("Data cannot be transposed because the ID column is not all unique. Please specify a summarize option.")
+    
+  } else {
+    
+    transposed <- dataToTranspose %>%
+      gather(newrows, valname, -ID) %>%
+      spread(ID, valname) %>%
+      dplyr::rename(ID = "newrows")
+  }
+  
+  return(transposed)
+}
+
+replaceID <- function(data, replacement, replaceCol, summaryOption) {
+  
+  if (replaceCol == "ID") {
+    return(data)
+  }
+  
+  dataWRowNames <- data
+  
+  replacementWRowNames <- replacement %>%
+    dplyr::rename(replace=replaceCol) %>%
+    select(ID, replace)
+  
+  mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
+    select(-ID) %>%
+    dplyr::rename(ID = "replace") %>%
+    select(ID, everything())
+  
+  if (!is.null(summaryOption)) {
+    if (summaryOption == "mean") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(mean) %>%
+        ungroup()
+    } else if (summaryOption == "median") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(median) %>%
+        ungroup()
+    } else if (summaryOption == "max") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(max) %>%
+        ungroup()
+    } else if (summaryOption == "min") {
+      mergedData <- mergedData %>% group_by(ID) %>%
+        summarize_all(min) %>%
+        ungroup()
+    }
+  }
+  
+  return(mergedData)
 }
