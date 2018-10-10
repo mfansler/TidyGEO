@@ -150,7 +150,9 @@ ui <- fluidPage(
                                       #renaming any columns
                                       tabPanel("4",
                                                uiOutput("showCols"),
-                                               rHandsontableOutput("newName"),
+                                               #rHandsontableOutput("newName"),
+                                               selectizeInput("newNameSelect", label = "Please specify a new name for the column.", 
+                                                              choices = c(""), options = list(create = TRUE)),
                                                uiOutput("thesLink"),
                                                actionButton("save", "Save"),
                                                actionButton("delete", "Remove"), br(),
@@ -593,16 +595,20 @@ server <- function(input, output, session) {
     selectInput(inputId = "colsToRename", label = "Which columns would you like to rename?", choices = colNames)
   })
   
-  output$newName <- renderRHandsontable({
-    rhandsontable(data.frame(`Enter a new name: ` = "", stringsAsFactors = FALSE, check.names = F), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
-      hot_col(col = "Enter a new name: ", type = "autocomplete", source = values$thes_suggest, strict = FALSE)
-  })
+  #output$newName <- renderRHandsontable({
+  #  rhandsontable(data.frame(`Enter a new name: ` = "", stringsAsFactors = FALSE, check.names = F), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
+  #    hot_col(col = "Enter a new name: ", type = "autocomplete", source = values$thes_suggest, strict = FALSE)
+  #})
   
   observe({
-    if (!is.null(input$newName)) {
-      values$newName <- hot_to_r(input$newName)[which(colnames(hot_to_r(input$newName)) == "Enter a new name: "),]
-    }
+    updateSelectizeInput(session, "newNameSelect", choices = values$thes_suggest, server = TRUE)
   })
+  
+  #observe({
+  #  if (!is.null(input$newName)) {
+  #    values$newName <- hot_to_r(input$newName)[which(colnames(hot_to_r(input$newName)) == "Enter a new name: "),]
+  #  }
+  #})
   
   output$thesLink <- renderUI({
     if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"]), "character(0)")) {
@@ -614,7 +620,8 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$save, {
-    values$newNames[[input$colsToRename]] <- if (!is.null(values$newName)) values$newName else input$colsToRename
+    #values$newNames[[input$colsToRename]] <- if (!is.null(values$newName)) values$newName else input$colsToRename
+    values$newNames[[input$colsToRename]] <- if (!is.null(input$newNameSelect) && input$newNameSelect != "") input$newNameSelect else input$colsToRename
   })
   
   observeEvent(input$delete, {
@@ -699,11 +706,10 @@ server <- function(input, output, session) {
       }
       
     }
-    #}
   }, ignoreInit = T, ignoreNULL = T)
   
   output$thesLinkSub <- renderUI({
-    if(!is.null(values$DFIn) && values$DFIn[,"New_Val"] != "") {
+    if("New_Val" %in% colnames(values$DFIn) && values$DFIn[,"New_Val"] != "") {
       if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"]), "character(0)")) {
         url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
                                                   as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"])), 
@@ -715,12 +721,14 @@ server <- function(input, output, session) {
   
   output$hotIn <- renderRHandsontable({
     rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
-      hot_col(col = "To_Replace", type = "autocomplete", source = values$suggestions, strict = FALSE) %>%
-      hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
+      hot_col(col = "To_Replace", type = "autocomplete", source = values$suggestions, strict = FALSE) #%>%
+      #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
   })
   
   output$hotOut <- renderDT({
-    datatable(if(!is.null(values$tablesList[[input$colsToSub]])) values$tablesList[[input$colsToSub]] else values$DFOut, options = list(paging = F, searching = F))
+    datatable(if(!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) 
+      values$tablesList[[input$colsToSub]] else values$DFOut, options = list(paging = F, searching = F))
+    
   })
   
   observeEvent(input$hotIn, {
