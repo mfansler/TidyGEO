@@ -244,91 +244,47 @@ printVarsSummary <- function(metaData) {
   return(summFrame)
 }
 
-extractColNames <- function(inputDataFrame, delimiterInfo)
-{
-  print(delimiterInfo)
-  incProgress()
-  classAndClinical <- inputDataFrame
-  prefixes = NULL
+extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
-  for (i in 1:nrow(classAndClinical))
-  {
-    for (j in 1:ncol(classAndClinical))
-    {
-      value <- as.character(classAndClinical[i,j])
-      pattern <- delimiterInfo[which(delimiterInfo == colnames(classAndClinical[j]))+1]
+  errorMessage <- NULL
+  
+  for(col in colsToSplit) {
+    
+    hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
+      str_detect(x, delimiter)
+    }))
+    if (all(hasDelim)) {
+      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
+      inputDataFrame <- spread(inputDataFrame, key = "key", value = "value")
+    } else {
       
-      if (colnames(classAndClinical)[j] %in% delimiterInfo && grepl(pattern, value)) {
-
-        prefix <- str_split(value, pattern)[[1]][1]
-        prefix <- str_trim(prefix)
-
-      }
-      else {
-        prefix <- colnames(classAndClinical)[j]
-      }
+      offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
+      offendingRows <- if_else(nchar(offendingRows) > 50, paste0(substr(offendingRows, 1, 50), "... "), offendingRows)
       
-      if (prefix != "")
-        prefixes <- c(prefixes, prefix)
+      offendingVals <- paste(inputDataFrame[!hasDelim, col], collapse = ", ")
+      offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
+      
+      errorMessage <- c(errorMessage, paste0(col, " could not be split."),
+                        paste0("Rows: ", offendingRows),
+                        paste0("Values: ", offendingVals))
     }
-    incProgress()
   }
   
-  prefixes <- sort(unique(prefixes))
-  
-  classAndClinical2 <- data.frame(rownames(classAndClinical))
-  
-  for (prefix in prefixes)
-  {
-    rowValues = NULL
-    
-    for (i in 1:nrow(classAndClinical))
-    {
-      rowValue = "?"
-      
-      for (j in 1:ncol(classAndClinical))
-      {
-        value <- as.character(classAndClinical[i,j])
-        pattern <- delimiterInfo[which(delimiterInfo == colnames(classAndClinical[j]))+1]
-        
-        if (colnames(classAndClinical)[j] %in% delimiterInfo && grepl(pattern, value)) {
-          valueParts <- str_split(value, pattern)[[1]]
-          thisPrefix <- str_trim(valueParts[1])
-          thisValue <- valueParts[2]
-        }
-        
-        else
-        {
-          thisPrefix <- colnames(classAndClinical)[j]
-          thisValue <- value
-        }
-        
-        if (thisPrefix == prefix) {
-          thisValue = str_trim(thisValue)
-          rowValue = thisValue
-        }
-      }
-      
-      rowValues <- c(rowValues, rowValue)
-    }
-    
-    classAndClinical2 <- cbind(classAndClinical2, rowValues)
-    
-    incProgress()
+  if(!is.null(errorMessage)) {
+    errorMessage <- c(paste0('Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".'),
+                      errorMessage)
+    tagsList <- tags$div(sapply(errorMessage, function(x){
+      HTML(as.character(tags$span(style = "color:red", x)))
+    }))
+    print(tagsList)
+    showModal(
+      modalDialog(tagsList, title = "Error", footer = modalButton("OK")
+      )
+      )
   }
   
-  prefixesNew <- c("SampleID", str_replace_all(prefixes, " ", "_"))
-  prefixesNew <- str_replace_all(prefixesNew,"\\(","")
-  prefixesNew <- str_replace_all(prefixesNew,"\\)","")
-  
-  colnames(classAndClinical2) <- prefixesNew
-  
-  rownames(classAndClinical2) <- as.vector(classAndClinical2[,1])
-  classAndClinical2 <- classAndClinical2[,-1]
-  
-  classAndClinical2 <- filterUninformativeCols(classAndClinical2, list("none"))
-  
-  return(classAndClinical2)
+  inputDataFrame <- filterUninformativeCols(inputDataFrame, list("none"))
+  return(inputDataFrame)
 }
 
 splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements)
@@ -373,10 +329,8 @@ extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, 
       colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
       colsToSplit <- colsToSplit[-which(colsToSplit == "evalSame")]
     }
-    for (col in colsToSplit) {
-      delimiterInfo <- c(delimiterInfo, col, delimiter)
-    }
-    metaData <- extractColNames(metaData, delimiterInfo)
+    
+    metaData <- extractColNames(metaData, delimiter, colsToSplit)
     
   }
   

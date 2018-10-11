@@ -1,5 +1,5 @@
-library(readr)
-GSE1456_Clinical_Raw <- read_delim("GSE1456_Clinical_Raw.txt",
+library(tidyverse)
+GSE1456_Clinical_Raw <- read_delim("GEOcurate/User/GSE1456_Clinical_Raw.txt",
                                    "\t", escape_double = FALSE, trim_ws = TRUE)
 View(GSE1456_Clinical_Raw)
 
@@ -12,19 +12,54 @@ GSE1456_gather <- spread(GSE1456_split, key = "key", value = "value")
 GSE1456_test <- rbind(GSE1456, rep("testval=testVal", ncol(GSE1456)))
 
 extractColNames2 <- function(inputDataFrame, delimiter, colsToSplit) {
+  
   for(col in colsToSplit) {
-    if(all(grepl(delimiter, inputDataFrame[which(!is.na(inputDataFrame[,col])),col]))) {
+    
+    errorMessage <- NULL
+    
+    hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
+      str_detect(x, delimiter)
+    }))
+    if (all(hasDelim)) {
       inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
       inputDataFrame <- spread(inputDataFrame, key = "key", value = "value")
+    } else if (any(hasDelim)) {
+      errorMessage <- c(errorMessage, paste0('Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".', col, " could not be split."),
+                        paste0("Rows: ", paste((1:length(hasDelim))[!hasDelim], collapse = ", ")),
+                        paste0("Values: ", paste(inputDataFrame[!hasDelim,col], collapse = ", ")))
+    }
+    if(!is.null(errorMessage)) {
+      print(errorMessage)
     }
   }
+  inputDataFrame <- filterUninformativeCols(inputDataFrame, list("none"))
   return(inputDataFrame)
 }
 
-all(grepl(": ", GSE1456_test[which(!is.na(GSE1456_test[,"characteristics_ch1.2"])),"characteristics_ch1.2"]))
+str_detect(GSE1456_test[which(!is.na(GSE1456_test[,"characteristics_ch1.2"])),"characteristics_ch1.2"], ": ")
 
 View(extractColNames(GSE1456_test, c("characteristics_ch1.2", ": ")))
 View(extractColNames2(GSE1456_test, ": ", "characteristics_ch1.2"))
+
+delimiterInfo <- NULL
+for (col in colnames(GSE1456)) {
+  delimiterInfo <- c(delimiterInfo, col, delimiter)
+}
+
+start_time <- Sys.time()
+oldData <- extractColNames(GSE1456, delimiterInfo)
+end_time <- Sys.time()
+oldTime <- end_time - start_time
+
+start_time <- Sys.time()
+newData <- extractColNames2(GSE1456, ": ", colnames(GSE1456))
+end_time <- Sys.time()
+newTime <- end_time - start_time
+
+print("Original function: ")
+print(oldTime)
+print("New function")
+print(newTime)
 
 extractColNames <- function(inputDataFrame, delimiterInfo)
 {
