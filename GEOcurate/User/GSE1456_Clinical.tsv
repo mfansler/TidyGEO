@@ -1,5 +1,0 @@
-	Outcome.Death	Breast.Cancer.Treatment.Outcomes.Scale.Cosmetic.Status	ELSTON	Relapse	Tumor.Subtype	Event.Free.Survival	Disease.Free.Survival
-GSM107074	1	0	1	0	Luminal A	ShortSurvival	LongSurvival
-GSM107112	1	0	2	0	Luminal A	ShortSurvival	LongSurvival
-GSM107222	0	0	2	0	Luminal A	8.49	8.49
-GSM107223	1	0	3	0	Normal Like	0.18	8.49

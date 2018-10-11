@@ -279,7 +279,8 @@ ui <- fluidPage(
                                                actionButton(inputId = "undoEvalExpr", label = "Undo")
                                              ),
                                              mainPanel(
-                                               withSpinner(DTOutput("exprPreview"), type = 5)
+                                               actionButton(inputId = "viewFilters", label = "View filters"),
+                                               withSpinner(dataTableOutput("exprPreview"), type = 5)
                                              )
                                            ))
                       )
@@ -1147,12 +1148,11 @@ server <- function(input, output, session) {
   
   output$exprPreview <- DT::renderDT({
     if(!is.null(values$previewExprData)) {
-      datatable(values$previewExprData, rownames = FALSE, options = list(dom = "tp"))
+      values$previewExprData
     } else {
-      datatable(data.frame("Please download some expression data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "tp"))
+      data.frame("Please download some expression data")
     }
-  })  
+  }, filter = "top", rownames = FALSE, options = list(dom = "tp"))  
   
   observeEvent(input$undoEvalExpr, {
     values$previewExprData <- values$exprToDisplay
@@ -1175,6 +1175,16 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       
+      values$exprData <- filterExpressionData(values$exprData, input$exprPreview_search_columns)
+      
+      #WRITING COMMANDS TO EXPRESSION RSCRIPT
+      before <- length(values$expression_oFile)
+      values$expression_oFile <- saveLines(c(commentify("filter data"),
+                                             paste0("filterSpecs <- ", formatString(input$exprPreview_search_columns)),
+                                             "expressionData <- filterExpressionData(expressionData, filterSpecs)"), 
+                                           values$expression_oFile)
+      values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
+      
       if (input$expression_fileType == "csv") {
         write.csv(values$exprData, file, row.names = FALSE, col.names = TRUE)
       }
@@ -1194,9 +1204,6 @@ server <- function(input, output, session) {
         write.xlsx(values$exprData, file, row.names = FALSE, showNA = FALSE)
         
       }
-      
-      values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
-      
     }
   )
   
@@ -1227,11 +1234,15 @@ server <- function(input, output, session) {
                                              values$expression_oFile)
       }
       
-      values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
-      
       saveToRscript(values$expression_oFile, file)
+      
+      values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
     }
   )
+  
+  observeEvent(input$viewFilters, {
+    print(input$exprPreview_search_columns)
+  })
 }
 
 shinyApp(ui = ui, server = server)

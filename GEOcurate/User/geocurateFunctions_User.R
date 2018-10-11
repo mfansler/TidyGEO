@@ -428,6 +428,7 @@ excludeVars <- function(metaData, specs) {
           metaData <- metaData[which(as.numeric(metaData[,variable]) >= bounds[1]),]
           metaData <- metaData[which(as.numeric(metaData[,variable]) <= bounds[2]),]
         }
+        metaData[,variable] <- as.numeric(metaData[,variable])
       }
       #print(metaData)
       toExclude <- toExclude[which(toExclude %in% metaData[,variable])]

@@ -101,7 +101,6 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
     }
     ))
     if(any(hasNA)) {
-      print("reached")
       featureData <- featureData[, -which(hasNA)]
     }
     
@@ -247,6 +246,7 @@ printVarsSummary <- function(metaData) {
 
 extractColNames <- function(inputDataFrame, delimiterInfo)
 {
+  print(delimiterInfo)
   incProgress()
   classAndClinical <- inputDataFrame
   prefixes = NULL
@@ -463,10 +463,13 @@ substituteVals <- function(classAndClinical, subSpecs)
         classAndClinical[,colToSub] <- sapply(classAndClinical[,colToSub], 
                                               function(x){
                                                 if (mySub[1] <= x && x <= mySub[2]) newVal[i] else x
-                                                })
+                                              })
       } else {
         classAndClinical[,colToSub] <- sapply(classAndClinical[,colToSub], 
-                                       function(x){gsub(x, pattern = toSub[i], replacement = newVal[i])})
+                                       function(x){
+                                         gsub(x, pattern = toSub[i], replacement = newVal[i])
+                                         }
+                                       )
       }
     }
   }
@@ -513,6 +516,7 @@ excludeVars <- function(metaData, specs) {
           metaData <- metaData[which(as.numeric(metaData[,variable]) >= bounds[1]),]
           metaData <- metaData[which(as.numeric(metaData[,variable]) <= bounds[2]),]
         }
+        metaData[,variable] <- as.numeric(metaData[,variable])
       }
       toExclude <- toExclude[which(toExclude %in% metaData[,variable])]
       metaData <- if (!identical(toExclude, character(0))) metaData[which(!(metaData[,variable] %in% toExclude)),] else metaData
@@ -598,4 +602,23 @@ findExprLabelColumns <- function(ftData) {
     length(unique(x)) == nrow(ftData)
   }))
   return(colnames(ftData[allDiff]))
+}
+
+filterExpressionData <- function(data, shinyFilterSpecs) {
+  
+  for(i in 1:length(shinyFilterSpecs)) {
+    if(grepl("\"", shinyFilterSpecs[i])) {
+      searchStrs <- shinyFilterSpecs[i] %>%
+        str_remove_all("\"") %>%
+        str_remove_all("\\[") %>%
+        str_remove_all("\\]") %>%
+        str_split(",")
+      searchStrs <- searchStrs[[1]]
+      data <- data %>% filter_at(i, any_vars(. %in% searchStrs))
+    } else {
+      searchStrs <- as.numeric(str_split(shinyFilterSpecs[i], " ... ")[[1]])
+      data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
+    }
+  }
+  return(data)
 }
