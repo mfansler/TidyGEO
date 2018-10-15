@@ -271,14 +271,16 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   }
   
   if(!is.null(errorMessage)) {
-    errorMessage <- c(paste0('Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".'),
+    errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
                       errorMessage)
-    tagsList <- tags$div(sapply(errorMessage, function(x){
-      HTML(as.character(tags$span(style = "color:red", x)))
-    }))
-    print(tagsList)
+    errorMessage <- paste(errorMessage, collapse = "<br/>")
+    errorMessage <- paste('<font color="red">', errorMessage, '</font>')
+    #tagsList <- tags$div(sapply(errorMessage, function(x){
+    #  HTML(as.character(tags$span(style = "color:red", x)))
+    #}))
+    #print(tagsList)
     showModal(
-      modalDialog(tagsList, title = "Error", footer = modalButton("OK")
+      modalDialog(HTML(errorMessage), title = "Error", footer = modalButton("OK")
       )
       )
   }
