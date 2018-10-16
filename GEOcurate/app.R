@@ -1,5 +1,5 @@
-source("https://bioconductor.org/biocLite.R")
-options(repos = BiocInstaller::biocinstallRepos())
+#source("https://bioconductor.org/biocLite.R")
+#options(repos = BiocInstaller::biocinstallRepos())
 
 library(shiny)
 library(DT)
@@ -20,13 +20,13 @@ source("geocurateFunctions.R")
 
 
 helpButton <- function(message = "content", placement = "right") {
-  return(tipify(icon("question-circle"), title = message, placement = placement, trigger = "hover"))
+  tipify(icon("question-circle"), title = message, placement = placement, trigger = "hover")
 }
 
 # detects variable type & formats string to be written to R script --------
 
 
-formatString <- function(el) {
+format_string <- function(el) {
   if(is.null(el)) {
     return("NULL")
   }
@@ -58,10 +58,10 @@ formatString <- function(el) {
 
 commentify <- function(myStr) {
   
-  numChars <- 75
+  num_chars <- 75
   comment <- paste0("# ", myStr, " ")
-  comment <- paste0(comment, paste(rep("-", numChars - nchar(comment)), collapse = ""))
-  return(c("", "", comment, ""))
+  comment <- paste0(comment, paste(rep("-", num_chars - nchar(comment)), collapse = ""))
+  c("", "", comment, "")
 }
 
 # download thesaurus files from working directory -------------------------
@@ -94,17 +94,17 @@ ui <- fluidPage(
                                                h4("Downloading the data"),
                                                textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                                                         helpButton('The GEO identifier for the dataset, e.g., "GSE1456"'))),
-                                               checkboxGroupInput(inputId = "filter", label = div("Would you like to filter any of the following?", 
+                                               checkboxGroupInput(inputId = "download_data_filter", label = div("Would you like to filter any of the following?", 
                                                                                                   helpButton("Removes columns right after downloading, according to the following specifications.")),
                                                                   choiceNames = list(div("All the same value", helpButton("Columns in which every value is the same are often uninformative.")), 
                                                                                      div("All different values", helpButton("Columns in which every value is different are often uninformative.")), 
                                                                                      div("Dates", helpButton("Removes columns in which every entry is in the format January 00 00 (for example).")),
                                                                                      div("Reanalyzed by", helpButton('Removes columns in which every entry contains the phrase "reanalyzed by", which are often uninformative.')), 
                                                                                      div("Web addresses", helpButton('Removes columns in which every entry is a web address beginning with "ftp:://"'))),
-                                                                  choiceValues = list("sameVals", "allDiff", "dates", "reanalyzed", "url")),
-                                               checkboxInput(inputId = "alsoDownload", label = div("Also download series matrix file",
+                                                                  choiceValues = list("same_vals", "all_diff", "dates", "reanalyzed", "url")),
+                                               checkboxInput(inputId = "to_download_expression", label = div("Also download series matrix file",
                                                                                                    helpButton("Files to download in addition to the metadata file."))),
-                                               actionButton(inputId = "download", label = "Download"),
+                                               actionButton(inputId = "download_data_evaluate", label = "Download"),
                                                hr(), uiOutput("nav_1_ui")
                                       ),
                                       
@@ -115,21 +115,21 @@ ui <- fluidPage(
                                       #specify which columns to split up, and the delimiter
                                       tabPanel("2",
                                                h4("Formatting the data"),
-                                               checkboxInput(inputId = "toSplit", label = div("Contains key-value pairs separated by a delimiter",
+                                               checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
                                                                                               helpButton('e.g. <b>"RELAPSE: 1"</b>'))),
-                                               conditionalPanel(condition = "input.toSplit == true",
-                                                                uiOutput("chooseSplitVars"),
-                                                                checkboxInput(inputId = "allButSplit", label = tags$i("split all BUT the specified")),
-                                                                textInput(inputId = "delimiter", label = "Delimiter (including any spaces): ")
+                                               conditionalPanel(condition = "input.to_split == true",
+                                                                uiOutput("choose_cols_to_split"),
+                                                                checkboxInput(inputId = "split_all_but", label = tags$i("split all BUT the specified")),
+                                                                textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
-                                               checkboxInput(inputId = "toDivide", label = div("Contains multiple values in one column",
+                                               checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
                                                                                                helpButton('e.g. <b>"responder;7;control"</b>'))),
-                                               conditionalPanel(condition = "input.toDivide == true",
-                                                                uiOutput("chooseDivideVars"),
-                                                                checkboxInput(inputId = "allButDivide", label = tags$i("split all BUT the specified")),
-                                                                textInput(inputId = "delimiter2", label = "Delimiter (including any spaces): ")
+                                               conditionalPanel(condition = "input.to_divide == true",
+                                                                uiOutput("choose_cols_to_divide"),
+                                                                checkboxInput(inputId = "divide_all_but", label = tags$i("split all BUT the specified")),
+                                                                textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
-                                               actionButton(inputId = "extractCols", label = "Extract columns"),
+                                               actionButton(inputId = "reformat_columns", label = "Reformat columns"),
                                                hr(), uiOutput("nav_2_ui")
                                       ),
                                       
@@ -284,7 +284,10 @@ ui <- fluidPage(
                                              )
                                            ))
                       )
-             ) # expression data tab panel
+             ), # expression data tab panel
+             tabPanel(title = "FAQ",
+                      includeMarkdown("FAQ.md")
+             )
   ) #master panel
 ) #fluidPage
 
@@ -348,7 +351,7 @@ server <- function(input, output, session) {
   
   # download & display metaData ---------------------------------------------
   
-  observeEvent(input$download, {
+  observeEvent(input$download_data_evaluate, {
     if (input$geoID == "") {
       values$errorState <- TRUE
       createAlert(session, "alert", "inputError", title = "Error",
@@ -359,16 +362,18 @@ server <- function(input, output, session) {
       closeAlert(session, "fileError")
       values$errorState <- FALSE
       
-      values$allData <- withProgress(downloadClinical(input$geoID, input$filter, session = session, 
-                                               downloadExpr = input$alsoDownload), 
+      values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session, 
+                                               downloadExpr = input$to_download_expression), 
                               message = "Downloading data")
       
       platforms <- sapply(values$allData, annotation)
       
-      showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-                                         choiceNames = unname(platforms), 
-                                         choiceValues = names(platforms)), 
-                            footer = actionButton(inputId = "usePlatform", label = "Use platform"), size = "s"))
+      if (length(platforms) > 0) {
+        showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+                                           choiceNames = unname(platforms), 
+                                           choiceValues = names(platforms)), 
+                              footer = actionButton(inputId = "usePlatform", label = "Use platform"), size = "s"))
+      }
       
     }
   })
@@ -377,10 +382,10 @@ server <- function(input, output, session) {
     
     removeModal()
     
-    extractedData <- withProgress(processData(values$allData, input$platformIndex, input$filter, input$alsoDownload))
+    extractedData <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, input$to_download_expression))
     
     values$metaData <- extractedData[["metaData"]]
-    if (input$alsoDownload) {
+    if (input$to_download_expression) {
       values$exprData <- extractedData[["expressionData"]]
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
       values$previewExprData <- values$exprToDisplay
@@ -393,18 +398,18 @@ server <- function(input, output, session) {
     values$oFile <- "source('geocurateFunctions_User.R')"
     values$oFile <- saveLines(commentify("download metaData"), values$oFile)
     values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
-    for (i in 1:length(input$filter)) {
-      values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", formatString(input$filter[i])), values$oFile)
+    for (i in 1:length(input$download_data_filter)) {
+      values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", format_string(input$download_data_filter[i])), values$oFile)
     }
-    values$oFile <- saveLines(paste0("dataSetIndex <- ", formatString(input$platformIndex)), values$oFile)
-    values$oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
+    values$oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$oFile)
+    values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
     downloadChunkLen <- length(values$oFile)
     
-    if(input$alsoDownload) {
+    if(input$to_download_expression) {
       #WRITING COMMANDS TO EXPRESSION R SCRIPT
       values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
-      values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", formatString(input$platformIndex)), values$expression_oFile)
-      values$expression_oFile <- saveLines(c(paste0("geoID <- ", formatString(input$geoID)),
+      values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
+      values$expression_oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)),
                                              "allData <- downloadExpression(geoID, dataSetIndex)",
                                              "expressionData <- allData[['expressionData']]",
                                              "featureData <- allData[['featureData']]"), 
@@ -503,44 +508,44 @@ server <- function(input, output, session) {
   # extract columns ---------------------------------------------------------
   
   
-  output$chooseSplitVars <- renderUI({
+  output$choose_cols_to_split <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
-    checkboxGroupInput(inputId = "colsToSplit", label = "Which columns contain key-value pairs?", colNames)
+    checkboxGroupInput(inputId = "cols_to_split", label = "Which columns contain key-value pairs?", colNames)
   })
   
-  output$chooseDivideVars <- renderUI({
+  output$choose_cols_to_divide <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     checkboxGroupInput(inputId = "colsToDivide", label = "Which columns contain multiple values?", colNames)
   })
   
   
-  observeEvent(input$extractCols, ({values$lastData <- values$metaData
-  values$metaData <- withProgress(extractCols(values$metaData, 
-                                              input$toSplit, 
-                                              input$colsToSplit, 
-                                              input$toDivide, 
+  observeEvent(input$reformat_columns, ({values$lastData <- values$metaData
+  values$metaData <- withProgress(reformat_columns(values$metaData, 
+                                              input$to_split, 
+                                              input$cols_to_split, 
+                                              input$to_divide, 
                                               input$colsToDivide, 
-                                              input$delimiter,
-                                              input$delimiter2,
-                                              input$allButSplit,
-                                              input$allButDivide), message = "Extracting columns")
+                                              input$split_delimiter,
+                                              input$divide_delimiter,
+                                              input$split_all_but,
+                                              input$divide_all_but), message = "Extracting columns")
   #WRITING COMMANDS TO R SCRIPT
   before <- length(values$oFile)
   values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
-  values$oFile <- saveLines(paste0("colsToSplit <- NULL"), values$oFile)
-  for (i in 1:length(input$colsToSplit)) {
-    values$oFile <- saveLines(paste0("colsToSplit[", i, "] <- ", formatString(input$colsToSplit[i])), values$oFile)
+  values$oFile <- saveLines(paste0("cols_to_split <- NULL"), values$oFile)
+  for (i in 1:length(input$cols_to_split)) {
+    values$oFile <- saveLines(paste0("cols_to_split[", i, "] <- ", format_string(input$cols_to_split[i])), values$oFile)
   }
   values$oFile <- saveLines(paste0("colsToDivide <- NULL"), values$oFile)
   for (i in 1:length(input$colsToDivide)) {
-    values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", formatString(input$colsToDivide[i])), values$oFile)
+    values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", format_string(input$colsToDivide[i])), values$oFile)
   }
-  values$oFile <- saveLines(c(paste0("toSplit <- ", formatString(input$toSplit)), paste0("toDivide <- ", formatString(input$toDivide)),
-                              paste0("delimiter <- ", formatString(input$delimiter)), 
-                              paste0("delimiter2 <- ", formatString(input$delimiter2)),
-                              paste0("allButSplit <- ", formatString(input$allButSplit)), 
-                              paste0("allButDivide <- ", formatString(input$allButDivide)),
-                              "metaData <- extractCols(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide)"), 
+  values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
+                              paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
+                              paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
+                              paste0("split_all_but <- ", format_string(input$split_all_but)), 
+                              paste0("divide_all_but <- ", format_string(input$divide_all_but)),
+                              "metaData <- reformat_columns(metaData, toSplit, cols_to_split, to_divide, colsToDivide, split_delimiter, divide_delimiter, split_all_but, divide_all_but)"), 
                             values$oFile)
   values$currChunkLen <- length(values$oFile) - before
   }))
@@ -563,9 +568,9 @@ server <- function(input, output, session) {
     values$oFile <- saveLines(commentify("exclude undesired columns"), values$oFile)
     values$oFile <- saveLines(paste0("varsToKeep <- NULL"), values$oFile)
     for (i in 1:length(input$varsToKeep)) {
-      values$oFile <- saveLines(paste0("varsToKeep[", i, "] <- ", formatString(input$varsToKeep[i])), values$oFile)
+      values$oFile <- saveLines(paste0("varsToKeep[", i, "] <- ", format_string(input$varsToKeep[i])), values$oFile)
     }
-    values$oFile <- saveLines(c(paste0("allButKeep <- ", formatString(input$allButKeep)),
+    values$oFile <- saveLines(c(paste0("allButKeep <- ", format_string(input$allButKeep)),
                                 "metaData <- filterCols(metaData, varsToKeep, allButKeep)"), 
                               values$oFile)
     values$currChunkLen <- length(values$oFile) - before
@@ -642,7 +647,7 @@ server <- function(input, output, session) {
     values$oFile <- saveLines(commentify("rename columns"), values$oFile)
     values$oFile <- saveLines(paste0("newNames <- NULL"), values$oFile)
     for (i in 1:length(values$newNames)) {
-      values$oFile <- saveLines(paste0("newNames[[", formatString(names(values$newNames)[i]), "]] <- ", formatString(values$newNames[[i]])), values$oFile)
+      values$oFile <- saveLines(paste0("newNames[[", format_string(names(values$newNames)[i]), "]] <- ", format_string(values$newNames[[i]])), values$oFile)
     }
     values$oFile <- saveLines("metaData <- renameCols(metaData, newNames)", 
                               values$oFile)
@@ -804,11 +809,11 @@ server <- function(input, output, session) {
       values$oFile <- saveLines(commentify("substitute values"), values$oFile)
       values$oFile <- saveLines(paste0("tablesList <- NULL"), values$oFile)
       for (i in 1:length(values$tablesList)) {
-        values$oFile <- saveLines(paste0("tablesList[[", formatString(names(values$tablesList)[i]), "]] <- ",
+        values$oFile <- saveLines(paste0("tablesList[[", format_string(names(values$tablesList)[i]), "]] <- ",
                                          "data.frame(", colnames(values$tablesList[[i]])[1], "=c(", 
-                                         paste(formatString(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
+                                         paste(format_string(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
                                          colnames(values$tablesList[[i]])[2], "=c(", 
-                                         paste(formatString(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
+                                         paste(format_string(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
       }
       values$oFile <- saveLines("metaData <- substituteVals(metaData, tablesList)", 
                                 values$oFile)
@@ -883,8 +888,8 @@ server <- function(input, output, session) {
     values$oFile <- saveLines(commentify("exclude undesired samples"), values$oFile)
     values$oFile <- saveLines(paste0("excludesList <- NULL"), values$oFile)
     for (i in 1:length(values$excludesList)) {
-      values$oFile <- saveLines(paste0("excludesList[[", formatString(names(values$excludesList)[i]), "]] <- ", 
-                                       formatString(values$excludesList[[i]])), values$oFile)
+      values$oFile <- saveLines(paste0("excludesList[[", format_string(names(values$excludesList)[i]), "]] <- ", 
+                                       format_string(values$excludesList[[i]])), values$oFile)
     }
     values$oFile <- saveLines("metaData <- excludeVars(metaData, excludesList)", 
                               values$oFile)
@@ -941,7 +946,7 @@ server <- function(input, output, session) {
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("save data"), values$oFile)
       values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
-                                  paste0("file <- ", formatString(input$userFileName))), values$oFile)
+                                  paste0("file <- ", format_string(input$userFileName))), values$oFile)
       
       if (input$fileType == "csv") {
         values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
@@ -1103,8 +1108,8 @@ server <- function(input, output, session) {
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
       values$expression_oFile <- saveLines(c(commentify("replace ID column"),
                                              paste0("expressionData <- replaceID(expressionData, featureData, ", 
-                                                    formatString(input$colForExprLabels), ", ",
-                                                    formatString(input$howToSummarize), ")")), 
+                                                    format_string(input$colForExprLabels), ", ",
+                                                    format_string(input$howToSummarize), ")")), 
                                            values$expression_oFile)
       if(input$transposeExpr) {
         values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
@@ -1180,7 +1185,7 @@ server <- function(input, output, session) {
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
       before <- length(values$expression_oFile)
       values$expression_oFile <- saveLines(c(commentify("filter data"),
-                                             paste0("filterSpecs <- ", formatString(input$exprPreview_search_columns)),
+                                             paste0("filterSpecs <- ", format_string(input$exprPreview_search_columns)),
                                              "expressionData <- filterExpressionData(expressionData, filterSpecs)"), 
                                            values$expression_oFile)
       values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
@@ -1215,7 +1220,7 @@ server <- function(input, output, session) {
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$expression_oFile)
       values$expression_oFile <- saveLines(commentify("save expression data"), values$expression_oFile)
-      values$expression_oFile <- saveLines(paste0("file <- ", formatString(input$expression_userFileName)), values$expression_oFile)
+      values$expression_oFile <- saveLines(paste0("file <- ", format_string(input$expression_userFileName)), values$expression_oFile)
       
       if (input$expression_fileType == "csv") {
         values$expression_oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE, col.names = TRUE)"), values$expression_oFile)

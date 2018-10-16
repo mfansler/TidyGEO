@@ -165,8 +165,8 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       }
       
       uniqueVals <- unique(as.factor(as.character(toupper(temp))))
-      notAllSame <- if("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
-      notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
+      notAllSame <- if("same_vals" %in% toFilter) length(uniqueVals) > 1 else TRUE
+      notAllDifferent <- if("all_diff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
       # && !isTooLong
       
@@ -299,7 +299,7 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
   return(metaData)
 }
 
-extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
+reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
   
   if(toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
     delimiterInfo <- NULL
