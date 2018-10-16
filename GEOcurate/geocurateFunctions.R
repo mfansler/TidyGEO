@@ -275,51 +275,27 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
                       errorMessage)
     errorMessage <- paste(errorMessage, collapse = "<br/>")
     errorMessage <- paste('<font color="red">', errorMessage, '</font>')
-    #tagsList <- tags$div(sapply(errorMessage, function(x){
-    #  HTML(as.character(tags$span(style = "color:red", x)))
-    #}))
-    #print(tagsList)
     showModal(
       modalDialog(HTML(errorMessage), title = "Error", footer = modalButton("OK")
       )
       )
   }
   
-  inputDataFrame <- filterUninformativeCols(inputDataFrame, list("none"))
   return(inputDataFrame)
 }
 
-splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements)
-{
-  incProgress()
-  
+splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
   targetCols <- colsToDivide
   for (colName in targetCols) {
     targetCol <- metaData[,colName]
-    if (numElements[[colName]] > 1) {
+    if(numElements[[colName]] > 1) {
       colNames <- NULL
       for (i in 1:numElements[[colName]]) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
       }
-      newData <- data.frame(matrix(nrow = length(targetCol), ncol = length(colNames)))
-      colnames(newData) <- colNames
-      for (index in 1:length(targetCol)) {
-        delimiter <- as.character(delimiter)
-        newVar <- as.character(targetCol[index])
-        vars <- str_split(newVar, delimiter)[[1]]
-        vars <- str_trim(vars)
-        for (i in 1:length(vars)) {
-          newData[index, colNames[i]] <- vars[i]
-        }
-      }
-      metaData <- cbind(metaData, newData)
-      metaData <- metaData[, which(colnames(metaData) != colName)]
+      metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
     }
-    incProgress()
   }
-  
-  metaData <- filterUninformativeCols(metaData, list("none"))
-  
   return(metaData)
 }
 
@@ -347,13 +323,15 @@ extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, 
     for (col in colsToDivide) {
       numElements[[col]] <- length(str_split(metaData[1, col], delimiter2)[[1]])
     }
-
+    
     metaData <- splitCombinedVars(metaData, colsToDivide, delimiter2, numElements)
   }
   
-  for (col in colnames(metaData)) {
-    metaData[,col] <- sapply(metaData[,col], function(x){gsub(x, pattern = "NA", replacement = NA)})
-  }
+  metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    gsub(x, pattern = "NA", replacement = NA)
+  }))
+  
+  metaData <- filterUninformativeCols(metaData)
   
   return(metaData)
 }

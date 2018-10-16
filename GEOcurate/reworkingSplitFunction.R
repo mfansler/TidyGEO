@@ -68,15 +68,16 @@ extractCols2 <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide,
     metaData <- splitCombinedVars2(metaData, colsToDivide, delimiter2, numElements)
   }
   
-  for (col in colnames(metaData)) {
-    metaData[,col] <- sapply(metaData[,col], function(x){gsub(x, pattern = "NA", replacement = NA)})
-  }
+  #for (col in colnames(metaData)) {
+  #  metaData[,col] <- sapply(metaData[,col], function(x){gsub(x, pattern = "NA", replacement = NA)})
+  #}
+  
+  metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    gsub(x, pattern = "NA", replacement = NA)
+  }))
   
   return(metaData)
 }
-#time these
-oldSplit <- extractCols_test(GSE1456, FALSE, NULL, TRUE, c("characteristics_ch1.3"), NULL, ": ", FALSE, FALSE)
-newSplit <- extractCols2(GSE1456, FALSE, NULL, TRUE, c("characteristics_ch1.3"), NULL, ": ", FALSE, FALSE)
 
 splitCombinedVars2 <- function(metaData, colsToDivide, delimiter, numElements) {
   targetCols <- colsToDivide
@@ -125,3 +126,16 @@ splitCombinedVars_test <- function(metaData, colsToDivide, delimiter, numElement
   
   return(metaData)
 }
+
+start_time <- Sys.time()
+oldSplit <- extractCols_test(GSE1456, FALSE, NULL, TRUE, c("SampleID"), NULL, ": ", FALSE, FALSE)
+end_time <- Sys.time()
+old_time <- end_time - start_time
+start_time <- Sys.time()
+newSplit <- extractCols2(GSE1456, FALSE, NULL, TRUE, c("SampleID"), NULL, ": ", FALSE, FALSE)
+end_time <- Sys.time()
+new_time <- end_time - start_time
+print("Old time")
+print(old_time)
+print("New time")
+print(new_time)
