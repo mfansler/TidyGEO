@@ -1,6 +1,3 @@
-#source("https://bioconductor.org/biocLite.R")
-#options(repos = BiocInstaller::biocinstallRepos())
-
 library(shiny)
 library(DT)
 library(shinycssloaders)
@@ -157,6 +154,7 @@ ui <- fluidPage(
                                                actionButton("save", "Save"),
                                                actionButton("delete", "Remove"), br(),
                                                br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
+                                               #DTOutput("new_name_contents"),
                                                tableOutput("new_name_contents"),
                                                actionButton(inputId = "rename", label = "Rename columns"),
                                                hr(), uiOutput("nav_4_ui")
@@ -385,6 +383,7 @@ server <- function(input, output, session) {
     extractedData <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, input$to_download_expression))
     
     values$metaData <- extractedData[["metaData"]]
+    #colnames(values$metaData) <- make.names(colnames(values$metaData))
     if (input$to_download_expression) {
       values$exprData <- extractedData[["expressionData"]]
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
@@ -457,7 +456,7 @@ server <- function(input, output, session) {
     if (!is.null(values$metaData)) {
       plot_output_list <- lapply(1:plotInput()$n_plot, function(i) {
         if (!grepl("evalSame", colnames(values$metaData)[i])) {
-          plotname <- colnames(values$metaData)[i]
+          plotname <- make.names(colnames(values$metaData)[i])
           plotHeight <- if(isAllNum(values$metaData[i])) 500 else 280
           plotOutput(plotname, height = plotHeight, width = "auto")
         }
@@ -469,7 +468,7 @@ server <- function(input, output, session) {
   observe({
     if (!is.null(values$metaData)) {
       lapply(1:plotInput()$n_plot, function(i){
-        output[[ colnames(values$metaData)[i] ]] <- renderPlot({
+        output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlot({
           #create a histogram if it's numeric, a barplot if it's a factor
           if (isAllNum(values$metaData[i])) {
             hist(as.numeric(as.character(plotInput()$total_data[[i]])), main = colnames(values$metaData)[i], xlab = "Value range", ylab = "Frequency", col = "darkblue", labels = TRUE)
@@ -598,7 +597,7 @@ server <- function(input, output, session) {
   output$showCols <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
-    selectInput(inputId = "colsToRename", label = "Which columns would you like to rename?", choices = colNames)
+    selectInput(inputId = "colsToRename", label = "Which column would you like to rename?", choices = colNames)
   })
   
   #output$newName <- renderRHandsontable({
@@ -633,6 +632,10 @@ server <- function(input, output, session) {
   observeEvent(input$delete, {
     values$newNames <- values$newNames[-(length(values$newNames))]
   })
+  
+  #output$new_name_contents <- renderDT({
+  #  data.frame(names(values$newNames), values$newNames)
+  #}, rownames = FALSE, options = list(dom = "t"))
   
   output$new_name_contents <- renderTable(colnames = FALSE, {
     data.frame(names(values$newNames), values$newNames)
@@ -732,10 +735,9 @@ server <- function(input, output, session) {
   })
   
   output$hotOut <- renderDT({
-    datatable(if(!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) 
-      values$tablesList[[input$colsToSub]] else values$DFOut, options = list(paging = F, searching = F))
-    
-  })
+    if(!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) 
+      values$tablesList[[input$colsToSub]] else values$DFOut
+  }, rownames = FALSE, options = list(dom = "t"))
   
   observeEvent(input$hotIn, {
     values$DFIn <- hot_to_r(input$hotIn)

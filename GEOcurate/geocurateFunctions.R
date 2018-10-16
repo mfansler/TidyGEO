@@ -377,7 +377,7 @@ renameCols <- function(metaData, newNames, session) {
       updatedCols <- c(updatedCols, colName)
     }
   }
-  updatedCols <- make.names(updatedCols)
+  updatedCols <- make.names(updatedCols, unique = TRUE)
   colnames(metaData) <- updatedCols
   
   return(metaData)
