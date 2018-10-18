@@ -64,8 +64,8 @@ commentify <- function(myStr) {
 # download thesaurus files from working directory -------------------------
 
 
-thesaurus.synonyms.feather <- read_feather("thesaurus.synonyms.feather")
-thesaurus.preferred.feather <- read_feather("thesaurus.preferred.feather")
+#thesaurus.synonyms.feather <- read_feather("thesaurus.synonyms.feather")
+#thesaurus.preferred.feather <- read_feather("thesaurus.preferred.feather")
 
 options(shiny.autoreload = F)
 
@@ -148,8 +148,9 @@ ui <- fluidPage(
                                       tabPanel("4",
                                                uiOutput("showCols"),
                                                #rHandsontableOutput("newName"),
-                                               selectizeInput("newNameSelect", label = "Please specify a new name for the column.", 
-                                                              choices = c(""), options = list(create = TRUE)),
+                                               textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
+                                               #selectizeInput("newNameSelect", label = "Please specify a new name for the column.", 
+                                              #                choices = c(""), options = list(create = TRUE)),
                                                uiOutput("thesLink"),
                                                actionButton("save", "Save"),
                                                actionButton("delete", "Remove"), br(),
@@ -579,20 +580,20 @@ server <- function(input, output, session) {
   
   # rename columns ----------------------------------------------------------
   
-  observe({
-    input$colsToRename
-    if (!is.null(input$colsToRename) && input$colsToRename != "" && (input$colsToRename %in% colnames(values$metaData))) {
-      spacers <- c(" ", "\\.", "\\_")
-      toSearch <- input$colsToRename
-      for (x in spacers) {
-        toSearch <- str_split(toSearch, x)[[1]]
-        sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
-        toSearch <- paste(toSearch, collapse = sep)
-      }
-      synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-      values$thes_suggest <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-    }
-  })
+  #observe({
+  #  input$colsToRename
+  #  if (!is.null(input$colsToRename) && input$colsToRename != "" && (input$colsToRename %in% colnames(values$metaData))) {
+  #    spacers <- c(" ", "\\.", "\\_")
+  #    toSearch <- input$colsToRename
+  #    for (x in spacers) {
+  #      toSearch <- str_split(toSearch, x)[[1]]
+  #      sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
+  #      toSearch <- paste(toSearch, collapse = sep)
+  #    }
+  #    synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
+  #    values$thes_suggest <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
+  #  }
+  #})
   
   output$showCols <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
@@ -605,9 +606,9 @@ server <- function(input, output, session) {
   #    hot_col(col = "Enter a new name: ", type = "autocomplete", source = values$thes_suggest, strict = FALSE)
   #})
   
-  observe({
-    updateSelectizeInput(session, "newNameSelect", choices = values$thes_suggest, server = TRUE)
-  })
+  #observe({
+  #  updateSelectizeInput(session, "newNameSelect", choices = values$thes_suggest, server = TRUE)
+  #})
   
   #observe({
   #  if (!is.null(input$newName)) {
@@ -615,18 +616,19 @@ server <- function(input, output, session) {
   #  }
   #})
   
-  output$thesLink <- renderUI({
-    if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"]), "character(0)")) {
-      url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
-                                                as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"])), 
-               values$newName)
-      tagList("NCI Thesaurus link:", url)
-    }
-  })
+  #output$thesLink <- renderUI({
+  #  if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"]), "character(0)")) {
+  #    url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
+  #                                              as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"])), 
+  #             values$newName)
+  #    tagList("NCI Thesaurus link:", url)
+  #  }
+  #})
   
   observeEvent(input$save, {
     #values$newNames[[input$colsToRename]] <- if (!is.null(values$newName)) values$newName else input$colsToRename
-    values$newNames[[input$colsToRename]] <- if (!is.null(input$newNameSelect) && input$newNameSelect != "") input$newNameSelect else input$colsToRename
+    #values$newNames[[input$colsToRename]] <- if (!is.null(input$newNameSelect) && input$newNameSelect != "") input$newNameSelect else input$colsToRename
+    values$newNames[[input$colsToRename]] <- if (!is.null(input$rename_new_name) && input$rename_new_name != "") input$rename_new_name else input$colsToRename
   })
   
   observeEvent(input$delete, {
@@ -686,47 +688,47 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$colsToSub, {
-    
-    values$suggestions <- if (!is.null(input$colsToSub) && input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) unique(as.character(values$metaData[,input$colsToSub]))
-  }, ignoreInit = T, ignoreNULL = T)
-  
-  observeEvent(input$hotIn, {
-    
-    
-    val <- if(!is.null(input$hotIn)) hot_to_r(input$hotIn)$To_Replace else ""
-    
-    if (!is.null(val) && val != "" && !identical(val, character(0))) {
-      
-      synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(val, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-      
-      if(length(synonyms > 0)) {
-        values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-      }
-      else {
-        spacers <- c(" ", "\\.", "\\_")
-        toSearch <- val
-        for (x in spacers) {
-          toSearch <- str_split(toSearch, x)[[1]]
-          sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
-          toSearch <- paste(toSearch, collapse = sep)
-        }
-        synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-        values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-      }
-      
-    }
-  }, ignoreInit = T, ignoreNULL = T)
-  
-  output$thesLinkSub <- renderUI({
-    if("New_Val" %in% colnames(values$DFIn) && values$DFIn[,"New_Val"] != "") {
-      if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"]), "character(0)")) {
-        url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
-                                                  as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"])), 
-                 values$DFIn[,"New_Val"])
-        tagList("NCI Thesaurus link:", url)
-      }
-    }
+    values$suggestions <- if (input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) 
+      unique(as.character(values$metaData[,input$colsToSub]))
   })
+  
+  #observeEvent(input$hotIn, {
+  #  
+  #  
+  #  val <- if(!is.null(input$hotIn)) hot_to_r(input$hotIn)$To_Replace else ""
+  #  
+  #  if (!is.null(val) && val != "" && !identical(val, character(0))) {
+  #    
+  #    synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(val, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
+  #    
+  #    if(length(synonyms > 0)) {
+  #      values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
+  #    }
+  #    else {
+  #      spacers <- c(" ", "\\.", "\\_")
+  #      toSearch <- val
+  #      for (x in spacers) {
+  #        toSearch <- str_split(toSearch, x)[[1]]
+  #        sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
+  #        toSearch <- paste(toSearch, collapse = sep)
+  #      }
+  #      synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
+  #      values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
+  #    }
+  #    
+  #  }
+  #}, ignoreInit = T, ignoreNULL = T)
+  
+  #output$thesLinkSub <- renderUI({
+  #  if("New_Val" %in% colnames(values$DFIn) && values$DFIn[,"New_Val"] != "") {
+  #    if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"]), "character(0)")) {
+  #      url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
+  #                                                as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"])), 
+  #               values$DFIn[,"New_Val"])
+  #      tagList("NCI Thesaurus link:", url)
+  #    }
+  #  }
+  #})
   
   output$hotIn <- renderRHandsontable({
     rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
@@ -823,6 +825,7 @@ server <- function(input, output, session) {
       
       values$tablesList <- list()
       values$DFOut <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
+      values$suggestions <- unique(as.character(values$metaData[,input$colsToSub]))
       
     }
   })
