@@ -20,6 +20,17 @@ helpButton <- function(message = "content", placement = "right") {
   tipify(icon("question-circle"), title = message, placement = placement, trigger = "hover")
 }
 
+help_modal <- function(id) {
+  actionLink(inputId = id, label = icon("question-circle"))
+  #clickable icon that can be added to any text
+  #upon click, the icon shows a modal specific to that icon
+  #the modal contains any instructions and images associated with that icon
+  #showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+  #                                   choiceNames = unname(platforms), 
+  #                                   choiceValues = names(platforms)), 
+  #                      footer = actionButton(inputId = "usePlatform", label = "Use platform"), size = "s"))
+}
+
 # detects variable type & formats string to be written to R script --------
 
 
@@ -60,12 +71,6 @@ commentify <- function(myStr) {
   comment <- paste0(comment, paste(rep("-", num_chars - nchar(comment)), collapse = ""))
   c("", "", comment, "")
 }
-
-# download thesaurus files from working directory -------------------------
-
-
-#thesaurus.synonyms.feather <- read_feather("thesaurus.synonyms.feather")
-#thesaurus.preferred.feather <- read_feather("thesaurus.preferred.feather")
 
 options(shiny.autoreload = F)
 
@@ -149,13 +154,9 @@ ui <- fluidPage(
                                                uiOutput("showCols"),
                                                #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
-                                               #selectizeInput("newNameSelect", label = "Please specify a new name for the column.", 
-                                              #                choices = c(""), options = list(create = TRUE)),
-                                               uiOutput("thesLink"),
                                                actionButton("save", "Save"),
                                                actionButton("delete", "Remove"), br(),
                                                br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
-                                               #DTOutput("new_name_contents"),
                                                tableOutput("new_name_contents"),
                                                actionButton(inputId = "rename", label = "Rename columns"),
                                                hr(), uiOutput("nav_4_ui")
@@ -215,7 +216,7 @@ ui <- fluidPage(
                                      br(), br(), 
                                      bsAlert("alert"), withSpinner(DTOutput("dataset"), type = 5)
                             ),
-                            tabPanel("Summary", #verbatimTextOutput("metaSummary")
+                            tabPanel("Summary",
                                      
                                      uiOutput("plots")
                             ),
@@ -284,6 +285,9 @@ ui <- fluidPage(
                                            ))
                       )
              ), # expression data tab panel
+             tabPanel(title = "Image testing",
+                      img(src = "separate_example.gif"),
+                      help_modal("test_help")),
              tabPanel(title = "FAQ",
                       includeMarkdown("FAQ.md")
              )
@@ -384,7 +388,6 @@ server <- function(input, output, session) {
     extractedData <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, input$to_download_expression))
     
     values$metaData <- extractedData[["metaData"]]
-    #colnames(values$metaData) <- make.names(colnames(values$metaData))
     if (input$to_download_expression) {
       values$exprData <- extractedData[["expressionData"]]
       values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
@@ -580,50 +583,11 @@ server <- function(input, output, session) {
   
   # rename columns ----------------------------------------------------------
   
-  #observe({
-  #  input$colsToRename
-  #  if (!is.null(input$colsToRename) && input$colsToRename != "" && (input$colsToRename %in% colnames(values$metaData))) {
-  #    spacers <- c(" ", "\\.", "\\_")
-  #    toSearch <- input$colsToRename
-  #    for (x in spacers) {
-  #      toSearch <- str_split(toSearch, x)[[1]]
-  #      sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
-  #      toSearch <- paste(toSearch, collapse = sep)
-  #    }
-  #    synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-  #    values$thes_suggest <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-  #  }
-  #})
-  
   output$showCols <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
     selectInput(inputId = "colsToRename", label = "Which column would you like to rename?", choices = colNames)
   })
-  
-  #output$newName <- renderRHandsontable({
-  #  rhandsontable(data.frame(`Enter a new name: ` = "", stringsAsFactors = FALSE, check.names = F), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
-  #    hot_col(col = "Enter a new name: ", type = "autocomplete", source = values$thes_suggest, strict = FALSE)
-  #})
-  
-  #observe({
-  #  updateSelectizeInput(session, "newNameSelect", choices = values$thes_suggest, server = TRUE)
-  #})
-  
-  #observe({
-  #  if (!is.null(input$newName)) {
-  #    values$newName <- hot_to_r(input$newName)[which(colnames(hot_to_r(input$newName)) == "Enter a new name: "),]
-  #  }
-  #})
-  
-  #output$thesLink <- renderUI({
-  #  if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"]), "character(0)")) {
-  #    url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
-  #                                              as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$newName), "Code"])), 
-  #             values$newName)
-  #    tagList("NCI Thesaurus link:", url)
-  #  }
-  #})
   
   observeEvent(input$save, {
     #values$newNames[[input$colsToRename]] <- if (!is.null(values$newName)) values$newName else input$colsToRename
@@ -634,10 +598,6 @@ server <- function(input, output, session) {
   observeEvent(input$delete, {
     values$newNames <- values$newNames[-(length(values$newNames))]
   })
-  
-  #output$new_name_contents <- renderDT({
-  #  data.frame(names(values$newNames), values$newNames)
-  #}, rownames = FALSE, options = list(dom = "t"))
   
   output$new_name_contents <- renderTable(colnames = FALSE, {
     data.frame(names(values$newNames), values$newNames)
@@ -691,44 +651,6 @@ server <- function(input, output, session) {
     values$suggestions <- if (input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) 
       unique(as.character(values$metaData[,input$colsToSub]))
   })
-  
-  #observeEvent(input$hotIn, {
-  #  
-  #  
-  #  val <- if(!is.null(input$hotIn)) hot_to_r(input$hotIn)$To_Replace else ""
-  #  
-  #  if (!is.null(val) && val != "" && !identical(val, character(0))) {
-  #    
-  #    synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(val, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-  #    
-  #    if(length(synonyms > 0)) {
-  #      values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-  #    }
-  #    else {
-  #      spacers <- c(" ", "\\.", "\\_")
-  #      toSearch <- val
-  #      for (x in spacers) {
-  #        toSearch <- str_split(toSearch, x)[[1]]
-  #        sep <- if (!all(nchar(toSearch) > 1)) " " else "|"
-  #        toSearch <- paste(toSearch, collapse = sep)
-  #      }
-  #      synonyms <- unique(thesaurus.synonyms.feather$Code[which(grepl(toSearch, thesaurus.synonyms.feather$Synonyms, ignore.case = T))])
-  #      values$thes_suggest_vals <- c(thesaurus.preferred.feather$Preferred_Name[which(thesaurus.preferred.feather$Code %in% synonyms)], NA)
-  #    }
-  #    
-  #  }
-  #}, ignoreInit = T, ignoreNULL = T)
-  
-  #output$thesLinkSub <- renderUI({
-  #  if("New_Val" %in% colnames(values$DFIn) && values$DFIn[,"New_Val"] != "") {
-  #    if (!identical(as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"]), "character(0)")) {
-  #      url <- a(target = "_blank", href = paste0("https://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&ns=ncit&code=", 
-  #                                                as.character(thesaurus.preferred.feather[which(thesaurus.preferred.feather$Preferred_Name == values$DFIn[,"New_Val"]), "Code"])), 
-  #               values$DFIn[,"New_Val"])
-  #      tagList("NCI Thesaurus link:", url)
-  #    }
-  #  }
-  #})
   
   output$hotIn <- renderRHandsontable({
     rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
