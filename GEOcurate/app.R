@@ -20,15 +20,23 @@ helpButton <- function(message = "content", placement = "right") {
   tipify(icon("question-circle"), title = message, placement = placement, trigger = "hover")
 }
 
-help_modal <- function(id) {
+help_link <- function(id) {
   actionLink(inputId = id, label = icon("question-circle"))
   #clickable icon that can be added to any text
   #upon click, the icon shows a modal specific to that icon
   #the modal contains any instructions and images associated with that icon
-  #showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-  #                                   choiceNames = unname(platforms), 
-  #                                   choiceValues = names(platforms)), 
-  #                      footer = actionButton(inputId = "usePlatform", label = "Use platform"), size = "s"))
+  #showModal(modalDialog(includeMarkdown(help_file), 
+  #                      footer = modalButton()))
+}
+
+help_modal <- function(help_file) {
+  showModal(
+    modalDialog(
+      includeMarkdown(help_file), 
+      footer = modalButton("Close"),
+      size = "l"
+      )
+    )
 }
 
 # detects variable type & formats string to be written to R script --------
@@ -118,7 +126,7 @@ ui <- fluidPage(
                                       tabPanel("2",
                                                h4("Formatting the data"),
                                                checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
-                                                                                              helpButton('e.g. <b>"RELAPSE: 1"</b>'))),
+                                                                                              help_link(id = "split_help"))),
                                                conditionalPanel(condition = "input.to_split == true",
                                                                 uiOutput("choose_cols_to_split"),
                                                                 checkboxInput(inputId = "split_all_but", label = tags$i("split all BUT the specified")),
@@ -285,9 +293,6 @@ ui <- fluidPage(
                                            ))
                       )
              ), # expression data tab panel
-             tabPanel(title = "Image testing",
-                      img(src = "separate_example.gif"),
-                      help_modal("test_help")),
              tabPanel(title = "FAQ",
                       includeMarkdown("FAQ.md")
              )
@@ -971,6 +976,12 @@ server <- function(input, output, session) {
   })
   observeEvent(input$nav_6_to_5_button, {
     updateTabsetPanel(session, 'sidePanel', selected = '5')
+  })
+
+  # help modals -------------------------------------------------------------
+
+  observeEvent(input$split_help, {
+    help_modal("Split_Vars_Documentation.md")
   })
   
   
