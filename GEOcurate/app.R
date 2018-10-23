@@ -103,7 +103,9 @@ ui <- fluidPage(
                                       tabPanel("1",
                                                h4("Downloading the data"),
                                                textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                                                                        helpButton('The GEO identifier for the dataset, e.g., "GSE1456"'))),
+                                                                                        helpButton('The GEO identifier for the dataset, e.g., "GSE68849"'))),
+                                               uiOutput("gse_link"),
+                                               br(),
                                                checkboxGroupInput(inputId = "download_data_filter", label = div("Would you like to filter any of the following?", 
                                                                                                   helpButton("Removes columns right after downloading, according to the following specifications.")),
                                                                   choiceNames = list(div("All the same value", helpButton("Columns in which every value is the same are often uninformative.")), 
@@ -133,7 +135,7 @@ ui <- fluidPage(
                                                                 textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
-                                                                                               helpButton('e.g. <b>"responder;7;control"</b>'))),
+                                                                                               help_link(id = "divide_help"))),
                                                conditionalPanel(condition = "input.to_divide == true",
                                                                 uiOutput("choose_cols_to_divide"),
                                                                 checkboxInput(inputId = "divide_all_but", label = tags$i("split all BUT the specified")),
@@ -358,6 +360,13 @@ server <- function(input, output, session) {
   
   
   # download & display metaData ---------------------------------------------
+  
+  output$gse_link <- renderUI({
+    if (!is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
+      a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
+               input$geoID)
+    }
+  })
   
   observeEvent(input$download_data_evaluate, {
     if (input$geoID == "") {
@@ -648,7 +657,7 @@ server <- function(input, output, session) {
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
     selectInput(inputId = "colsToSub", label = div("Please select a column with values to substitute: ", 
-                                                   helpButton("Values to substitute may include values to treat as missing, such as ? or --")), 
+                                                   help_link(id = "substitute_help")), 
                 choices = colNames)
   })
   
@@ -781,7 +790,7 @@ server <- function(input, output, session) {
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
     selectInput(inputId = "col_valsToExclude", label = div("Please select a column with values to exclude: ", 
-                                                           helpButton("Values to exclude may include missing values, such as NA.")), 
+                                                           help_link(id = "exclude_help")), 
                 choices = colNames)
   })
   
@@ -982,6 +991,18 @@ server <- function(input, output, session) {
 
   observeEvent(input$split_help, {
     help_modal("Split_Vars_Documentation.md")
+  })
+  
+  observeEvent(input$divide_help, {
+    help_modal("Divide_Vars_Documentation.md")
+  })
+  
+  observeEvent(input$substitute_help, {
+    help_modal("Substitute_Vals_Documentation.md")
+  })
+  
+  observeEvent(input$exclude_help, {
+    help_modal("Exclude_Vals_Documentation.md")
   })
   
   

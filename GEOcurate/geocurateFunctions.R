@@ -170,7 +170,14 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       
       # && !isTooLong
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && metaData[i] != rownames(metaData)) {
+      #print(paste("notAllSame", notAllSame))
+      #print(paste("notAllDifferent", notAllDifferent))
+      #print(paste("isReanalyzed", all(isReanalyzed)))
+      #print(paste("isURL", all(isURL)))
+      #print(paste("isDate", all(isDate)))
+      #print(paste("metaData[i] != rownames(metaData)", !all(metaData[i] == rownames(metaData))))
+      
+      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(metaData[i] == rownames(metaData))) {
         filteredData <- cbind(filteredData, metaData[,i], stringsAsFactors = FALSE)
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1
