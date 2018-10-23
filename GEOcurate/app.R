@@ -88,7 +88,7 @@ options(shiny.autoreload = F)
 ui <- fluidPage(
   
   navbarPage(title = "GEOcurate",
-             tabPanel(title = "Meta data",
+             tabPanel(title = "Clinical data",
                       
                       sidebarLayout(
                         
@@ -103,18 +103,18 @@ ui <- fluidPage(
                                       tabPanel("1",
                                                h4("Downloading the data"),
                                                textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                                                                        helpButton('The GEO identifier for the dataset, e.g., "GSE68849"'))),
+                                                                                        help_link(id = "download_help"))),
                                                uiOutput("gse_link"),
                                                br(),
                                                checkboxGroupInput(inputId = "download_data_filter", label = div("Would you like to filter any of the following?", 
                                                                                                   helpButton("Removes columns right after downloading, according to the following specifications.")),
-                                                                  choiceNames = list(div("All the same value", helpButton("Columns in which every value is the same are often uninformative.")), 
-                                                                                     div("All different values", helpButton("Columns in which every value is different are often uninformative.")), 
-                                                                                     div("Dates", helpButton("Removes columns in which every entry is in the format January 00 00 (for example).")),
-                                                                                     div("Reanalyzed by", helpButton('Removes columns in which every entry contains the phrase "reanalyzed by", which are often uninformative.')), 
-                                                                                     div("Web addresses", helpButton('Removes columns in which every entry is a web address beginning with "ftp:://"'))),
+                                                                  choiceNames = list("All the same value", 
+                                                                                     "All different values",
+                                                                                     "Dates",
+                                                                                     "Reanalyzed by", 
+                                                                                     "Web addresses"),
                                                                   choiceValues = list("same_vals", "all_diff", "dates", "reanalyzed", "url")),
-                                               checkboxInput(inputId = "to_download_expression", label = div("Also download series matrix file",
+                                               checkboxInput(inputId = "to_download_expression", label = div("Also download expression file",
                                                                                                    helpButton("Files to download in addition to the metadata file."))),
                                                actionButton(inputId = "download_data_evaluate", label = "Download"),
                                                hr(), uiOutput("nav_1_ui")
@@ -218,8 +218,8 @@ ui <- fluidPage(
                                      br(), 
                                      fluidRow(
                                        #option to save the output file
-                                       column(2, actionButton("reset", "Reset")),
-                                       column(2, actionButton("undo", "Undo"), helpButton("Reset the dataset to its original state or undo the last action.")),
+                                       column(2, actionButton("reset", div("Reset", helpButton("Reset the dataset to its original downloaded state.", placement = "bottom")))),
+                                       column(2, offset = 0, actionButton("undo", div("Undo", helpButton("Undo the last action.", placement = "bottom")))),
                                        #warning about merged datasets using dates as the criteria
                                        column(6, offset = 2, uiOutput("mergedWarning"))
                                      ), 
@@ -247,7 +247,7 @@ ui <- fluidPage(
              
              # expression data ---------------------------------------------------------
              
-             tabPanel(title = "Series data",
+             tabPanel(title = "Expression data",
                       tabsetPanel(id = "expressionPanel",
                                   tabPanel("1",
                                            sidebarLayout(
@@ -289,7 +289,7 @@ ui <- fluidPage(
                                                actionButton(inputId = "undoEvalExpr", label = "Undo")
                                              ),
                                              mainPanel(
-                                               actionButton(inputId = "viewFilters", label = "View filters"),
+                                               #actionButton(inputId = "viewFilters", label = "View filters"),
                                                withSpinner(dataTableOutput("exprPreview"), type = 5)
                                              )
                                            ))
@@ -1005,6 +1005,10 @@ server <- function(input, output, session) {
     help_modal("Exclude_Vals_Documentation.md")
   })
   
+  observeEvent(input$download_help, {
+    help_modal("Download_Data_Documentation.md")
+  })
+  
   
   # expression data ---------------------------------------------------------
    
@@ -1043,7 +1047,8 @@ server <- function(input, output, session) {
   
   output$transposeCheckbox <- renderUI({
     textColor <- if_else(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
-                           !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay),
+                           !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay) &&
+                           input$howToSummarize == "keep all",
                          "color:gray", "color:black")
     checkboxInput(inputId = "transposeExpr", 
                   label = div(style = textColor, "Transpose the data", 
@@ -1053,7 +1058,7 @@ server <- function(input, output, session) {
   observe({
     if(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
        !input$colForExprLabels %in% findExprLabelColumns(values$ftToDisplay)) {
-      shinyjs::disable("transposeCheckbox")
+      shinyjs::disable("transposeExpr")
     }
   })
   
@@ -1204,9 +1209,9 @@ server <- function(input, output, session) {
     }
   )
   
-  observeEvent(input$viewFilters, {
-    print(input$exprPreview_search_columns)
-  })
+  #observeEvent(input$viewFilters, {
+  #  print(input$exprPreview_search_columns)
+  #})
 }
 
 shinyApp(ui = ui, server = server)

@@ -17,4 +17,4 @@ Please note that when clicking "Remove" without a row selected, the first row in
 Please note that when substituting a range of values, the specified range includes both the lower and upper limits. The ranges will be evaluated in the order they appear in the queue. Please see the example below.
 
 Here is an example of the substituting variables functionality with GSE68849:
-<img src="www/substitute_example.gif" alt="drawing" width="575"/>
+<img src="www/substitute_example.gif" alt="drawing" width="650"/>

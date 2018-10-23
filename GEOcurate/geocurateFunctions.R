@@ -56,7 +56,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
   
   if(is.null(expressionSet)) {
     status <- tryCatch({
-      expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = downloadExpr)
+      expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE)
       saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
     }, error = function(e){
@@ -95,6 +95,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
 
     incProgress(message = "Extracting feature data.")
     featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
+    
     hasNA <- as.logical(apply(featureData, 2, function(x) 
     {
       return(any(is.na(x)) || any(x == ""))
