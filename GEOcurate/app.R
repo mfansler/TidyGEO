@@ -106,13 +106,13 @@ ui <- fluidPage(
                                                                                         help_link(id = "download_help"))),
                                                uiOutput("gse_link"),
                                                br(),
-                                               checkboxGroupInput(inputId = "download_data_filter", label = div("Would you like to filter any of the following?", 
+                                               checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
                                                                                                   helpButton("Removes columns right after downloading, according to the following specifications.")),
-                                                                  choiceNames = list("All the same value", 
-                                                                                     "All different values",
-                                                                                     "Dates",
-                                                                                     "Reanalyzed by", 
-                                                                                     "Web addresses"),
+                                                                  choiceNames = list("Is the same", 
+                                                                                     "Is unique",
+                                                                                     "Contains a date",
+                                                                                     'Contains "Reanalyzed by"', 
+                                                                                     "Is a web address"),
                                                                   choiceValues = list("same_vals", "all_diff", "dates", "reanalyzed", "url")),
                                                checkboxInput(inputId = "to_download_expression", label = div("Also download expression file",
                                                                                                    helpButton("Files to download in addition to the metadata file."))),
@@ -205,6 +205,16 @@ ui <- fluidPage(
                                                                 uiOutput("showValsForExclude")),
                                                actionButton("excludeVals", "Exclude"),
                                                hr(), uiOutput("nav_6_ui")
+                                      ),
+                                      tabPanel("7",
+                                               radioButtons("fileType", "File type:", 
+                                                            choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
+                                                                        "JSON" = "JSON", "Excel" = "xlsx")),
+                                               uiOutput("nameFile"),
+                                               fluidRow(
+                                                 column(2, downloadButton("downloadData", "Save")),
+                                                 column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
+                                               )
                                       )
                           )
                         ),
@@ -226,19 +236,9 @@ ui <- fluidPage(
                                      br(), br(), 
                                      bsAlert("alert"), withSpinner(DTOutput("dataset"), type = 5)
                             ),
-                            tabPanel("Summary",
+                            tabPanel("Graphical Summary",
                                      
                                      uiOutput("plots")
-                            ),
-                            tabPanel(title = "Save file",
-                                     radioButtons("fileType", "File type:", 
-                                                  choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                                                              "JSON" = "JSON", "Excel" = "xlsx")),
-                                     uiOutput("nameFile"),
-                                     fluidRow(
-                                       column(2, downloadButton("downloadData", "Save")),
-                                       column(2, offset = 0, downloadButton("downloadRscript", "Download R script"))
-                                     )
                             )
                           ) #tab panel in main panel
                         ) #main panel
@@ -1031,7 +1031,7 @@ server <- function(input, output, session) {
   })
   
   output$exprLabels <- renderUI({
-    selectInput("colForExprLabels", label = div("Please select a column to the expression IDs", 
+    selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
                                                 helpButton("To keep the same ID column, please choose ID.")), 
                 choices = colnames(values$ftToDisplay))
   })
