@@ -255,20 +255,37 @@ ui <- fluidPage(
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
                                                uiOutput("transposeCheckbox"),
-                                               hr(),
+                                               br(),
                                                fluidRow(
-                                                 column(2, offset = 7, actionButton(inputId = "previewExpr", label = "Preview"))
+                                                 column(1, actionButton(inputId = "undoEvalExpr", label = "Undo")),
+                                                 column(1, offset = 6, actionButton(inputId = "previewExpr", label = "Evaluate"))
+                                               ),
+                                               hr(),
+                                               radioButtons("expression_fileType", "File type:", 
+                                                            choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
+                                                                        "JSON" = "JSON", "Excel" = "xlsx")),
+                                               uiOutput("expression_nameFile"),
+                                               fluidRow(
+                                                 column(1, downloadButton("expression_downloadData", "Save")),
+                                                 column(1, offset = 3, downloadButton("expression_downloadRscript", "Download Rscript"))
                                                )
                                              ),
                                              mainPanel(
-                                               fluidRow(
-                                                 column(5, textInput("searchBox", "Search ID column:")),
-                                                 column(1, actionButton("searchButton", label = icon("search"))),
+                                               #fluidRow(
+                                              #   column(5, textInput("searchBox", "Search ID column:")),
+                                              #   column(1, actionButton("searchButton", label = icon("search"))),
                                                  #bottom-aligns the search button 
                                                  #https://stackoverflow.com/questions/28960189/bottom-align-a-button-in-r-shiny
-                                                 tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
-                                               ),
-                                               withSpinner(DTOutput("expressionData"), type = 5),
+                                               #  tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
+                                               #),
+                                               #withSpinner(DTOutput("expressionData"), type = 5),
+                                               fluidRow(
+                                                 column(1, actionButton(inputId = "expression_prev_cols", label = div("Previous columns", icon("arrow-left")))),
+                                                 column(1, offset = 8, actionButton(inputId = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
+                                                ),
+                                               withSpinner(dataTableOutput("exprPreview"), type = 5),
+                                               hr(),
+                                               actionButton("expression_evaluate_filters", label = "Evaluate filters"),
                                                hr(),
                                                withSpinner(DTOutput("featureData"), type = 5)
                                              ) #main panel
@@ -277,20 +294,10 @@ ui <- fluidPage(
                                   tabPanel("2",
                                            sidebarLayout(
                                              sidebarPanel(
-                                               radioButtons("expression_fileType", "File type:", 
-                                                                     choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                                                                                 "JSON" = "JSON", "Excel" = "xlsx")),
-                                                        uiOutput("expression_nameFile"),
-                                                        fluidRow(
-                                                          column(1, downloadButton("expression_downloadData", "Save")),
-                                                          column(1, offset = 3, downloadButton("expression_downloadRscript", "Download Rscript"))
-                                                        ),
-                                               hr(),
-                                               actionButton(inputId = "undoEvalExpr", label = "Undo")
+                                               
                                              ),
                                              mainPanel(
                                                #actionButton(inputId = "viewFilters", label = "View filters"),
-                                               withSpinner(dataTableOutput("exprPreview"), type = 5)
                                              )
                                            ))
                       )
@@ -404,11 +411,12 @@ server <- function(input, output, session) {
     values$metaData <- extractedData[["metaData"]]
     if (input$to_download_expression) {
       values$exprData <- extractedData[["expressionData"]]
-      values$exprToDisplay <- head(values$exprData, n = 10)[,1:5]
-      values$previewExprData <- values$exprToDisplay
+      values$exprToDisplay <- values$exprData
+      values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, end = 5)
       values$ftData <- extractedData[["featureData"]]
       values$ftToDisplay <- values$ftData %>%
-        filter(ID %in% values$exprToDisplay[,"ID"])
+        filter(ID %in% values$previewExprData[,"ID"])
+        #filter(ID %in% values$exprToDisplay[,"ID"])
     }
     
     #WRITING COMMANDS TO R SCRIPT
@@ -1020,15 +1028,15 @@ server <- function(input, output, session) {
       filter(ID %in% values$exprToDisplay[,"ID"])
   })
   
-  output$expressionData <- DT::renderDT({
-    if(!is.null(values$exprToDisplay)) {
-      datatable(values$exprToDisplay, rownames = FALSE, options = list(dom = "tp"))
-    }
-    else {
-      datatable(data.frame("Please download some expression data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "tp"))
-    }
-  })
+  #output$expressionData <- DT::renderDT({
+  #  if(!is.null(values$exprToDisplay)) {
+  #    datatable(values$exprToDisplay, rownames = FALSE, options = list(dom = "tp"))
+  #  }
+  #  else {
+  #    datatable(data.frame("Please download some expression data"), rownames = FALSE, 
+  #              colnames = "NO DATA", options = list(dom = "tp"))
+  #  }
+  #})
   
   output$exprLabels <- renderUI({
     selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
@@ -1064,8 +1072,8 @@ server <- function(input, output, session) {
   
   observeEvent(input$previewExpr, {
     
-    if(!is.null(values$exprToDisplay)) {
-      values$previewExprData <- withProgress(replaceID(values$exprToDisplay, values$ftToDisplay, input$colForExprLabels, input$howToSummarize))
+    if(!is.null(values$previewExprData)) {
+      values$exprToDisplay <- withProgress(replaceID(values$exprData, values$ftData, input$colForExprLabels, input$howToSummarize))
       
       before <- length(values$expression_oFile)
       
@@ -1084,19 +1092,21 @@ server <- function(input, output, session) {
                                              values$expression_oFile)
       }
       
+      values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, end = 5)
+      
       after <- length(values$expression_oFile)
       
       values$expression_currChunkLen <- after - before
     }
     
-    updateTabsetPanel(session, "expressionPanel", selected = "2")
+    #updateTabsetPanel(session, "expressionPanel", selected = "2")
   })
   
   # feature data ------------------------------------------------------------
   
   output$featureData <- DT::renderDT({
     if(!is.null(values$ftToDisplay)) {
-      datatable(values$ftToDisplay, rownames = FALSE, options = list(scrollX = TRUE, dom = "tp", columnDefs = list(list(
+      datatable(data.frame(values$ftToDisplay, stringsAsFactors = TRUE), rownames = FALSE, filter = "top", options = list(scrollX = TRUE, dom = "tp", columnDefs = list(list(
         targets = "_all",
         #Makes it so that the table will only display the first 30 chars.
         #See https://rstudio.github.io/DT/options.html
@@ -1117,18 +1127,28 @@ server <- function(input, output, session) {
   
   output$exprPreview <- DT::renderDT({
     if(!is.null(values$previewExprData)) {
-      values$previewExprData
+      datatable(values$previewExprData, filter = "top", rownames = FALSE, options = list(dom = "tp"))
     } else {
-      data.frame("Please download some expression data")
+      datatable(data.frame("Please download some feature data"), rownames = FALSE, 
+                colnames = "NO DATA", options = list(dom = "tp"))
     }
-  }, filter = "top", rownames = FALSE, options = list(dom = "tp"))  
+  })  
   
   observeEvent(input$undoEvalExpr, {
-    values$previewExprData <- values$exprToDisplay
+    values$exprToDisplay <- values$exprData
+    values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, end = 5)
     values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_currChunkLen)
     values$expression_currChunkLen <- 0
     
-    updateTabsetPanel(session, "expressionPanel", selected = "1")
+    #updateTabsetPanel(session, "expressionPanel", selected = "1")
+  })
+  
+  observeEvent(input$expression_next_cols, {
+    values$previewExprData <- advance_columns_view(values$exprToDisplay, start = colnames(values$previewExprData)[ncol(values$previewExprData)], forward_distance = 5)
+  })
+  
+  observeEvent(input$expression_prev_cols, {
+    values$previewExprData <- retract_columns_view(values$exprToDisplay, last_column = colnames(values$previewExprData)[ncol(values$previewExprData)], backward_distance = 5)
   })
   
   # download expression data -----------------------------------------------------------

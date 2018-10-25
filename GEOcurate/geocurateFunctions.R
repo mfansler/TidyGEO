@@ -564,3 +564,42 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
   }
   return(data)
 }
+
+advance_columns_view <- function(data, start, forward_distance) {
+  
+  if(class(start) == "character") {
+    start <- which(colnames(data) == start) + 1
+  }
+  
+  end_point <- start + (forward_distance - 1)
+  
+  if(end_point > ncol(data)) {
+    end_point <- ncol(data)
+  }
+  
+  if(start == end_point) {
+    return(data)
+  }
+  
+  data[,start:end_point]
+  
+}
+
+retract_columns_view <- function(data, last_column, backward_distance) {
+  
+  if(class(last_column) == "character") {
+    last_column <- which(colnames(data) == last_column) - 1
+  }
+  
+  start_point <- last_column - (backward_distance - 1)
+  
+  if(start_point < 1) {
+    start_point <- 1
+  }
+  
+  if(start_point == last_column) {
+    return(data)
+  }
+  
+  data[,start_point:last_column]
+}
