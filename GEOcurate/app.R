@@ -39,6 +39,16 @@ help_modal <- function(help_file) {
     )
 }
 
+primary_button <- function(id, label, icon = NULL) {
+  actionButton("run", "Run Analysis", icon("paper-plane"), 
+               style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+}
+
+secondary_button<- function(id, label, icon = NULL) {
+  #actionButton("run", "Run Analysis", icon("paper-plane"), 
+   #            style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+}
+
 # detects variable type & formats string to be written to R script --------
 
 
@@ -101,6 +111,8 @@ ui <- fluidPage(
                                       
                                       
                                       tabPanel("1",
+                                               primary_button(id = "this_id", label = "button"),
+                                               #secondary_button(id = "this_id", label = "button"),
                                                h4("Downloading the data"),
                                                textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                                                         help_link(id = "download_help"))),
@@ -412,7 +424,7 @@ server <- function(input, output, session) {
     if (input$to_download_expression) {
       values$exprData <- extractedData[["expressionData"]]
       values$exprToDisplay <- values$exprData
-      values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, end = 5)
+      values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, forward_distance = 5)
       values$ftData <- extractedData[["featureData"]]
       values$ftToDisplay <- values$ftData %>%
         filter(ID %in% values$previewExprData[,"ID"])
@@ -1092,7 +1104,7 @@ server <- function(input, output, session) {
                                              values$expression_oFile)
       }
       
-      values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, end = 5)
+      values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, forward_distance = 5)
       
       after <- length(values$expression_oFile)
       
@@ -1136,7 +1148,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$undoEvalExpr, {
     values$exprToDisplay <- values$exprData
-    values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, end = 5)
+    values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, forward_distance = 5)
     values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_currChunkLen)
     values$expression_currChunkLen <- 0
     
@@ -1144,11 +1156,13 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$expression_next_cols, {
-    values$previewExprData <- advance_columns_view(values$exprToDisplay, start = colnames(values$previewExprData)[ncol(values$previewExprData)], forward_distance = 5)
+    next_cols <- advance_columns_view(values$exprToDisplay, start = colnames(values$previewExprData)[ncol(values$previewExprData)], forward_distance = 5)
+    values$previewExprData <- if (!is.null(next_cols)) next_cols else values$previewExprData
   })
   
   observeEvent(input$expression_prev_cols, {
-    values$previewExprData <- retract_columns_view(values$exprToDisplay, last_column = colnames(values$previewExprData)[ncol(values$previewExprData)], backward_distance = 5)
+    prev_cols <- retract_columns_view(values$exprToDisplay, last_column = colnames(values$previewExprData)[ncol(values$previewExprData)], backward_distance = 5)
+    values$previewExprData <- if (!is.null(prev_cols)) prev_cols else values$previewExprData
   })
   
   # download expression data -----------------------------------------------------------

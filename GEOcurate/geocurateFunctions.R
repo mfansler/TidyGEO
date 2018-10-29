@@ -577,8 +577,8 @@ advance_columns_view <- function(data, start, forward_distance) {
     end_point <- ncol(data)
   }
   
-  if(start == end_point) {
-    return(data)
+  if(start >= end_point ) {
+    return(NULL)
   }
   
   data[,start:end_point]
@@ -598,7 +598,7 @@ retract_columns_view <- function(data, last_column, backward_distance) {
   }
   
   if(start_point == last_column) {
-    return(data)
+    return(NULL)
   }
   
   data[,start_point:last_column]
