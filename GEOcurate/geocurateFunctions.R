@@ -83,12 +83,9 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
 processData <- function(expressionSet, index, toFilter, extractExprData = FALSE) {
   
   expressionSet <- expressionSet[[index]]
-  incProgress(message = "Extracting metadata.")
-  metaData <- as.data.frame(pData(expressionSet), stringsAsFactors = FALSE)
-  incProgress(message = "Filtering metadata.")
-  metaData <- filterUninformativeCols(metaData, toFilter)
   
   if(extractExprData) {
+    
     incProgress(message = "Extracting expression data.")
     expressionData <- assayData(expressionSet)$exprs
     expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
@@ -105,9 +102,18 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
       featureData <- featureData[, -which(hasNA)]
     }
     
+    metaData <- NULL
+    
   } else {
+    
+    incProgress(message = "Extracting metadata.")
+    metaData <- as.data.frame(pData(expressionSet), stringsAsFactors = FALSE)
+    incProgress(message = "Filtering metadata.")
+    metaData <- filterUninformativeCols(metaData, toFilter)
+    
     expressionData <- NULL
     featureData <- NULL
+    
   }
   
   return(list("metaData" = metaData, "expressionData" = expressionData, "featureData" = featureData))
