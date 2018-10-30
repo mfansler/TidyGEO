@@ -117,6 +117,9 @@ ui <- fluidPage(
                                       
                                       tabPanel("1",
                                                h4("Downloading the data"),
+                                               p("Welcome to GEOcurate! This application will allow you to reformat data
+                                                 from GEO, which can then be used to answer research questions. To get started,
+                                                 take a look at the help documentation or"),
                                                textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                                                         help_link(id = "download_help"))),
                                                uiOutput("gse_link"),
@@ -164,6 +167,7 @@ ui <- fluidPage(
                                       
                                       #specify which vars to keep
                                       tabPanel("3",
+                                               h4("Selecting informative columns"),
                                                uiOutput("chooseVarsToKeep"),
                                                checkboxInput(inputId = "allButKeep", label = tags$i("keep all BUT the specified")),
                                                primary_button(id = "filterCols", label = "Filter columns")#,
@@ -175,6 +179,7 @@ ui <- fluidPage(
                                       
                                       #renaming any columns
                                       tabPanel("4",
+                                               h4("Renaming columns"),
                                                uiOutput("showCols"),
                                                #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
@@ -191,6 +196,7 @@ ui <- fluidPage(
                                       
                                       #specify which values to substitute for other values/which values should be treated as NA
                                       tabPanel("5",
+                                               h4("Substituting values"),
                                                uiOutput("showColsForSub"),
                                                checkboxInput(inputId = "isRange", label = "Specify a range of values to substitute?"),
                                                conditionalPanel(condition = "input.isRange == true",
@@ -211,6 +217,7 @@ ui <- fluidPage(
                                       
                                       
                                       tabPanel("6",
+                                               h4("Excluding values"),
                                                uiOutput("showColsForExclude"),
                                                checkboxInput("isRangeExclude", "Specify a range of values"),
                                                conditionalPanel(condition = "input.isRangeExclude == true",
@@ -221,6 +228,7 @@ ui <- fluidPage(
                                                #hr(), uiOutput("nav_6_ui")
                                       ),
                                       tabPanel("7",
+                                               h4("Saving the data"),
                                                radioButtons("fileType", "File type:", 
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
@@ -262,13 +270,17 @@ ui <- fluidPage(
              # expression data ---------------------------------------------------------
              
              tabPanel(title = "Expression data",
-                      tabsetPanel(id = "expressionPanel",
-                                  tabPanel("1",
+                      #tabsetPanel(id = "expressionPanel",
+                                  #tabPanel("1",
                                            sidebarLayout(
                                              sidebarPanel(
-                                               primary_button("download_expr", "Download Expression Data", 
+                                               h4("Formatting the expression data"),
+                                               p("This portion of the application can reformat the expression (assay) data
+                                                 associated with the clinical data for the specified GEO ID. If you have already
+                                                 loaded clinical data, please start by clicking the button below."),
+                                               primary_button("download_expr", "Load Expression Data", 
                                                               icon = helpButton("Please make sure to download some clinical data first.")),
-                                               br(),
+                                               hr(),
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
                                                uiOutput("transposeCheckbox"),
@@ -288,6 +300,20 @@ ui <- fluidPage(
                                                )
                                              ),
                                              mainPanel(
+                                               tabsetPanel(
+                                                 tabPanel("Assay data",
+                                                          fluidRow(
+                                                            column(1, secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
+                                                            column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
+                                                          ),
+                                                          withSpinner(dataTableOutput("exprPreview"), type = 5),
+                                                          primary_button("expression_evaluate_filters", label = "Evaluate filters")
+                                                          ),
+                                                 tabPanel("Feature data",
+                                                          withSpinner(DTOutput("featureData"), type = 5),
+                                                          primary_button("feature_evaluate_filters", label = "Evaluate filters")
+                                                          )
+                                               )
                                                #fluidRow(
                                               #   column(5, textInput("searchBox", "Search ID column:")),
                                               #   column(1, actionButton("searchButton", label = icon("search"))),
@@ -296,19 +322,10 @@ ui <- fluidPage(
                                                #  tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
                                                #),
                                                #withSpinner(DTOutput("expressionData"), type = 5),
-                                               fluidRow(
-                                                 column(1, secondary_button(id = "expression_prev_cols", label = div("Previous columns", icon("arrow-left")))),
-                                                 column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
-                                                ),
-                                               withSpinner(dataTableOutput("exprPreview"), type = 5),
-                                               hr(),
-                                               primary_button("expression_evaluate_filters", label = "Evaluate filters"),
-                                               hr(),
-                                               withSpinner(DTOutput("featureData"), type = 5)
                                              ) #main panel
                                            ) #sidebar layout
-                                  )
-                      )
+                                  #)
+                      #)
              ), # expression data tab panel
              tabPanel(title = "FAQ",
                       includeMarkdown("www/FAQ.md")
@@ -378,8 +395,8 @@ server <- function(input, output, session) {
   
   output$gse_link <- renderUI({
     if (!is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
-      a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
-               paste("View", input$geoID, "dataset on GEO"))
+      div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
+               paste("View", input$geoID, "dataset on GEO")), icon("external-link"))
     }
   })
   
@@ -569,7 +586,8 @@ server <- function(input, output, session) {
   
   output$chooseVarsToKeep <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
-    checkboxGroupInput(inputId = "varsToKeep", label = "Which columns would you like to keep?", colNames)
+    checkboxGroupInput(inputId = "varsToKeep", label = div("Which columns would you like to keep?",
+                                                           helpButton("This will drop any unselected columns from the dataset.")), colNames)
   })
   
   observeEvent(input$filterCols, ({ if (!is.null(values$metaData)) {
@@ -1005,8 +1023,8 @@ server <- function(input, output, session) {
     help_modal("www/Download_Data_Documentation.md")
   })
   
-  
-  # expression data ---------------------------------------------------------
+
+  # expression data sidebar -------------------------------------------------
    
   observeEvent(input$download_expr, {
     
@@ -1033,24 +1051,6 @@ server <- function(input, output, session) {
                                            values$expression_oFile)
     }
   })
-  
-  
-  observeEvent(input$searchButton, {
-    values$exprToDisplay <- values$exprData %>% 
-      filter(str_detect(ID, input$searchBox))
-    values$ftToDisplay <- values$ftData %>% 
-      filter(ID %in% values$exprToDisplay[,"ID"])
-  })
-  
-  #output$expressionData <- DT::renderDT({
-  #  if(!is.null(values$exprToDisplay)) {
-  #    datatable(values$exprToDisplay, rownames = FALSE, options = list(dom = "tp"))
-  #  }
-  #  else {
-  #    datatable(data.frame("Please download some expression data"), rownames = FALSE, 
-  #              colnames = "NO DATA", options = list(dom = "tp"))
-  #  }
-  #})
   
   output$exprLabels <- renderUI({
     selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
@@ -1098,7 +1098,7 @@ server <- function(input, output, session) {
                                                     format_string(input$howToSummarize), ")")), 
                                            values$expression_oFile)
       if(input$transposeExpr) {
-        values$previewExprData <- withProgress(quickTranspose(values$previewExprData))
+        values$exprToDisplay <- withProgress(quickTranspose(values$exprToDisplay))
         
         #WRITING COMMANDS TO EXPRESSION RSCRIPT
         values$expression_oFile <- saveLines(c(commentify("transpose data"), 
@@ -1116,38 +1116,6 @@ server <- function(input, output, session) {
     #updateTabsetPanel(session, "expressionPanel", selected = "2")
   })
   
-  # feature data ------------------------------------------------------------
-  
-  output$featureData <- DT::renderDT({
-    if(!is.null(values$ftToDisplay)) {
-      datatable(data.frame(values$ftToDisplay, stringsAsFactors = TRUE), rownames = FALSE, filter = "top", options = list(scrollX = TRUE, dom = "tp", columnDefs = list(list(
-        targets = "_all",
-        #Makes it so that the table will only display the first 30 chars.
-        #See https://rstudio.github.io/DT/options.html
-        render = JS(
-          "function(data, type, row, meta) {",
-          "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
-          "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
-          "}")
-      ))))
-    }
-    else {
-      datatable(data.frame("Please download some data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "tp"))
-    }
-  }) 
-  
-  # preview expression data ------------------------------------
-  
-  output$exprPreview <- DT::renderDT({
-    if(!is.null(values$previewExprData)) {
-      datatable(values$previewExprData, filter = "top", rownames = FALSE, options = list(dom = "tp"))
-    } else {
-      datatable(data.frame("Please download some data"), rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "tp"))
-    }
-  })  
-  
   observeEvent(input$undoEvalExpr, {
     values$exprToDisplay <- values$exprData
     values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, forward_distance = 5)
@@ -1155,16 +1123,6 @@ server <- function(input, output, session) {
     values$expression_currChunkLen <- 0
     
     #updateTabsetPanel(session, "expressionPanel", selected = "1")
-  })
-  
-  observeEvent(input$expression_next_cols, {
-    next_cols <- advance_columns_view(values$exprToDisplay, start = colnames(values$previewExprData)[ncol(values$previewExprData)], forward_distance = 5)
-    values$previewExprData <- if (!is.null(next_cols)) next_cols else values$previewExprData
-  })
-  
-  observeEvent(input$expression_prev_cols, {
-    prev_cols <- retract_columns_view(values$exprToDisplay, last_column = colnames(values$previewExprData)[ncol(values$previewExprData)], backward_distance = 5)
-    values$previewExprData <- if (!is.null(prev_cols)) prev_cols else values$previewExprData
   })
   
   # download expression data -----------------------------------------------------------
@@ -1228,12 +1186,12 @@ server <- function(input, output, session) {
       else if (input$expression_fileType == "tsv") {
         values$expression_oFile <- saveLines("write.table(expressionData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
                                              values$expression_oFile)
-        }
+      }
       else if (input$expression_fileType == "JSON") {
         values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
                                     "expressionData %>% toJSON() %>% write_lines(file)"), 
                                   values$expression_oFile)
-        }
+      }
       else if (input$expression_fileType == "xlsx") {
         values$expression_oFile <- saveLines(c("library(xlsx)", "write.xlsx(expressionData, file, row.names = FALSE, showNA = FALSE)"), 
                                              values$expression_oFile)
@@ -1245,9 +1203,63 @@ server <- function(input, output, session) {
     }
   )
   
+  # main panel expression data ----------------------------------------------
+  
+  observeEvent(input$expression_next_cols, {
+    next_cols <- advance_columns_view(values$exprToDisplay, start = colnames(values$previewExprData)[ncol(values$previewExprData)], forward_distance = 5)
+    values$previewExprData <- if (!is.null(next_cols)) next_cols else values$previewExprData
+  })
+  
+  observeEvent(input$expression_prev_cols, {
+    prev_cols <- retract_columns_view(values$exprToDisplay, last_column = colnames(values$previewExprData)[1], backward_distance = 5)
+    values$previewExprData <- if (!is.null(prev_cols)) prev_cols else values$previewExprData
+  })
+  
+  output$exprPreview <- DT::renderDT({
+    if(!is.null(values$previewExprData)) {
+      datatable(values$previewExprData, filter = "top", rownames = FALSE, options = list(dom = "tp"))
+    } else {
+      datatable(data.frame("Please download some data"), rownames = FALSE, 
+                colnames = "NO DATA", options = list(dom = "tp"))
+    }
+  }) 
+  
+  observeEvent(input$expression_evaluate_filters, {
+    values$exprToDisplay <- filterExpressionData(values$exprToDisplay)
+    values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, forward_distance = 5)
+    #find which values in the feature data match the ones in the expression data
+  })
+  
   #observeEvent(input$viewFilters, {
   #  print(input$exprPreview_search_columns)
   #})
+  
+  # main panel feature data -------------------------------------------------
+
+  output$featureData <- DT::renderDT({
+    if(!is.null(values$ftToDisplay)) {
+      datatable(data.frame(values$ftToDisplay, stringsAsFactors = TRUE), rownames = FALSE, filter = "top", options = list(scrollX = TRUE, dom = "tp", columnDefs = list(list(
+        targets = "_all",
+        #Makes it so that the table will only display the first 30 chars.
+        #See https://rstudio.github.io/DT/options.html
+        render = JS(
+          "function(data, type, row, meta) {",
+          "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
+          "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
+          "}")
+      ))))
+    }
+    else {
+      datatable(data.frame("Please download some data"), rownames = FALSE, 
+                colnames = "NO DATA", options = list(dom = "tp"))
+    }
+  }) 
+  
+  observeEvent(input$expression_evaluate_filters, {
+    values$ftToDisplay <- filterExpressionData(values$ftToDisplay)
+    #find which values in the expression data match the ones in the feature data
+  })
+  
 }
 
 shinyApp(ui = ui, server = server)

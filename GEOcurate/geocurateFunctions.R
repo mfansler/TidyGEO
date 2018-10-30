@@ -177,13 +177,6 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       
       # && !isTooLong
       
-      #print(paste("notAllSame", notAllSame))
-      #print(paste("notAllDifferent", notAllDifferent))
-      #print(paste("isReanalyzed", all(isReanalyzed)))
-      #print(paste("isURL", all(isURL)))
-      #print(paste("isDate", all(isDate)))
-      #print(paste("metaData[i] != rownames(metaData)", !all(metaData[i] == rownames(metaData))))
-      
       if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(metaData[i] == rownames(metaData))) {
         filteredData <- cbind(filteredData, metaData[,i], stringsAsFactors = FALSE)
         colNames <- c(colNames, colName)
@@ -583,7 +576,7 @@ advance_columns_view <- function(data, start, forward_distance) {
     end_point <- ncol(data)
   }
   
-  if(start >= end_point ) {
+  if(start > end_point ) {
     return(NULL)
   }
   
@@ -603,9 +596,18 @@ retract_columns_view <- function(data, last_column, backward_distance) {
     start_point <- 1
   }
   
-  if(start_point == last_column) {
+  if(start_point > last_column) {
     return(NULL)
   }
   
   data[,start_point:last_column]
+}
+
+find_intersection <- function(data1, data2, id_col1, id_col2) {
+  
+  search_terms <- if_else(id_col2 == "colnames", colnames(data2), data2[,id_col2])
+  
+  #account for when id_col1 is colnames
+  
+  data1[which(data1[,id_col1] %in% search_terms)]
 }

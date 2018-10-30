@@ -12,19 +12,12 @@ After inputting the GSE ID, you may specify some columns to filter out of the da
 
 * All the same value
     + If a column has the same value for every row, it will be dropped. Columns with all the same value are often unhelpful because they don't measure meaningful change.
-    + Example: 
 * All different values
-    + If a column has different values for every row, it will be dropped. Columns with all different values are often unnecessary because there is already an ID column in the data. 
-    + Example: 
+    + If a column has different values for every row, it will be dropped. Columns with all different values are often unnecessary because there is already an ID column in the data.
 * Dates
     + If a column has dates in every row, it will be dropped. Columns with dates are sometimes uninformative because they simply specify when the data was published. However, publishing date can sometimes be helpful in determining if the data consists of two merged datsets, a situation which can complicate the reformatting process.
-    + Example:
-* Reanalyzed by
-    + Removes columns in which every row contains the phrase "Reanalyzed by:", which are often uninformative.
-    + Example:
 * Web addresses
     + Removes columns in which every row contains a web address starting with `ftp:://`, which are often unhelpful because they simply specify where the data was published.
-    + Example:
   
 Additionally, there is an option to download the expression data associated with this series record. Checking this option will allow you to work with the expression data in the "Expression data" tab. Leaving the box unchecked will make the download go faster. If you would like to download the expression data later, you will have to redownload the clinical data as well.
 
