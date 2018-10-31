@@ -102,7 +102,7 @@ options(shiny.autoreload = F)
 
 ui <- fluidPage(
   
-  navbarPage(title = "GEOcurate",
+  navbarPage(title = "GEOcurate", id = "top_level",
              tabPanel(title = "Clinical data",
                       
                       sidebarLayout(
@@ -133,8 +133,8 @@ ui <- fluidPage(
                                                                   choiceValues = list("same_vals", "all_diff", "dates", "url")),
                                                #checkboxInput(inputId = "to_download_expression", label = div("Also download expression file",
                                               #                                                     helpButton("Files to download in addition to the metadata file."))),
-                                               primary_button(id = "download_data_evaluate", label = "Download")#,
-                                               #hr(), uiOutput("nav_1_ui")
+                                               primary_button(id = "download_data_evaluate", label = "Download"),
+                                               hr(), uiOutput("nav_1_ui")
                                       ),
                                       
                                       
@@ -158,8 +158,8 @@ ui <- fluidPage(
                                                                 checkboxInput(inputId = "divide_all_but", label = tags$i("split all BUT the specified")),
                                                                 textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
-                                               primary_button(id = "reformat_columns", label = "Reformat columns")#,
-                                               #hr(), uiOutput("nav_2_ui")
+                                               primary_button(id = "reformat_columns", label = "Reformat columns"),
+                                               hr(), uiOutput("nav_2_ui")
                                       ),
                                       
                                       # exclude columns ---------------------------------------------------------
@@ -170,8 +170,8 @@ ui <- fluidPage(
                                                h4("Selecting informative columns"),
                                                uiOutput("chooseVarsToKeep"),
                                                checkboxInput(inputId = "allButKeep", label = tags$i("keep all BUT the specified")),
-                                               primary_button(id = "filterCols", label = "Filter columns")#,
-                                               #hr(), uiOutput("nav_3_ui")
+                                               primary_button(id = "filterCols", label = "Filter columns"),
+                                               hr(), uiOutput("nav_3_ui")
                                       ),
                                       
                                       # rename columns ----------------------------------------------------------
@@ -187,8 +187,8 @@ ui <- fluidPage(
                                                tertiary_button("delete", "Remove"), br(),
                                                br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
                                                tableOutput("new_name_contents"),
-                                               primary_button(id = "rename", label = "Rename columns")#,
-                                               #hr(), uiOutput("nav_4_ui")
+                                               primary_button(id = "rename", label = "Rename columns"),
+                                               hr(), uiOutput("nav_4_ui")
                                       ),
                                       
                                       # substitute --------------------------------------------------------------
@@ -209,8 +209,8 @@ ui <- fluidPage(
                                                tertiary_button("removeToSub", "Remove"),
                                                div(#style = 'overflow-x: scroll', 
                                                  DTOutput("hotOut")),
-                                               primary_button("evaluateSubs", "Substitute")#,
-                                               #hr(), uiOutput("nav_5_ui")
+                                               primary_button("evaluateSubs", "Substitute"),
+                                               hr(), uiOutput("nav_5_ui")
                                       ),
                                       
                                       # exclude variables -------------------------------------------------------
@@ -224,8 +224,8 @@ ui <- fluidPage(
                                                                 uiOutput("sliderExclude")),
                                                conditionalPanel(condition = "input.isRangeExclude == false",
                                                                 uiOutput("showValsForExclude")),
-                                               primary_button("excludeVals", "Exclude")#,
-                                               #hr(), uiOutput("nav_6_ui")
+                                               primary_button("excludeVals", "Exclude"),
+                                               hr(), uiOutput("nav_6_ui")
                                       ),
                                       tabPanel("7",
                                                h4("Saving the data"),
@@ -236,7 +236,8 @@ ui <- fluidPage(
                                                fluidRow(
                                                  column(1, downloadButton("downloadData", "Save", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
                                                  column(1, offset = 3, downloadButton("downloadRscript", "Download Rscript", style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f"))
-                                               )
+                                               ),
+                                               hr(), uiOutput("nav_7_ui")
                                       )
                           )
                         ),
@@ -993,14 +994,29 @@ server <- function(input, output, session) {
   #6
   output$nav_6_ui <- renderUI({
     fluidRow(
-      column(1, tertiary_button('nav_6_to_5_button', 'Back'))
-      #column(2, offset = 7, actionButton('nav_6_to_7_button', 'Next'))
+      column(1, tertiary_button('nav_6_to_5_button', 'Back')),
+      column(2, offset = 7, secondary_button('nav_6_to_7_button', 'Next'))
     )
   })
   observeEvent(input$nav_6_to_5_button, {
     updateTabsetPanel(session, 'sidePanel', selected = '5')
   })
-
+  observeEvent(input$nav_6_to_7_button, {
+    updateTabsetPanel(session, 'sidePanel', selected = '7')
+  })
+  #7
+  output$nav_7_ui <- renderUI({
+    fluidRow(
+      column(1, tertiary_button('nav_7_to_6_button', 'Back')),
+      column(2, offset = 7, secondary_button('nav_7_to_expression_button', 'Next'))
+    )
+  })
+  observeEvent(input$nav_7_to_6_button, {
+    updateTabsetPanel(session, 'sidePanel', selected = '6')
+  })
+  observeEvent(input$nav_7_to_expression_button, {
+    updateTabsetPanel(session, 'top_level', selected = 'Expression data')
+  })
   # help modals -------------------------------------------------------------
 
   observeEvent(input$split_help, {
