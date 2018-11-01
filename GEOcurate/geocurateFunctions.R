@@ -86,11 +86,11 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
   
   if(extractExprData) {
     
-    incProgress(message = "Extracting expression data.")
+    incProgress(message = "Extracting expression data")
     expressionData <- assayData(expressionSet)$exprs
     expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
 
-    incProgress(message = "Extracting feature data.")
+    incProgress(message = "Extracting feature data")
     featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
     
     hasNA <- as.logical(apply(featureData, 2, function(x) 
@@ -106,7 +106,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
     
   } else {
     
-    incProgress(message = "Extracting metadata.")
+    incProgress(message = "Extracting metadata")
     metaData <- as.data.frame(pData(expressionSet), stringsAsFactors = FALSE)
     incProgress(message = "Filtering metadata.")
     metaData <- filterUninformativeCols(metaData, toFilter)

@@ -101,7 +101,19 @@ options(shiny.autoreload = F)
 
 
 ui <- fluidPage(
-  
+  tags$head(
+    tags$style(
+      HTML(".shiny-notification {
+           height: 50px;
+           width: 800px;
+           position:fixed;
+           top: calc(50% - 50px);;
+           left: calc(50% - 400px);;
+           }
+           "
+      )
+      )
+      ),
   navbarPage(title = "GEOcurate", id = "top_level",
              tabPanel(title = "Clinical data",
                       
@@ -144,6 +156,9 @@ ui <- fluidPage(
                                       #specify which columns to split up, and the delimiter
                                       tabPanel("2",
                                                h4("Formatting the data"),
+                                               p("Sometimes columns contain multiple values in them. This makes it so that the values
+                                                 cannot be analyzed separately. Here, you can indicate that there are multiple values in a
+                                                 column so that the values can be separate."),
                                                checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
                                                                                               help_link(id = "split_help"))),
                                                conditionalPanel(condition = "input.to_split == true",
@@ -168,6 +183,9 @@ ui <- fluidPage(
                                       #specify which vars to keep
                                       tabPanel("3",
                                                h4("Selecting informative columns"),
+                                               p("It can be helpful to filter out unneeded columns for better storage capacity and improved
+                                                 human readability. Here, you can choose which columns are most important for you to keep
+                                                 and drop the rest."),
                                                uiOutput("chooseVarsToKeep"),
                                                checkboxInput(inputId = "allButKeep", label = tags$i("keep all BUT the specified")),
                                                primary_button(id = "filterCols", label = "Filter columns"),
@@ -180,6 +198,9 @@ ui <- fluidPage(
                                       #renaming any columns
                                       tabPanel("4",
                                                h4("Renaming columns"),
+                                               p("In order to integrate the data with other tables or for humans to be able to understand the data,
+                                                 it may be helpful to replace the existing column names with more accurate/descriptive ones.
+                                                 Here, you can give any column a new name."),
                                                uiOutput("showCols"),
                                                #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
@@ -197,6 +218,9 @@ ui <- fluidPage(
                                       #specify which values to substitute for other values/which values should be treated as NA
                                       tabPanel("5",
                                                h4("Substituting values"),
+                                               p("In order to achieve the uniformity required to combine datasets, it may be helpful to substitute 
+                                                 some of the values in the data for other values. Here, you can identify values you would like to replace
+                                                 and an alternative to replace them with."),
                                                uiOutput("showColsForSub"),
                                                checkboxInput(inputId = "isRange", label = "Specify a range of values to substitute?"),
                                                conditionalPanel(condition = "input.isRange == true",
@@ -218,6 +242,9 @@ ui <- fluidPage(
                                       
                                       tabPanel("6",
                                                h4("Excluding values"),
+                                               p("You may want to remove some of the values in a column, for example, if you have missing (NA) values.
+                                                  Here, you can specify which values you would like to remove.
+                                                 Excluding a value will take out the entire row that contains that value in the selected column."),
                                                uiOutput("showColsForExclude"),
                                                checkboxInput("isRangeExclude", "Specify a range of values"),
                                                conditionalPanel(condition = "input.isRangeExclude == true",
@@ -229,6 +256,9 @@ ui <- fluidPage(
                                       ),
                                       tabPanel("7",
                                                h4("Saving the data"),
+                                               p("Here is where you can download the clinical data to your computer. If you have R installed,
+                                                 you can also download the R script that produced this data. The R script allows other scientists
+                                                to replicate your experiment because it shows how the data was obtained."),
                                                radioButtons("fileType", "File type:", 
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
@@ -417,14 +447,21 @@ server <- function(input, output, session) {
                               message = "Downloading data")
       
       platforms <- sapply(values$allData, annotation)
+      platform_links <- list()
+      for(i in 1:length(unname(platforms))) {
+        platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
+                                  platforms[[i]]), icon("external-link"))
+      } 
       
       if (length(platforms) > 0) {
         showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-                                           choiceNames = unname(platforms), 
+                                           choiceNames = platform_links, 
                                            choiceValues = names(platforms)), 
                               footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
+        if(length(platforms) == 1) {
+          click("usePlatform")
+        }
       }
-      
     }
   })
   
@@ -588,7 +625,8 @@ server <- function(input, output, session) {
   output$chooseVarsToKeep <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     checkboxGroupInput(inputId = "varsToKeep", label = div("Which columns would you like to keep?",
-                                                           helpButton("This will drop any unselected columns from the dataset.")), colNames)
+                                                           helpButton("This will drop any unselected columns from the dataset.")), 
+                       choices = colNames, selected = colNames)
   })
   
   observeEvent(input$filterCols, ({ if (!is.null(values$metaData)) {
@@ -1046,8 +1084,6 @@ server <- function(input, output, session) {
     
     if(!is.null(values$allData)) {
       
-      print(values$allData)
-      
       extractedData <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
     
       values$exprData <- extractedData[["expressionData"]]
@@ -1103,7 +1139,8 @@ server <- function(input, output, session) {
   observeEvent(input$previewExpr, {
     
     if(!is.null(values$previewExprData)) {
-      values$exprToDisplay <- withProgress(replaceID(values$exprData, values$ftData, input$colForExprLabels, input$howToSummarize))
+      values$exprToDisplay <- withProgress(message = "Replacing the ID column", 
+                                           replaceID(values$exprData, values$ftData, input$colForExprLabels, input$howToSummarize))
       
       before <- length(values$expression_oFile)
       
@@ -1114,7 +1151,8 @@ server <- function(input, output, session) {
                                                     format_string(input$howToSummarize), ")")), 
                                            values$expression_oFile)
       if(input$transposeExpr) {
-        values$exprToDisplay <- withProgress(quickTranspose(values$exprToDisplay))
+        values$exprToDisplay <- withProgress(message = "Transposing the data", 
+                                             quickTranspose(values$exprToDisplay))
         
         #WRITING COMMANDS TO EXPRESSION RSCRIPT
         values$expression_oFile <- saveLines(c(commentify("transpose data"), 
@@ -1154,7 +1192,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       
-      values$exprData <- filterExpressionData(values$exprData, input$exprPreview_search_columns)
+      #values$exprToDisplay <- filterExpressionData(values$exprToDisplay, input$exprPreview_search_columns)
       
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
       before <- length(values$expression_oFile)
@@ -1165,22 +1203,38 @@ server <- function(input, output, session) {
       values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
       
       if (input$expression_fileType == "csv") {
-        write.csv(values$exprData, file, row.names = FALSE, col.names = TRUE)
+        
+        #print("exprToDisplay")
+        #print(values$exprToDisplay, n = 10)
+        withProgress(message = "Writing data to file", {
+          incProgress()
+          write.csv(values$exprToDisplay, file, row.names = FALSE, col.names = TRUE)
+          incProgress()
+        })
       }
       else if (input$expression_fileType == "tsv") {
-        write.table(values$exprData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+        withProgress(message = "Writing data to file",
+                     write.table(values$exprToDisplay, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
       }
       else if (input$expression_fileType == "JSON") {
         library(jsonlite)
         library(readr)
         
-        values$exprData %>% toJSON() %>% write_lines(file)
+        withProgress(message = "Writing data to file", {
+          incProgress()
+          values$exprToDisplay %>% toJSON() %>% write_lines(file)
+          incProgress()
+        })
         
       }
       else if (input$expression_fileType == "xlsx") {
         library(xlsx)
         
-        write.xlsx(values$exprData, file, row.names = FALSE, showNA = FALSE)
+        withProgress(message = "Writing data to file", {
+          incProgress()
+          write.xlsx(values$exprToDisplay, file, row.names = FALSE, showNA = FALSE)
+          incProgress()
+        })
         
       }
     }
