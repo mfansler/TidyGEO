@@ -29,15 +29,39 @@ help_link <- function(id) {
   #                      footer = modalButton()))
 }
 
-help_modal <- function(help_file) {
+help_modal <- function(help_file, images_id) {
   showModal(
     modalDialog(
-      includeMarkdown(help_file), 
+      includeMarkdown(help_file),
+      uiOutput(images_id),
+      tags$script(HTML(
+        "$(document).on('click', '.clickimg', function() {",
+        "  Shiny.onInputChange('clickimg', $(this).data('value'));",
+        "});"
+      )),
       footer = modalButton("Close"),
       size = "l"
       )
     )
 }
+
+
+# creating an image grid for help modals ----------------------------------
+
+
+create_image_grid <- function(images, image_names) {
+  fluidRow(
+    mapply(function(my_image, img_name) {
+      print(paste(my_image, img_name))
+      column(3, 
+             div(tags$img(src=my_image, width = "200px", class="clickimg", "data-value"=my_image), img_name)
+      )
+    }, images, image_names)
+  )
+}
+
+# colored buttons of different types --------------------------------------
+
 
 primary_button <- function(id, label, icon = NULL) {
   shiny::actionButton(id, div(label, icon), 
@@ -1055,27 +1079,67 @@ server <- function(input, output, session) {
   observeEvent(input$nav_7_to_expression_button, {
     updateTabsetPanel(session, 'top_level', selected = 'Expression data')
   })
+  
   # help modals -------------------------------------------------------------
 
+  
   observeEvent(input$split_help, {
-    help_modal("www/Split_Vars_Documentation.md")
+    help_modal("www/Split_Vars_Documentation.md", "split_images")
+  })
+  output$split_images <- renderUI({
+    images <- c("separate_example.gif")
+    image_names <- c("Separate Columns Demo")
+    
+    create_image_grid(images, image_names)
   })
   
   observeEvent(input$divide_help, {
-    help_modal("www/Divide_Vars_Documentation.md")
+    help_modal("www/Divide_Vars_Documentation.md", "divide_images")
+  })
+  output$divide_images <- renderUI({
+    images <- c("divide_example.gif")
+    image_names <- c("Divide Columns Demo")
+    
+    create_image_grid(images, image_names)
   })
   
   observeEvent(input$substitute_help, {
-    help_modal("www/Substitute_Vals_Documentation.md")
+    help_modal("www/Substitute_Vals_Documentation.md", "substitute_images")
+  })
+  output$substitute_images <- renderUI({
+    images <- c("substitute_example.gif")
+    image_names <- c("Substitute Values Demo")
+    
+    create_image_grid(images, image_names)
   })
   
   observeEvent(input$exclude_help, {
-    help_modal("www/Exclude_Vals_Documentation.md")
+    help_modal("www/Exclude_Vals_Documentation.md", "exclude_images")
+  })
+  output$exclude_images <- renderUI({
+    images <- c("exclude_example.gif")
+    image_names <- c("Exclude Values Demo")
+    
+    create_image_grid(images, image_names)
   })
   
   observeEvent(input$download_help, {
-    help_modal("www/Download_Data_Documentation.md")
+    help_modal("www/Download_Data_Documentation.md", "download_images")
   })
+  output$download_images <- renderUI({
+    images <- c("download_example_no_filter.gif", "download_example_with_filter.gif")
+    image_names <- c("Download Without Filters", "Download With Filters")
+    
+    create_image_grid(images, image_names)
+  })
+  
+  observeEvent(input$clickimg, {
+    showModal(modalDialog({
+      tags$img(src=input$clickimg, width = "100%", height = "100%")
+    },
+    size = "l"
+    ))
+  }, ignoreInit = TRUE)
   
 
   # expression data sidebar -------------------------------------------------

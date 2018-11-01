@@ -11,4 +11,5 @@ If there is a mistake with how "Exclude" was evaluated, you can click "Undo" to 
 Please note that when excluding a range of values, the specified range includes both the lower and upper limits.
 
 Here is an example of the substituting variables functionality with GSE68849:
-<img src="exclude_example.gif" alt="drawing" width="575"/>
+
+

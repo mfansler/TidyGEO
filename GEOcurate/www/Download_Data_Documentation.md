@@ -2,7 +2,7 @@
 
 This tool works with **Series** data from the online repository Gene Expression Omnibus. According to the information on [GEO's website](https://www.ncbi.nlm.nih.gov/geo/info/overview.html):
 
-> A Series record links together a group of related Samples and provides a focal point and description of the whole study. Series records may also contain tables describing extracted data, summary conclusions, or analyses. Each Series record is assigned a unique and stable GEO accession number (GSExxx).
+*"A Series record links together a group of related Samples and provides a focal point and description of the whole study. Series records may also contain tables describing extracted data, summary conclusions, or analyses. Each Series record is assigned a unique and stable GEO accession number (GSExxx)."*
 
 There are many tools available to search for series records on GEO. [Here](https://www.ncbi.nlm.nih.gov/gds/) is one of GEO's own tools.
 
@@ -20,13 +20,3 @@ After inputting the GSE ID, you may specify some columns to filter out of the da
     + Columns in which every row contains a web address starting with `ftp:://` are often unhelpful because they simply specify where the data was published. If you select this option, columns with web addresses in every row will be dropped.
     
 Here is an example of the filtering functionality with GSE68849:
-
-<figure>
-  <figcaption>Downloading data without using filters.</figcaption>
-  <img src="download_example_no_filter.gif" alt="drawing" width="650"/>
-</figure>
-
-<figure>
-  <figcaption>Downloading data using filters.</figcaption>
-  <img src="download_example_with_filter.gif" alt="drawing" width="650"/>
-</figure>
