@@ -56,7 +56,13 @@ create_image_grid <- function(images, image_names) {
       column(3, 
              div(tags$img(src=my_image, width = "200px", class="clickimg", "data-value"=my_image), img_name)
       )
-    }, images, image_names)
+    }, images, image_names, SIMPLIFY = FALSE, USE.NAMES = FALSE)#,
+    
+    #lapply(images, function(my_image) {
+    #  column(3, 
+    #         tags$img(src=my_image, width = "200px", class="clickimg", "data-value"=my_image)
+    #  )
+    #})
   )
 }
 
