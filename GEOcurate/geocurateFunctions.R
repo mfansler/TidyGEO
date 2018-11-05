@@ -91,7 +91,9 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
     expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
 
     incProgress(message = "Extracting feature data")
-    featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
+    featureData <- #as.data.frame(
+      fData(expressionSet)#, stringsAsFactors = FALSE
+                                 #)
     
     hasNA <- as.logical(apply(featureData, 2, function(x) 
     {

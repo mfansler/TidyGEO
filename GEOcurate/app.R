@@ -56,13 +56,7 @@ create_image_grid <- function(images, image_names) {
       column(3, 
              div(tags$img(src=my_image, width = "200px", class="clickimg", "data-value"=my_image), img_name)
       )
-    }, images, image_names, SIMPLIFY = FALSE, USE.NAMES = FALSE)#,
-    
-    #lapply(images, function(my_image) {
-    #  column(3, 
-    #         tags$img(src=my_image, width = "200px", class="clickimg", "data-value"=my_image)
-    #  )
-    #})
+    }, images, image_names, SIMPLIFY = FALSE, USE.NAMES = FALSE)
   )
 }
 
@@ -371,7 +365,7 @@ ui <- fluidPage(
                                                           primary_button("expression_evaluate_filters", label = "Evaluate filters")
                                                           ),
                                                  tabPanel("Feature data",
-                                                          withSpinner(DTOutput("featureData"), type = 5),
+                                                          withSpinner(dataTableOutput("featureData"), type = 5),
                                                           primary_button("feature_evaluate_filters", label = "Evaluate filters")
                                                           )
                                                )
@@ -1378,16 +1372,17 @@ server <- function(input, output, session) {
 
   output$featureData <- DT::renderDT({
     if(!is.null(values$ftToDisplay)) {
-      datatable(data.frame(values$ftToDisplay, stringsAsFactors = TRUE), rownames = FALSE, filter = "top", options = list(scrollX = TRUE, dom = "tp", columnDefs = list(list(
-        targets = "_all",
-        #Makes it so that the table will only display the first 30 chars.
-        #See https://rstudio.github.io/DT/options.html
-        render = JS(
-          "function(data, type, row, meta) {",
-          "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
-          "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
-          "}")
-      ))))
+      datatable(data.frame(values$ftToDisplay, stringsAsFactors = TRUE), rownames = FALSE, filter = "top", options = list(scrollX = TRUE, dom = "tp"#, columnDefs = list(list(
+        #targets = "_all",
+        ##Makes it so that the table will only display the first 30 chars.
+        ##See https://rstudio.github.io/DT/options.html
+        #render = JS(
+        #  "function(data, type, row, meta) {",
+        #  "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
+        #  "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
+        #  "}")
+      #))
+      ))
     }
     else {
       datatable(data.frame("Please download some data"), rownames = FALSE, 
