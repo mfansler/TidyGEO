@@ -1,4 +1,3 @@
-
 library(GEOquery)
 library(stringr)
 library(glue)
@@ -6,7 +5,7 @@ library(dplyr)
 
 saveData <- function(metaData, outputRawFilePath) {
   if (!dir.exists(dirname(outputRawFilePath)))
-    dir.create(dirname(outputRawFilePath), recursive=TRUE, showWarnings=FALSE)
+    dir.create(dirname(outputRawFilePath), recursive = TRUE, showWarnings = FALSE)
   
   write.table(metaData, outputRawFilePath, sep = "\t", row.names = TRUE, col.names = TRUE, quote = FALSE)
 }
@@ -14,7 +13,7 @@ saveData <- function(metaData, outputRawFilePath) {
 loadData <- function(fileName) {
   
   if (file.exists(fileName)) {
-    metaData <- read.table(fileName, sep="\t", row.names=NULL, header=TRUE, na.strings="NA", check.names=FALSE, quote=NULL)
+    metaData <- read.table(fileName, sep = "\t", row.names = NULL, header = TRUE, na.strings = "NA", check.names = FALSE, quote = NULL)
     colnames(metaData)[1] <- "SampleID"
     return(metaData)
   }
@@ -74,11 +73,11 @@ downloadExpression <- function(geoID, dataSetIndex) {
   
   featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
   hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
-  if(all(hasNA) != FALSE) {
+  if (all(hasNA) != FALSE) {
     featureData <- featureData[, -which(hasNA)]
   }
   
-  return(list("expressionData"=expressionData, "featureData"=featureData))
+  return(list("expressionData" = expressionData, "featureData" = featureData))
 }
 
 #filter columns with all different entries or all the same entry
@@ -102,16 +101,16 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
     temp <- temp[which(temp != "NA")]
     temp <- temp[which(temp != "")]
     if (length(temp) > 0) {
-      isReanalyzed <- if("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
-      isURL <- if("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
-      isDate <- if("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
-      isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
+      isReanalyzed <- if ("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
+      isURL <- if ("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
+      isDate <- if ("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
+      isTooLong <- if ("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
       uniqueVals <- unique(as.factor(as.character(toupper(temp))))
-      notAllSame <- if("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
-      notAllDifferent <- if("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
+      notAllSame <- if ("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
+      notAllDifferent <- if ("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && 
+      if (notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && 
          !all(isTooLong) && metaData[i] != rownames(metaData)) {
         filteredData <- cbind(filteredData, metaData[,i])
         colNames <- c(colNames, colName)
@@ -130,7 +129,6 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
 }
 
 isAllNum <- function(metaData) {
-  #print(metaData[,1])
   vals <- unique(metaData[,1])
   temp <- suppressWarnings(as.numeric(as.character(metaData[,1])))
   isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
@@ -139,7 +137,7 @@ isAllNum <- function(metaData) {
 
 isAllUnique <- function(metaData) {
   vals <- unique(metaData[,1])
-  return (length(vals) == nrow(metaData))
+  return(length(vals) == nrow(metaData))
 }
 
 saveFileDescription <- function(geoID, filePathToSave) {
@@ -147,7 +145,7 @@ saveFileDescription <- function(geoID, filePathToSave) {
   desFilePath <- paste(filePathToSave, "_Description.md", sep = "")
   if (!file.exists(desFilePath)) {  
     url <- paste("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geoID, "&targ=self&form=text&view=quick", sep = "")
-    tempFile <- paste("Clinical_Raw/", geoID, "__ncbi.txt", sep= "")
+    tempFile <- paste("Clinical_Raw/", geoID, "__ncbi.txt", sep = "")
     if (!file.exists(tempFile)) {
       download.file(url, tempFile, method = "auto")
     }
@@ -168,7 +166,7 @@ saveFileDescription <- function(geoID, filePathToSave) {
           item <- str_split(item, " = ")
           value <- str_trim(paste(value, item[[1]][2], sep = " "))
         }
-        if(term == "!Series_pubmed_id") {
+        if (term == "!Series_pubmed_id") {
           value <- paste("[PubMed article]", "(https://www.ncbi.nlm.nih.gov/pubmed/", value, ")", sep = "")
         }
       }
@@ -178,144 +176,68 @@ saveFileDescription <- function(geoID, filePathToSave) {
     if (!dir.exists(dirname(desFilePath)))
       dir.create(dirname(desFilePath), recursive = TRUE)
     
-    for(i in 1:length(titles)) {
+    for (i in 1:length(titles)) {
       write(c(titles[i], valuesList[i]), file = desFilePath, append = TRUE, sep = "\n")
       write("", file = desFilePath, append = TRUE, sep = "\n")
     }
   }
 }
 
-
-
-extractColNames <- function(inputDataFrame, delimiterInfo)
-{
-  classAndClinical <- inputDataFrame
-  prefixes = NULL
+extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
-  for (i in 1:nrow(classAndClinical))
-  {
-    for (j in 1:ncol(classAndClinical))
-    {
-      value <- as.character(classAndClinical[i,j])
-      pattern <- delimiterInfo[which(delimiterInfo == colnames(classAndClinical[j]))+1]
+  for (col in colsToSplit) {
+    
+    hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
+      str_detect(x, delimiter)
+    }))
+    if (all(hasDelim)) {
+      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
+      inputDataFrame <- spread(inputDataFrame, key = "key", value = "value")
+    } else {
       
-      if (colnames(classAndClinical)[j] %in% delimiterInfo && grepl(pattern, value)) {
-
-        prefix <- str_split(value, pattern)[[1]][1]
-        prefix <- str_trim(prefix)
-
-      }
-      else {
-        prefix <- colnames(classAndClinical)[j]
-      }
+      offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
+      offendingRows <- if_else(nchar(offendingRows) > 50, paste0(substr(offendingRows, 1, 50), "... "), offendingRows)
       
-      if (prefix != "")
-        prefixes <- c(prefixes, prefix)
+      offendingVals <- paste(inputDataFrame[!hasDelim, col], collapse = ", ")
+      offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
+      
+      print(paste0(col, " could not be split."))
+      print(paste0("Rows: ", offendingRows))
+      print(paste0("Values: ", offendingVals))
     }
   }
   
-  prefixes <- sort(unique(prefixes))
-  
-  classAndClinical2 <- data.frame(rownames(classAndClinical))
-  
-  for (prefix in prefixes)
-  {
-    rowValues = NULL
-    
-    for (i in 1:nrow(classAndClinical))
-    {
-      rowValue = "?"
-      
-      for (j in 1:ncol(classAndClinical))
-      {
-        value <- as.character(classAndClinical[i,j])
-        pattern <- delimiterInfo[which(delimiterInfo == colnames(classAndClinical[j]))+1]
-        
-        if (colnames(classAndClinical)[j] %in% delimiterInfo && grepl(pattern, value)) {
-          valueParts <- str_split(value, pattern)[[1]]
-          thisPrefix <- str_trim(valueParts[1])
-          thisValue <- valueParts[2]
-        }
-        
-        else
-        {
-          thisPrefix <- colnames(classAndClinical)[j]
-          thisValue <- value
-        }
-        
-        if (thisPrefix == prefix) {
-          thisValue = str_trim(thisValue)
-          rowValue = thisValue
-        }
-      }
-      
-      rowValues <- c(rowValues, rowValue)
-    }
-    
-    classAndClinical2 <- cbind(classAndClinical2, rowValues)
-    
-  }
-  
-  prefixesNew <- c("SampleID", str_replace_all(prefixes, " ", "_"))
-  prefixesNew <- str_replace_all(prefixesNew,"\\(","")
-  prefixesNew <- str_replace_all(prefixesNew,"\\)","")
-  
-  colnames(classAndClinical2) <- prefixesNew
-  
-  rownames(classAndClinical2) <- as.vector(classAndClinical2[,1])
-  classAndClinical2 <- classAndClinical2[,-1]
-  
-  classAndClinical2 <- filterUninformativeCols(classAndClinical2, list("none"))
-  
-  return(classAndClinical2)
+  return(inputDataFrame)
 }
 
-splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements)
-{
-  
+splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
   targetCols <- colsToDivide
   for (colName in targetCols) {
-    targetCol <- metaData[,colName]
+    #targetCol <- metaData[,colName]
     if (numElements[[colName]] > 1) {
       colNames <- NULL
       for (i in 1:numElements[[colName]]) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
       }
-      newData <- data.frame(matrix(nrow = length(targetCol), ncol = length(colNames)))
-      colnames(newData) <- colNames
-      for (index in 1:length(targetCol)) {
-        delimiter <- as.character(delimiter)
-        newVar <- as.character(targetCol[index])
-        vars <- str_split(newVar, delimiter)[[1]]
-        vars <- str_trim(vars)
-        for (i in 1:length(vars)) {
-          newData[index, colNames[i]] <- vars[i]
-        }
-      }
-      metaData <- cbind(metaData, newData)
-      metaData <- metaData[, which(colnames(metaData) != colName)]
+      metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
     }
   }
-  
-  metaData <- filterUninformativeCols(metaData, list("none"))
   return(metaData)
 }
 
-extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
+reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
   
-  if(toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
-    delimiterInfo <- NULL
+  if (toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
+    #delimiterInfo <- NULL
     if (allButSplit) {
       colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
     }
-    for (col in colsToSplit) {
-      delimiterInfo <- c(delimiterInfo, col, delimiter)
-    }
-    metaData <- extractColNames(metaData, delimiterInfo)
+    
+    metaData <- extractColNames(metaData, delimiter, colsToSplit)
     
   }
   
-  if(toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
+  if (toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
     numElements <- NULL
     
     if (allButDivide) {
@@ -325,13 +247,15 @@ extractCols <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, 
     for (col in colsToDivide) {
       numElements[[col]] <- length(str_split(metaData[1, col], delimiter2)[[1]])
     }
-
+    
     metaData <- splitCombinedVars(metaData, colsToDivide, delimiter2, numElements)
   }
   
-  for (col in colnames(metaData)) {
-    metaData[,col] <- sapply(metaData[,col], function(x){gsub(x, pattern = "NA", replacement = NA)})
-  }
+  metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    gsub(x, pattern = "NA", replacement = NA)
+  }))
+  
+  metaData <- filterUninformativeCols(metaData)
   
   return(metaData)
 }
@@ -340,7 +264,7 @@ filterCols <- function(metaData, varsToKeep, allButKeep) {
   
   if (allButKeep) {
     
-    metaData <- if(!is.null(varsToKeep)) metaData[-which(colnames(metaData) %in% varsToKeep)] else metaData
+    metaData <- if (!is.null(varsToKeep)) metaData[-which(colnames(metaData) %in% varsToKeep)] else metaData
 
   }
   else {
@@ -377,7 +301,7 @@ renameCols <- function(metaData, newNames) {
 
 substituteVals <- function(classAndClinical, subSpecs)
 {
-  for(colToSub in names(subSpecs)) {
+  for (colToSub in names(subSpecs)) {
     subs <- subSpecs[[colToSub]]
     toSub <- subs$To_Replace
     newVal <- if (subs$New_Val == "NA" || subs$New_Val == "") NA else as.character(subs$New_Val)
@@ -411,7 +335,7 @@ excludeVars <- function(metaData, specs) {
     }
     if (!identical(toExclude, character(0))) {
       #print(toExclude[which(!toExclude %in% metaData[,variable])])
-      for(el in toExclude[which(!toExclude %in% metaData[,variable])]) {
+      for (el in toExclude[which(!toExclude %in% metaData[,variable])]) {
         if (grepl("exclude", el)) {
           el <- str_split(el, "exclude: ")[[1]][2]
           bounds <- as.numeric(str_split(el, "-")[[1]])
@@ -451,10 +375,10 @@ fixSpecialCharacters <- function(x, offendingChars)
 saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription = FALSE)
 {
 
-  print(paste("Saving clinical data to ", outputRawFilePath, sep=""))
+  print(paste("Saving clinical data to ", outputRawFilePath, sep = ""))
     
   if (!dir.exists(dirname(outputRawFilePath)))
-    dir.create(dirname(outputRawFilePath), recursive=TRUE, showWarnings=FALSE)
+    dir.create(dirname(outputRawFilePath), recursive = TRUE, showWarnings = FALSE)
     
   write.table(metaData, outputRawFilePath, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     
@@ -491,7 +415,7 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   dataWRowNames <- data
   
   replacementWRowNames <- replacement %>%
-    dplyr::rename(replace=replaceCol) %>%
+    dplyr::rename(replace = replaceCol) %>%
     select(ID, replace)
   
   mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
@@ -520,4 +444,41 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   }
   
   return(mergedData)
+}
+
+filterExpressionData <- function(data, shinyFilterSpecs) {
+  
+  for (i in 1:length(shinyFilterSpecs)) {
+    if (shinyFilterSpecs[i] != "") {
+      if (grepl("\"", shinyFilterSpecs[i])) {
+        searchStrs <- shinyFilterSpecs[i] %>%
+          str_remove_all("\"") %>%
+          str_remove_all("\\[") %>%
+          str_remove_all("\\]") %>%
+          str_split(",")
+        searchStrs <- searchStrs[[1]]
+        data <- data %>% filter_at(i, any_vars(. %in% searchStrs))
+      } else if (grepl(" ... ", shinyFilterSpecs[i])) {
+        searchStrs <- as.numeric(str_split(shinyFilterSpecs[i], " ... ")[[1]])
+        data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
+      } else {
+        matches <- sapply(data[,i], function(x) {
+          grepl(shinyFilterSpecs[i], x)
+        })
+        data <- data[matches,]
+      }
+    }
+  }
+  return(data)
+}
+
+find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
+  
+  search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else data2[,id_col2]
+  
+  if (id_col1 == "colnames") {
+    data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
+  } else {
+    data1[which(data1[,id_col1] %in% search_terms),]
+  }
 }
