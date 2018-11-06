@@ -14,12 +14,12 @@ saveLines <- function(strings, oFile) {
 
 saveToRscript <- function(oFile, filePath = file.path(tempdir(), "script_Temp.R")) {
   sink(filePath, append = FALSE, split = FALSE)
-  for(i in 1:length(oFile)) cat(oFile[i], fill = T)
+  for (i in 1:length(oFile)) cat(oFile[i], fill = T)
   sink()
 }
 
 removeFromScript <- function(oFile, len, all = F) {
-  length(oFile) <- if(all) len else length(oFile) - len
+  length(oFile) <- if (all) len else length(oFile) - len
   return(oFile)
 }
 
@@ -39,8 +39,7 @@ loadRdsFromDropbox <- function(geoID) {
   
   filesInfo <- drop_dir("Shiny")
   filePaths <- filesInfo$path_display
-  allData <- NULL
-  if(currPath %in% filePaths) {
+  if (currPath %in% filePaths) {
     print("RDS found")
     filePath <- filePaths[which(filePaths == currPath)]
     drop_download(path = filePath, local_path = localPath, dtoken = token, overwrite = TRUE)
@@ -54,7 +53,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
   
   expressionSet <- loadRdsFromDropbox(geoID)
   
-  if(is.null(expressionSet)) {
+  if (is.null(expressionSet)) {
     status <- tryCatch({
       expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE)
       saveDataRDS(expressionSet, paste0(geoID, ".rds"))
@@ -84,7 +83,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
   
   expressionSet <- expressionSet[[index]]
   
-  if(extractExprData) {
+  if (extractExprData) {
     
     incProgress(message = "Extracting expression data")
     expressionData <- assayData(expressionSet)$exprs
@@ -100,7 +99,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
       return(any(is.na(x)) || any(x == ""))
     }
     ))
-    if(any(hasNA)) {
+    if (any(hasNA)) {
       featureData <- featureData[, -which(hasNA)]
     }
     
@@ -127,9 +126,9 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
   metaData <- metaData[!duplicated(as.list(metaData))]
   
   filteredData <- as.data.frame(row.names(metaData))
-  dataToFilter <- matrix(nrow = nrow(metaData), ncol = 1)
+  #dataToFilter <- matrix(nrow = nrow(metaData), ncol = 1)
   
-  metaDataCols <- colnames(metaData)
+  #metaDataCols <- colnames(metaData)
   colNames <- NULL
   unFilteredCount = 0
   evalSame <- rep(0, nrow(metaData))
@@ -141,14 +140,14 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
     temp <- temp[which(temp != "NA")]
     temp <- temp[which(temp != "")]
     if (length(temp) > 0) {
-      isReanalyzed <- if("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
-      isURL <- if("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
-      isDate <- if("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
+      isReanalyzed <- if ("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
+      isURL <- if ("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
+      isDate <- if ("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
       #isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
       #isTooLong <- sum(isTooLong) > (length(temp) / 2)
       
-      if(all(grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp))) {
+      if (all(grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp))) {
         
         uniqueDates <- unique(temp)
         dateCounts <- NULL
@@ -157,16 +156,16 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
           dateCounts[[uniqueDate]] <- length(which(temp == uniqueDate))
         }
         
-        m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[1,i], perl=TRUE)
+        m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[1,i], perl = TRUE)
         prev <- regmatches(metaData[1,i], m)
         
         for (j in 1:length(metaData[,i])) {
           #extract the actual date part
-          m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[j,i], perl=TRUE)
+          m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[j,i], perl = TRUE)
           myDate <- regmatches(metaData[j,i], m)
           
           #the date is not the same as the previous one and the current date and the previous date represent a substantial amount of the entries
-          if (myDate != prev && (dateCounts[[metaData[j,i]]] > (nrow(metaData)/3)) && (dateCounts[[metaData[j-1,i]]] > (nrow(metaData)/3))) {
+          if (myDate != prev && (dateCounts[[metaData[j,i]]] > (nrow(metaData)/3)) && (dateCounts[[metaData[j - 1,i]]] > (nrow(metaData)/3))) {
             evalSame[j] <- 1
           }
           prev <- myDate
@@ -174,12 +173,12 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       }
       
       uniqueVals <- unique(as.factor(as.character(toupper(temp))))
-      notAllSame <- if("same_vals" %in% toFilter) length(uniqueVals) > 1 else TRUE
-      notAllDifferent <- if("all_diff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
+      notAllSame <- if ("same_vals" %in% toFilter) length(uniqueVals) > 1 else TRUE
+      notAllDifferent <- if ("all_diff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
       # && !isTooLong
       
-      if(notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(metaData[i] == rownames(metaData))) {
+      if (notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(metaData[i] == rownames(metaData))) {
         filteredData <- cbind(filteredData, metaData[,i], stringsAsFactors = FALSE)
         colNames <- c(colNames, colName)
         unFilteredCount <- unFilteredCount + 1
@@ -208,13 +207,13 @@ isAllNum <- function(metaData) {
 
 isAllUnique <- function(metaData) {
   vals <- unique(metaData[,1])
-  return (length(vals) == nrow(metaData))
+  return(length(vals) == nrow(metaData))
 }
 
 printVarsSummary <- function(metaData) {
-  summFrame <- data.frame(a="", b="", stringsAsFactors = FALSE)
+  summFrame <- data.frame(a = "", b = "", stringsAsFactors = FALSE)
   for (variable in colnames(metaData)) {
-    if(variable == "evalSame")
+    if (variable == "evalSame")
       next
     varName <- c(paste0("Summary for variable \"", variable, "\":"), "")
     summFrame <- rbind(summFrame, varName)
@@ -257,7 +256,7 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
   errorMessage <- NULL
   
-  for(col in colsToSplit) {
+  for (col in colsToSplit) {
     
     hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
       str_detect(x, delimiter)
@@ -279,7 +278,7 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     }
   }
   
-  if(!is.null(errorMessage)) {
+  if (!is.null(errorMessage)) {
     errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
                       errorMessage)
     errorMessage <- paste(errorMessage, collapse = "<br/>")
@@ -296,8 +295,8 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
 splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
   targetCols <- colsToDivide
   for (colName in targetCols) {
-    targetCol <- metaData[,colName]
-    if(numElements[[colName]] > 1) {
+    #targetCol <- metaData[,colName]
+    if (numElements[[colName]] > 1) {
       colNames <- NULL
       for (i in 1:numElements[[colName]]) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
@@ -310,8 +309,8 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
 
 reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
   
-  if(toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
-    delimiterInfo <- NULL
+  if (toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
+    #delimiterInfo <- NULL
     if (allButSplit) {
       colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
       colsToSplit <- colsToSplit[-which(colsToSplit == "evalSame")]
@@ -321,7 +320,7 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
     
   }
   
-  if(toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
+  if (toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
     numElements <- NULL
     
     if (allButDivide) {
@@ -349,7 +348,7 @@ filterCols <- function(metaData, varsToKeep, allButKeep) {
   
   if (allButKeep) {
     
-    metaData <- if(!is.null(varsToKeep)) metaData[-which(colnames(metaData) %in% varsToKeep)] else metaData
+    metaData <- if (!is.null(varsToKeep)) metaData[-which(colnames(metaData) %in% varsToKeep)] else metaData
 
   }
   else {
@@ -373,12 +372,12 @@ renameCols <- function(metaData, newNames, session) {
   for (colName in colnames(metaData)) {
     if (colName %in% names(newNames)) {
       offendingChars <- findOffendingChars(newNames[colName])
-      if(any(offendingChars)) {
+      if (any(offendingChars)) {
         createAlert(session, "alert", "offendingChars",
                     content = paste("The following characters were removed from", 
                                     newNames[colName], 
                                     "because they might cause problems later:", 
-                                    collapse(names(offendingChars[which(offendingChars == T)]), sep = ", ")))
+                                    paste(names(offendingChars[which(offendingChars == T)]), collapse = ", ")))
       }
       updatedCols <- c(updatedCols, newNames[colName])
     }
@@ -395,7 +394,7 @@ renameCols <- function(metaData, newNames, session) {
 
 substituteVals <- function(classAndClinical, subSpecs)
 {
-  for(colToSub in names(subSpecs)) {
+  for (colToSub in names(subSpecs)) {
     subs <- subSpecs[[colToSub]]
     toSub <- subs$To_Replace
     newVal <- if (subs$New_Val == "NA" || subs$New_Val == "") NA else as.character(subs$New_Val)
@@ -420,20 +419,6 @@ substituteVals <- function(classAndClinical, subSpecs)
   return(classAndClinical)
 }
 
-
-cleanValues <- function(data, specs, unknownVal = "?")
-{
-  names <- colnames(data)
-  names2 <- NULL
-  for (name in names)
-  {
-    names2 <- c(names2, fixSpecialCharacters(name))
-  }
-  colnames(data) <- names2
-
-  return(data)
-}
-
 excludeVars <- function(metaData, specs) {
   for (variable in names(specs)) {
     toExclude <- specs[[variable]]
@@ -442,7 +427,7 @@ excludeVars <- function(metaData, specs) {
       metaData <- metaData[-which(is.na(metaData[,variable])),]
     }
     if (!identical(toExclude, character(0))) {
-      for(el in toExclude[which(!toExclude %in% metaData[,variable])]) {
+      for (el in toExclude[which(!toExclude %in% metaData[,variable])]) {
         if (grepl("exclude", el)) {
           el <- str_split(el, "exclude: ")[[1]][2]
           bounds <- as.numeric(str_split(el, "-")[[1]])
@@ -505,7 +490,7 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   dataWRowNames <- data
   
   replacementWRowNames <- replacement %>%
-    dplyr::rename(replace=replaceCol) %>%
+    dplyr::rename(replace = replaceCol) %>%
     select(ID, replace)
   
   incProgress()
@@ -549,18 +534,25 @@ findExprLabelColumns <- function(ftData) {
 
 filterExpressionData <- function(data, shinyFilterSpecs) {
   
-  for(i in 1:length(shinyFilterSpecs)) {
-    if(grepl("\"", shinyFilterSpecs[i])) {
-      searchStrs <- shinyFilterSpecs[i] %>%
-        str_remove_all("\"") %>%
-        str_remove_all("\\[") %>%
-        str_remove_all("\\]") %>%
-        str_split(",")
-      searchStrs <- searchStrs[[1]]
-      data <- data %>% filter_at(i, any_vars(. %in% searchStrs))
-    } else {
-      searchStrs <- as.numeric(str_split(shinyFilterSpecs[i], " ... ")[[1]])
-      data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
+  for (i in 1:length(shinyFilterSpecs)) {
+    if (shinyFilterSpecs[i] != "") {
+      if (grepl("\"", shinyFilterSpecs[i])) {
+        searchStrs <- shinyFilterSpecs[i] %>%
+          str_remove_all("\"") %>%
+          str_remove_all("\\[") %>%
+          str_remove_all("\\]") %>%
+          str_split(",")
+        searchStrs <- searchStrs[[1]]
+        data <- data %>% filter_at(i, any_vars(. %in% searchStrs))
+      } else if (grepl(" ... ", shinyFilterSpecs[i])) {
+        searchStrs <- as.numeric(str_split(shinyFilterSpecs[i], " ... ")[[1]])
+        data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
+      } else {
+        matches <- sapply(data[,i], function(x) {
+          grepl(shinyFilterSpecs[i], x)
+        })
+        data <- data[matches,]
+      }
     }
   }
   return(data)
@@ -568,17 +560,17 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
 
 advance_columns_view <- function(data, start, forward_distance) {
   
-  if(class(start) == "character") {
+  if (class(start) == "character") {
     start <- which(colnames(data) == start) + 1
   }
   
   end_point <- start + (forward_distance - 1)
   
-  if(end_point > ncol(data)) {
+  if (end_point > ncol(data)) {
     end_point <- ncol(data)
   }
   
-  if(start > end_point ) {
+  if (start > end_point ) {
     return(NULL)
   }
   
@@ -588,28 +580,31 @@ advance_columns_view <- function(data, start, forward_distance) {
 
 retract_columns_view <- function(data, last_column, backward_distance) {
   
-  if(class(last_column) == "character") {
+  if (class(last_column) == "character") {
     last_column <- which(colnames(data) == last_column) - 1
   }
   
   start_point <- last_column - (backward_distance - 1)
   
-  if(start_point < 1) {
+  if (start_point < 1) {
     start_point <- 1
   }
   
-  if(start_point > last_column) {
+  if (start_point > last_column) {
     return(NULL)
   }
   
   data[,start_point:last_column]
 }
 
-find_intersection <- function(data1, data2, id_col1, id_col2) {
+#finds all of data1 in data2
+find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
   
-  search_terms <- if_else(id_col2 == "colnames", colnames(data2), data2[,id_col2])
+  search_terms <- if (id_col2 == "colnames") colnames(data2) else data2[,id_col2]
   
-  #account for when id_col1 is colnames
-  
-  data1[which(data1[,id_col1] %in% search_terms)]
+  if (id_col1 == "colnames") {
+    data1[,which(colnames(data1) %in% search_terms)]
+  } else {
+    data1[which(data1[,id_col1] %in% search_terms),]
+  }
 }
