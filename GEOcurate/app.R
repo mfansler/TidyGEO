@@ -87,24 +87,16 @@ format_string <- function(element) {
   else if (is.na(element)) {
     return("NA")
   }
-  else if (typeof(element) == "double") {
-    for (i in 1:length(element)) {
-      element[i] <- as.character(element[i])
-    }
-    return(element)
+  else if (mode(element) == "numeric" || mode(element) == "logical") {
+    element <- as.character(element)
   }
-  else if (typeof(element) == "character") {
-    for (i in 1:length(element)) {
-      element[i] <- paste0("'", element[i], "'")
-    }
-    return(element)
+  else if (mode(element) == "character") {
+    element <- sapply(element, function(x){paste0("'", x, "'")}, USE.NAMES = FALSE)
   }
-  else if (element == TRUE) {
-    return("TRUE")
+  if (length(element) > 1) {
+    element <- paste0("c(", paste(element, collapse = ", "), ")")
   }
-  else if (element == FALSE) {
-    return("FALSE")
-  }
+  return(element)
 }
 
 # creates section headings for R script -----------------------------------
@@ -504,9 +496,10 @@ server <- function(input, output, session) {
     values$oFile <- "source('geocurateFunctions_User.R')"
     values$oFile <- saveLines(commentify("download metaData"), values$oFile)
     values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
-    for (i in 1:length(input$download_data_filter)) {
-      values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", format_string(input$download_data_filter[i])), values$oFile)
-    }
+    values$oFile <- saveLines(paste0("toFilter <- ", format_string(input$download_data_filter)), values$oFile)
+    #for (i in 1:length(input$download_data_filter)) {
+    #  values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", format_string(input$download_data_filter[i])), values$oFile)
+    #}
     values$oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$oFile)
     values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
     downloadChunkLen <- length(values$oFile)
@@ -627,14 +620,16 @@ server <- function(input, output, session) {
   #WRITING COMMANDS TO R SCRIPT
   before <- length(values$oFile)
   values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
-  values$oFile <- saveLines(paste0("cols_to_split <- NULL"), values$oFile)
-  for (i in 1:length(input$cols_to_split)) {
-    values$oFile <- saveLines(paste0("cols_to_split[", i, "] <- ", format_string(input$cols_to_split[i])), values$oFile)
-  }
-  values$oFile <- saveLines(paste0("colsToDivide <- NULL"), values$oFile)
-  for (i in 1:length(input$colsToDivide)) {
-    values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", format_string(input$colsToDivide[i])), values$oFile)
-  }
+  values$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), values$oFile)
+  #values$oFile <- saveLines(paste0("cols_to_split <- NULL"), values$oFile)
+  #for (i in 1:length(input$cols_to_split)) {
+  #  values$oFile <- saveLines(paste0("cols_to_split[", i, "] <- ", format_string(input$cols_to_split[i])), values$oFile)
+  #}
+  values$oFile <- saveLines(paste0("colsToDivide <- ", format_string(input$cols_to_split)), values$oFile)
+  #values$oFile <- saveLines(paste0("colsToDivide <- NULL"), values$oFile)
+  #for (i in 1:length(input$colsToDivide)) {
+  #  values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", format_string(input$colsToDivide[i])), values$oFile)
+  #}
   values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
                               paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
                               paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
@@ -664,10 +659,11 @@ server <- function(input, output, session) {
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("exclude undesired columns"), values$oFile)
-      values$oFile <- saveLines(paste0("varsToKeep <- NULL"), values$oFile)
-      for (i in 1:length(input$varsToKeep)) {
-        values$oFile <- saveLines(paste0("varsToKeep[", i, "] <- ", format_string(input$varsToKeep[i])), values$oFile)
-      }
+      values$oFile <- saveLines(paste0("varsToKeep <- ", format_string(input$varsToKeep)), values$oFile)
+      #values$oFile <- saveLines(paste0("varsToKeep <- NULL"), values$oFile)
+      #for (i in 1:length(input$varsToKeep)) {
+      #  values$oFile <- saveLines(paste0("varsToKeep[", i, "] <- ", format_string(input$varsToKeep[i])), values$oFile)
+      #}
       values$oFile <- saveLines(c(paste0("keep_all_but <- ", format_string(input$keep_all_but)),
                                   "metaData <- filterCols(metaData, varsToKeep, keep_all_but)"), 
                                 values$oFile)
