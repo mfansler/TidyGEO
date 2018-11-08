@@ -254,6 +254,8 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
   errorMessage <- NULL
   
+  inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
+  
   for (col in colsToSplit) {
     
     hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
@@ -287,7 +289,7 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
       )
   }
   
-  return(inputDataFrame)
+  return(data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE))
 }
 
 splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {

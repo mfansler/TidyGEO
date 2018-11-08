@@ -2,6 +2,7 @@ library(GEOquery)
 library(stringr)
 library(glue)
 library(dplyr)
+library(tidyr)
 
 saveData <- function(metaData, outputRawFilePath) {
   if (!dir.exists(dirname(outputRawFilePath)))
@@ -96,7 +97,6 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
   
   for (i in 1:ncol(metaData)) {
     colName <- as.character(colnames(metaData)[i])
-
     temp <- metaData[,i]
     temp <- temp[which(temp != "NA")]
     temp <- temp[which(temp != "")]
@@ -107,8 +107,8 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
       isTooLong <- if ("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
       
       uniqueVals <- unique(as.factor(as.character(toupper(temp))))
-      notAllSame <- if ("sameVals" %in% toFilter) length(uniqueVals) > 1 else TRUE
-      notAllDifferent <- if ("allDiff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
+      notAllSame <- if ("same_vals" %in% toFilter) length(uniqueVals) > 1 else TRUE
+      notAllDifferent <- if ("all_diff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
       
       if (notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && 
          !all(isTooLong) && metaData[i] != rownames(metaData)) {
@@ -185,6 +185,8 @@ saveFileDescription <- function(geoID, filePathToSave) {
 
 extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
+  inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
+  
   for (col in colsToSplit) {
     
     hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
@@ -207,7 +209,7 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     }
   }
   
-  return(inputDataFrame)
+  return(data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE))
 }
 
 splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
