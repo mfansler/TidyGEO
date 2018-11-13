@@ -8,10 +8,14 @@ library(shinyjs)
 library(feather)
 library(shinysky)
 library(shinyFiles)
-library(tidyr)
+library(tidyverse)
 source("geocurateFunctions.R")
 
-
+series_list <- read_tsv("www/series.tsv")
+series_list <- series_list %>%
+  mutate(description = paste0(Title, "; Type: ", `Series Type`, "; Taxonomy: ", Taxonomy, "; Samples: ", `Sample Count`)) %>%
+  select(Accession, description)
+series_list <- series_list[nrow(series_list):1,]
 
 # help icon to add as tag to buttons, etc ---------------------------------
 
@@ -147,8 +151,8 @@ ui <- fluidPage(
                                                p("Welcome to GEOcurate! This application will allow you to reformat data
                                                  from GEO, which can then be used to answer research questions. To get started,
                                                  take a look at the help documentation or"),
-                                               textInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                                                                        help_link(id = "download_help"))),
+                                               selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
+                                                                                        help_link(id = "download_help")), choices = NULL),
                                                uiOutput("gse_link"),
                                                br(),
                                                checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
@@ -443,8 +447,25 @@ server <- function(input, output, session) {
   
   # download & display metaData ---------------------------------------------
   
+  observe({
+    updateSelectizeInput(
+      session = session, 'geoID', server = TRUE,
+      choices = data.frame(label = series_list$Accession, value = series_list$Accession, name = series_list$description),
+      options = list(render = I(
+        '{
+          option: function(item, escape) {
+            return "<div><strong>" + escape(item.label) + "</strong> " + escape(item.name) + " </div>"
+          }
+        }'),
+        create = TRUE,
+        multiple = TRUE,
+        maxItems = 5
+        )
+    )
+  })
+  
   output$gse_link <- renderUI({
-    if (!is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
+    if (!is.null(input$geoID) && !is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
       div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
                paste("View", input$geoID, "dataset on GEO")), icon("external-link"))
     }
