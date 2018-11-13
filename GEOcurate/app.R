@@ -11,11 +11,8 @@ library(shinyFiles)
 library(tidyverse)
 source("geocurateFunctions.R")
 
-series_list <- read_tsv("www/series.tsv")
-series_list <- series_list %>%
-  mutate(description = paste0(Title, "; Type: ", `Series Type`, "; Taxonomy: ", Taxonomy, "; Samples: ", `Sample Count`)) %>%
-  select(Accession, description)
-series_list <- series_list[nrow(series_list):1,]
+series_list <- readRDS("www/series_list.rds")
+platform_list <- readRDS("www/platform_list.rds")
 
 # help icon to add as tag to buttons, etc ---------------------------------
 
@@ -459,7 +456,8 @@ server <- function(input, output, session) {
         }'),
         create = TRUE,
         multiple = TRUE,
-        maxItems = 5
+        maxItems = 5,
+        maxOptions = 100
         )
     )
   })
@@ -489,8 +487,11 @@ server <- function(input, output, session) {
       platforms <- sapply(values$allData, annotation)
       platform_links <- list()
       for (i in 1:length(unname(platforms))) {
+        platform_description <- if (platforms[[i]] %in% platform_list$Accession) 
+          platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
         platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
-                                  platforms[[i]]), icon("external-link"))
+                                  platforms[[i]]), icon("external-link"), 
+                                  em(platform_description))
       } 
       
       if (length(platforms) > 0) {

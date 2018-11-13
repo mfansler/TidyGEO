@@ -2,4 +2,5 @@
 User/
 error_log.md
 *.html
-*.tsv
+series.*tsv
+platform.*tsv
