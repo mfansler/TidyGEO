@@ -55,7 +55,10 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
   
   if (is.null(expressionSet)) {
     status <- tryCatch({
-      expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE)
+      if (!grepl("GSE", geoID)) {
+        stop('Please enter an ID that begins with "GSE".', call. = FALSE)
+      }
+      expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
       saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
     }, error = function(e){

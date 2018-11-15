@@ -144,10 +144,14 @@ ui <- fluidPage(
                                       
                                       
                                       tabPanel("1",
-                                               h4("Downloading the data"),
-                                               p("Welcome to GEOcurate! This application will allow you to reformat data
-                                                 from GEO, which can then be used to answer research questions. To get started,
-                                                 take a look at the help documentation or"),
+                                               h4("Importing the data"),
+                                               div("Welcome to GEOcurate! This application will allow you to reformat data
+                                                   from ",
+                                                 a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus"),
+                                                 ", which can then be used to answer research questions. To get started,",
+                                                 a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "find a series of interest"),
+                                                   "and take a look at the help documentation or"
+                                                 ),
                                                selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                                                         help_link(id = "download_help")), choices = NULL),
                                                uiOutput("gse_link"),
@@ -159,7 +163,7 @@ ui <- fluidPage(
                                                                                      "Contains a date", 
                                                                                      "Is a web address"),
                                                                   choiceValues = list("same_vals", "all_diff", "dates", "url")),
-                                               primary_button(id = "download_data_evaluate", label = "Download"),
+                                               primary_button(id = "download_data_evaluate", label = "Import"),
                                                hr(), uiOutput("nav_1_ui")
                                       ),
                                       
@@ -470,10 +474,10 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$download_data_evaluate, {
-    if (input$geoID == "") {
+    if (is.null(input$geoID) || input$geoID == "") {
       values$errorState <- TRUE
       createAlert(session, "alert", "inputError", title = "Error",
-                  content = "Please specify a GSE ID", append = FALSE)
+                  content = "Please specify a GSE ID.", append = FALSE)
     }
     else {
       closeAlert(session, "inputError")
@@ -483,25 +487,31 @@ server <- function(input, output, session) {
       values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session, 
                                                downloadExpr = input$to_download_expression), 
                               message = "Downloading data")
-      
-      platforms <- sapply(values$allData, annotation)
-      platform_links <- list()
-      for (i in 1:length(unname(platforms))) {
-        platform_description <- if (platforms[[i]] %in% platform_list$Accession) 
-          platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
-        platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
-                                  platforms[[i]]), icon("external-link"), 
-                                  em(platform_description))
-      } 
-      
-      if (length(platforms) > 0) {
-        showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-                                           choiceNames = platform_links, 
-                                           choiceValues = names(platforms)), 
-                              footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
-        if (length(platforms) == 1) {
-          click("usePlatform")
+      if (!is.null(values$allData)) {
+        closeAlert(session, "fileError")
+        values$errorState <- FALSE
+        
+        platforms <- sapply(values$allData, annotation)
+        platform_links <- list()
+        for (i in 1:length(unname(platforms))) {
+          platform_description <- if (platforms[[i]] %in% platform_list$Accession) 
+            platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
+          platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
+                                       platforms[[i]]), icon("external-link"), 
+                                     em(platform_description))
+        } 
+        
+        if (length(platforms) > 0) {
+          showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+                                             choiceNames = platform_links, 
+                                             choiceValues = names(platforms)), 
+                                footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
+          if (length(platforms) == 1) {
+            click("usePlatform")
+          }
         }
+      } else {
+        values$errorState <- TRUE
       }
     }
   })

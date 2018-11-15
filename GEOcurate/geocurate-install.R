@@ -11,6 +11,9 @@ BiocInstaller::biocLite("GEOquery")
 
 source("https://bioconductor.org/biocLite.R")
 BiocInstaller::biocLite("BiocUpgrade")
+install.packages("BiocManager")
+library("BiocManager")
+BiocManager::install("BiocUpgrade")
 
 install.packages("dplyr")
 install.packages("stringr")
