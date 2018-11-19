@@ -177,18 +177,31 @@ ui <- fluidPage(
                                                p("Sometimes columns contain multiple values in them. This makes it so that the values
                                                  cannot be analyzed separately. Here, you can indicate that there are multiple values in a
                                                  column so that the values can be separate."),
-                                               checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
-                                                                                              help_link(id = "split_help"))),
+                                               #checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
+                                              #                                                 icon("caret-down"),
+                                              #                                                help_link(id = "split_help")
+                                              #                                                )),
+                                              prettyToggle(inputId = "to_split", 
+                                                           label_on = div("Contains key-value pairs separated \nby a delimiter",
+                                                                           help_link(id = "split_help")),
+                                                           label_off = div("Contains key-value pairs separated \nby a delimiter",
+                                                                           help_link(id = "split_help")),
+                                                           icon_on = icon("caret-up"),
+                                                           icon_off = icon("caret-down"),
+                                                           status_on = "info",
+                                                           status_off = "primary",
+                                                           shape = "curve",
+                                                           animation = "rotate"),
                                                conditionalPanel(condition = "input.to_split == true",
                                                                 uiOutput("choose_cols_to_split"),
-                                                                checkboxInput(inputId = "split_all_but", label = tags$i("split all BUT the specified")),
+                                                                checkboxInput(inputId = "split_all_but", label = tags$i("Split all BUT the specified")),
                                                                 textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
                                                                                                help_link(id = "divide_help"))),
                                                conditionalPanel(condition = "input.to_divide == true",
                                                                 uiOutput("choose_cols_to_divide"),
-                                                                checkboxInput(inputId = "divide_all_but", label = tags$i("split all BUT the specified")),
+                                                                checkboxInput(inputId = "divide_all_but", label = tags$i("Split all BUT the specified")),
                                                                 textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                primary_button(id = "reformat_columns", label = "Reformat columns"),
@@ -205,7 +218,7 @@ ui <- fluidPage(
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest."),
                                                uiOutput("display_vars_to_keep"),
-                                               checkboxInput(inputId = "keep_all_but", label = tags$i("keep all BUT the specified")),
+                                               checkboxInput(inputId = "keep_all_but", label = tags$i("Keep all BUT the specified")),
                                                primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
                                                hr(), uiOutput("nav_3_ui")
                                       ),
@@ -627,6 +640,14 @@ server <- function(input, output, session) {
   
   # extract columns ---------------------------------------------------------
   
+  
+  #observe({
+  #  input$to_split
+  #  updateCheckboxInput(session, inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
+  #                                                                 icon("caret-up"),
+  #                                                                 help_link(id = "split_help")
+  #  ))
+  #})
   
   output$choose_cols_to_split <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
