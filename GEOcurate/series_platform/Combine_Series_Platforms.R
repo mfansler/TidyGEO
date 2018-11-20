@@ -24,7 +24,14 @@ for (i in 2:num_groups) {
   series_list <- rbind(series_list, current_file)
   setTxtProgressBar(pb_series, i)
 }
-saveRDS(series_list, "../www/series_list.rds")
+#start_time <- Sys.time()
+#saveRDS(series_list, "../www/series_list.rds")
+#end_time <- Sys.time()
+#print(c("RDS time:", end_time - start_time))
+#start_time <- Sys.time()
+write_feather(series_list, "../www/series_list.feather")
+#end_time <- Sys.time()
+#print(c("Feather time:", end_time - start_time))
 
 # list of platforms on GEO as of 11/13/2018 -------------------------------
 
@@ -52,4 +59,5 @@ for (i in 2:num_groups) {
   platform_list <- rbind(platform_list, current_file)
   setTxtProgressBar(pb_platform, i)
 }
-saveRDS(platform_list, "../www/platform_list.rds")
+#saveRDS(platform_list, "../www/platform_list.rds")
+write_feather(platform_list, "../www/platform_list.feather")

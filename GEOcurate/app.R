@@ -9,10 +9,11 @@ library(feather)
 library(shinysky)
 library(shinyFiles)
 library(tidyverse)
+library(shinyWidgets)
 source("geocurateFunctions.R")
 
-series_list <- readRDS("www/series_list.rds")
-platform_list <- readRDS("www/platform_list.rds")
+series_list <- read_feather("www/series_list.feather")
+platform_list <- readRDS("www/platform_list.feather")
 
 # help icon to add as tag to buttons, etc ---------------------------------
 
@@ -178,27 +179,38 @@ ui <- fluidPage(
                                                  cannot be analyzed separately. Here, you can indicate that there are multiple values in a
                                                  column so that the values can be separate."),
                                                #checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
-                                              #                                                 icon("caret-down"),
-                                              #                                                help_link(id = "split_help")
-                                              #                                                )),
-                                              prettyToggle(inputId = "to_split", 
-                                                           label_on = div("Contains key-value pairs separated \nby a delimiter",
+                                               #                                                 icon("caret-down"),
+                                               #                                                help_link(id = "split_help")
+                                               #                                                )),
+                                               prettyToggle(inputId = "to_split", 
+                                                            label_on = div("Choose columns that contain key-value pairs",
                                                                            help_link(id = "split_help")),
-                                                           label_off = div("Contains key-value pairs separated \nby a delimiter",
-                                                                           help_link(id = "split_help")),
+                                                            label_off = div("Choose columns that contain key-value pairs",
+                                                                            help_link(id = "split_help")),
+                                                            icon_on = icon("caret-up"),
+                                                            icon_off = icon("caret-down"),
+                                                            status_on = "info",
+                                                            status_off = "primary",
+                                                            shape = "curve",
+                                                            animation = "rotate"),
+                                               conditionalPanel(condition = "input.to_split == true",
+                                                                uiOutput("choose_cols_to_split"),
+                                                                checkboxInput(inputId = "split_all_but", label = tags$i("Split all BUT the specified")),
+                                                                textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
+                                               ),
+                                               #checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
+                                              #                                                  help_link(id = "divide_help"))),
+                                              prettyToggle(inputId = "to_divide", 
+                                                           label_on = div("Choose columns that contain multiple values",
+                                                                          help_link(id = "divide_help")),
+                                                           label_off = div("Choose columns that contain multiple values",
+                                                                           help_link(id = "divide_help")),
                                                            icon_on = icon("caret-up"),
                                                            icon_off = icon("caret-down"),
                                                            status_on = "info",
                                                            status_off = "primary",
                                                            shape = "curve",
                                                            animation = "rotate"),
-                                               conditionalPanel(condition = "input.to_split == true",
-                                                                uiOutput("choose_cols_to_split"),
-                                                                checkboxInput(inputId = "split_all_but", label = tags$i("Split all BUT the specified")),
-                                                                textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
-                                               ),
-                                               checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
-                                                                                               help_link(id = "divide_help"))),
                                                conditionalPanel(condition = "input.to_divide == true",
                                                                 uiOutput("choose_cols_to_divide"),
                                                                 checkboxInput(inputId = "divide_all_but", label = tags$i("Split all BUT the specified")),

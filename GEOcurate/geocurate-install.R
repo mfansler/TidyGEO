@@ -52,4 +52,5 @@ install.packages("fs")
 install.packages("rJava")
 install.packages("rdrop2")
 install.packages("splitstackshape")
+install.packages("shinyWidgets")
 }
