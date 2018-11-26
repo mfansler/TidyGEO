@@ -266,7 +266,13 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     }))
     if (all(hasDelim)) {
       inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
+      
+      col_names <- colnames(inputDataFrame)
+      col_names <- append(col_names, unique(inputDataFrame$key)[which(!is.na(unique(inputDataFrame$key)))], which(col_names == "key"))
+      col_names <- col_names[-which(col_names %in% c("key", "value"))]
+      
       inputDataFrame <- spread(inputDataFrame, key = "key", value = "value")
+      inputDataFrame <- inputDataFrame[,col_names]
     } else {
       
       offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")

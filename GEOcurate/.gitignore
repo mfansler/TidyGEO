@@ -4,3 +4,4 @@ error_log.md
 *.html
 series*.tsv
 platform*.tsv
+*list.feather

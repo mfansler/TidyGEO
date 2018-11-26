@@ -13,7 +13,7 @@ library(shinyWidgets)
 source("geocurateFunctions.R")
 
 series_list <- read_feather("www/series_list.feather")
-platform_list <- readRDS("www/platform_list.feather")
+platform_list <- read_feather("www/platform_list.feather")
 
 # help icon to add as tag to buttons, etc ---------------------------------
 
