@@ -200,8 +200,9 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
 }
 
 isAllNum <- function(metaData) {
-  vals <- unique(metaData[,1])
-  temp <- suppressWarnings(as.numeric(as.character(metaData[,1])))
+  toEvaluate <- metaData[,1][which(!is.na(metaData[,1]))]
+  vals <- unique(toEvaluate)
+  temp <- suppressWarnings(as.numeric(as.character(toEvaluate)))
   isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
   return(isNum)
 }
@@ -393,12 +394,15 @@ renameCols <- function(metaData, newNames, session) {
   return(metaData)
 }
 
-substituteVals <- function(classAndClinical, subSpecs)
+substituteVals <- function(classAndClinical, subSpecs, is_reg_ex = FALSE)
 {
   for (colToSub in names(subSpecs)) {
     subs <- subSpecs[[colToSub]]
     toSub <- subs$To_Replace
-    newVal <- if (subs$New_Val == "NA" || subs$New_Val == "") NA else as.character(subs$New_Val)
+    if (any(subs$New_Val == "NA")) {
+      subs$New_Val[which(subs$New_Val == "NA")] <- NA
+    }
+    newVal <- subs$New_Val
     for (i in 1:length(toSub)) {
       if (grepl("RANGE", toSub[i])) {
         mySub <- str_split(toSub[i], "RANGE: ")[[1]][2]
@@ -408,9 +412,9 @@ substituteVals <- function(classAndClinical, subSpecs)
                                                 if (mySub[1] <= x && x <= mySub[2]) newVal[i] else x
                                               })
       } else {
-        classAndClinical[,colToSub] <- sapply(classAndClinical[,colToSub], 
+        classAndClinical[,colToSub] <- sapply(as.character(classAndClinical[,colToSub]), 
                                        function(x){
-                                         gsub(x, pattern = toSub[i], replacement = newVal[i])
+                                         gsub(x, pattern = toSub[i], replacement = newVal[i], fixed = is_reg_ex)
                                          }
                                        )
       }

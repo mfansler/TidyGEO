@@ -279,7 +279,7 @@ ui <- fluidPage(
                                       
                                       
                                       tabPanel("6",
-                                               h4("Excluding values"),
+                                               h4("Filtering samples"),
                                                p("You may want to remove some of the values in a column, for example, if you have missing (NA) values.
                                                   Here, you can specify which values you would like to remove.
                                                  Excluding a value will take out the entire row that contains that value in the selected column."),
@@ -301,9 +301,10 @@ ui <- fluidPage(
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
                                                uiOutput("clinical_display_filename"),
+                                               tags$b("Download:"),
                                                fluidRow(
-                                                 column(1, downloadButton("clinical_evaluate_save", "Save", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-                                                 column(1, offset = 3, downloadButton("clinical_save_rscript", "Download Rscript", style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f"))
+                                                 column(1, downloadButton("clinical_evaluate_save", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
+                                                 column(1, offset = 3, downloadButton("clinical_save_rscript", "R script", style = "color: #fff; background-color: #62c18b; border-color: #62c18b"))
                                                ),
                                                hr(), uiOutput("nav_7_ui")
                                       )
@@ -363,9 +364,10 @@ ui <- fluidPage(
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
                                                uiOutput("expression_nameFile"),
+                                               tags$b("Download:"),
                                                fluidRow(
-                                                 column(1, downloadButton("expression_downloadData", "Save", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-                                                 column(1, offset = 3, downloadButton("expression_downloadRscript", "Download Rscript", style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f"))
+                                                 column(1, downloadButton("expression_downloadData", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
+                                                 column(1, offset = 3, downloadButton("expression_downloadRscript", "R script", style = "color: #fff; background-color: #62c18b; border-color: #62c18b"))
                                                )
                                              ),
                                              mainPanel(
@@ -864,20 +866,39 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$evaluate_subs, {
-    if (!identical(values$tablesList, list())) {
+    #if (!identical(values$tablesList, list())) {
+    #print("tablesList")
+    #print(values$tablesList)
+    sub_specs <- list(values$DFIn)
+    names(sub_specs) <- input$colsToSub
+    #print("DFIn")
+    #print(sub_specs)
       values$lastData <- values$metaData
-      values$metaData <- withProgress(substituteVals(values$metaData, values$tablesList))
+      values$metaData <- withProgress(substituteVals(values$metaData, #values$tablesList
+                                                     sub_specs))
+      
+      #WRITING COMMANDS TO R SCRIPT
+      #before <- length(values$oFile)
+      #values$oFile <- saveLines(commentify("substitute values"), values$oFile)
+      #values$oFile <- saveLines(paste0("tablesList <- NULL"), values$oFile)
+      #for (i in 1:length(values$tablesList)) {
+      #  values$oFile <- saveLines(paste0("tablesList[[", format_string(names(values$tablesList)[i]), "]] <- ",
+      #                                   "data.frame(", colnames(values$tablesList[[i]])[1], "=c(", 
+      #                                   paste(format_string(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
+      #                                   colnames(values$tablesList[[i]])[2], "=c(", 
+      #                                   paste(format_string(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
+      #}
       
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("substitute values"), values$oFile)
-      values$oFile <- saveLines(paste0("tablesList <- NULL"), values$oFile)
+      values$oFile <- saveLines(paste0("sub_specs <- NULL"), values$oFile)
       for (i in 1:length(values$tablesList)) {
-        values$oFile <- saveLines(paste0("tablesList[[", format_string(names(values$tablesList)[i]), "]] <- ",
-                                         "data.frame(", colnames(values$tablesList[[i]])[1], "=c(", 
-                                         paste(format_string(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
-                                         colnames(values$tablesList[[i]])[2], "=c(", 
-                                         paste(format_string(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
+        values$oFile <- saveLines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
+                                         "data.frame(", colnames(values$DFIn)[1], "=c(", 
+                                         paste(format_string(as.character(values$DFIn[,1])), collapse = ", "), "), ",
+                                         colnames(values$DFIn)[2], "=c(", 
+                                         paste(format_string(as.character(values$DFIn[,2])), collapse = ", "), "))"), values$oFile)
       }
       values$oFile <- saveLines("metaData <- substituteVals(metaData, tablesList)", 
                                 values$oFile)
@@ -887,7 +908,7 @@ server <- function(input, output, session) {
       values$DFOut <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
       values$suggestions <- unique(as.character(values$metaData[,input$colsToSub]))
       
-    }
+    #}
   })
   
   # exclude vals ------------------------------------------------------------
@@ -968,8 +989,8 @@ server <- function(input, output, session) {
   # download data -----------------------------------------------------------
   
   output$clinical_display_filename <- renderUI({
-    textInput("clinical_user_filename", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows where to save the data. Please specify the full path.")), 
-              value = paste0(input$geoID, "_Clinical.", input$clinical_file_type))
+    textInput("clinical_user_filename", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows what to name the data file.")), 
+              value = paste0(input$geoID, "_Annotations.", input$clinical_file_type))
   })
   
   output$clinical_evaluate_save <- downloadHandler(
@@ -1004,7 +1025,7 @@ server <- function(input, output, session) {
   
   output$clinical_save_rscript <- downloadHandler(
     filename = function() {
-      paste0(input$geoID, "_Clinical_Rscript.R")
+      paste0(input$clinical_user_filename, ".R")
     },
     content = function(file) {
       #WRITING COMMANDS TO R SCRIPT
@@ -1320,8 +1341,8 @@ server <- function(input, output, session) {
   # download expression data -----------------------------------------------------------
   
   output$expression_nameFile <- renderUI({
-    textInput("expression_userFileName", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows where to save the data. Please specify the full path.")), 
-              value = paste0(input$geoID, "_Expression.", input$expression_fileType))
+    textInput("expression_userFileName", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows what to name the data file.")), 
+              value = paste0(input$geoID, "_Data.", input$expression_fileType))
   })
   
   output$expression_downloadData <- downloadHandler(
@@ -1372,7 +1393,7 @@ server <- function(input, output, session) {
   
   output$expression_downloadRscript <- downloadHandler(
     filename = function() {
-      paste0(input$geoID, "_Expression_Rscript.R")
+      paste0(input$expression_userFileName, ".R")
     },
     content = function(file) {
       #WRITING COMMANDS TO R SCRIPT
