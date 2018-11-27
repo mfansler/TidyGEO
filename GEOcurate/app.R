@@ -182,17 +182,19 @@ ui <- fluidPage(
                                                #                                                 icon("caret-down"),
                                                #                                                help_link(id = "split_help")
                                                #                                                )),
-                                               prettyToggle(inputId = "to_split", 
-                                                            label_on = div("Choose columns that contain key-value pairs",
-                                                                           help_link(id = "split_help")),
-                                                            label_off = div("Choose columns that contain key-value pairs",
-                                                                            help_link(id = "split_help")),
-                                                            icon_on = icon("caret-up"),
-                                                            icon_off = icon("caret-down"),
-                                                            status_on = "info",
-                                                            status_off = "primary",
-                                                            shape = "curve",
-                                                            animation = "rotate"),
+                                               #div(actionLink(inputId = "to_split", label = icon("caret-square-o-down")), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help")),                                                
+                                               uiOutput("to_split_toggle"),
+                                               #prettyToggle(inputId = "to_split", 
+                                              #              label_on = div("Columns contain key-value pairs",
+                                              #                             help_link(id = "split_help")),
+                                              #              label_off = div("Columns contain key-value pairs",
+                                              #                              help_link(id = "split_help")),
+                                              #              icon_on = icon("caret-up"),
+                                              #              icon_off = icon("caret-down"),
+                                              #              status_on = "info",
+                                              #              status_off = "primary",
+                                              #              shape = "curve",
+                                              #              animation = "rotate"),
                                                conditionalPanel(condition = "input.to_split == true",
                                                                 uiOutput("choose_cols_to_split"),
                                                                 checkboxInput(inputId = "split_all_but", label = tags$i("Split all BUT the specified")),
@@ -201,9 +203,9 @@ ui <- fluidPage(
                                                #checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
                                               #                                                  help_link(id = "divide_help"))),
                                               prettyToggle(inputId = "to_divide", 
-                                                           label_on = div("Choose columns that contain multiple values",
+                                                           label_on = div("Columns contain multiple values",
                                                                           help_link(id = "divide_help")),
-                                                           label_off = div("Choose columns that contain multiple values",
+                                                           label_off = div("Columns contain multiple values",
                                                                            help_link(id = "divide_help")),
                                                            icon_on = icon("caret-up"),
                                                            icon_off = icon("caret-down"),
@@ -264,13 +266,12 @@ ui <- fluidPage(
                                                checkboxInput(inputId = "substitute_isrange", label = "Specify a range of values to substitute?"),
                                                conditionalPanel(condition = "input.substitute_isrange == true",
                                                                 uiOutput("input_sub_range")),
-                                               conditionalPanel(condition = "input.substitute_isrange == false",
+                                               #conditionalPanel(condition = "input.substitute_isrange == false",
                                                                 h5('Click "Add" to add rows or "Remove" to remove the last row.'),
-                                                                rHandsontableOutput("input_subs_table")),
-                                               tertiary_button("add_val_to_sub", "Add"),
-                                               tertiary_button("remove_val_to_sub", "Remove"),
-                                               div(#style = 'overflow-x: scroll', 
-                                                 DTOutput("display_user_subs")),
+                                                                rHandsontableOutput("input_subs_table")#)
+                                               ,
+                                               #div(#style = 'overflow-x: scroll', 
+                                              #   DTOutput("display_user_subs")),
                                                primary_button("evaluate_subs", "Substitute"),
                                                hr(), uiOutput("nav_5_ui")
                                       ),
@@ -427,6 +428,7 @@ server <- function(input, output, session) {
       orig_feature = NULL,
       last_feature = NULL,
       feature_to_display = NULL,
+      to_split_selected = FALSE,
       newName = NULL,
       newNames = NULL,
       NAvalsList = list(),
@@ -651,13 +653,20 @@ server <- function(input, output, session) {
   # extract columns ---------------------------------------------------------
   
   
-  #observe({
-  #  input$to_split
+  observeEvent(input$to_split, {
   #  updateCheckboxInput(session, inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
   #                                                                 icon("caret-up"),
   #                                                                 help_link(id = "split_help")
-  #  ))
-  #})
+    #))
+    #
+    #updateActionButton(session, "to_split", label = icon("caret-square-o-up"))
+    values$to_split_selected <- if (values$to_split_selected) FALSE else TRUE
+  })
+  
+  output$to_split_toggle <- renderUI({
+    icon_type <- if (values$to_split_selected) "caret-square-o-down" else "caret-square-o-up"
+    div(actionLink(inputId = "to_split", label = icon(icon_type)), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help"))
+  })
   
   output$choose_cols_to_split <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
@@ -670,37 +679,41 @@ server <- function(input, output, session) {
   })
   
   
-  observeEvent(input$reformat_columns, ({values$lastData <- values$metaData
-  values$metaData <- withProgress(reformat_columns(values$metaData, 
-                                              input$to_split, 
-                                              input$cols_to_split, 
-                                              input$to_divide, 
-                                              input$colsToDivide, 
-                                              input$split_delimiter,
-                                              input$divide_delimiter,
-                                              input$split_all_but,
-                                              input$divide_all_but), message = "Extracting columns")
-  #WRITING COMMANDS TO R SCRIPT
-  before <- length(values$oFile)
-  values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
-  values$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), values$oFile)
-  #values$oFile <- saveLines(paste0("cols_to_split <- NULL"), values$oFile)
-  #for (i in 1:length(input$cols_to_split)) {
-  #  values$oFile <- saveLines(paste0("cols_to_split[", i, "] <- ", format_string(input$cols_to_split[i])), values$oFile)
-  #}
-  values$oFile <- saveLines(paste0("colsToDivide <- ", format_string(input$cols_to_split)), values$oFile)
-  #values$oFile <- saveLines(paste0("colsToDivide <- NULL"), values$oFile)
-  #for (i in 1:length(input$colsToDivide)) {
-  #  values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", format_string(input$colsToDivide[i])), values$oFile)
-  #}
-  values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
-                              paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
-                              paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
-                              paste0("split_all_but <- ", format_string(input$split_all_but)), 
-                              paste0("divide_all_but <- ", format_string(input$divide_all_but)),
-                              "metaData <- reformat_columns(metaData, toSplit, cols_to_split, to_divide, colsToDivide, split_delimiter, divide_delimiter, split_all_but, divide_all_but)"), 
-                            values$oFile)
-  values$currChunkLen <- length(values$oFile) - before
+  observeEvent(input$reformat_columns, ({
+    values$lastData <- values$metaData
+    values$metaData <- withProgress(reformat_columns(values$metaData, 
+                                                     input$to_split, 
+                                                     input$cols_to_split, 
+                                                     input$to_divide, 
+                                                     input$colsToDivide, 
+                                                     input$split_delimiter,
+                                                     input$divide_delimiter,
+                                                     input$split_all_but,
+                                                     input$divide_all_but), message = "Extracting columns")
+    #WRITING COMMANDS TO R SCRIPT
+    before <- length(values$oFile)
+    values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
+    values$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), values$oFile)
+    #values$oFile <- saveLines(paste0("cols_to_split <- NULL"), values$oFile)
+    #for (i in 1:length(input$cols_to_split)) {
+    #  values$oFile <- saveLines(paste0("cols_to_split[", i, "] <- ", format_string(input$cols_to_split[i])), values$oFile)
+    #}
+    values$oFile <- saveLines(paste0("colsToDivide <- ", format_string(input$cols_to_split)), values$oFile)
+    #values$oFile <- saveLines(paste0("colsToDivide <- NULL"), values$oFile)
+    #for (i in 1:length(input$colsToDivide)) {
+    #  values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", format_string(input$colsToDivide[i])), values$oFile)
+    #}
+    values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
+                                paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
+                                paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
+                                paste0("split_all_but <- ", format_string(input$split_all_but)), 
+                                paste0("divide_all_but <- ", format_string(input$divide_all_but)),
+                                "metaData <- reformat_columns(metaData, toSplit, cols_to_split, to_divide, colsToDivide, split_delimiter, divide_delimiter, split_all_but, divide_all_but)"), 
+                              values$oFile)
+    values$currChunkLen <- length(values$oFile) - before
+    
+    updatePrettyToggle(session, "to_split", value = FALSE)
+    updatePrettyToggle(session, "to_divide", value = FALSE)
   }))
   
   
@@ -770,7 +783,9 @@ server <- function(input, output, session) {
       output = tagList()
       currCol <- as.numeric(as.character(currCol <- values$metaData[!is.na(values$metaData[,input$colsToSub]),input$colsToSub]))
       output[[1]] <- sliderInput(inputId = "slideInSub", label = "", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
-      output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
+      #output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
+      output[[3]] <- tertiary_button("add_val_to_sub", "Add")
+      #output[[4]] <- tertiary_button("remove_val_to_sub", "Remove")
       output
     }
     else {
@@ -793,29 +808,30 @@ server <- function(input, output, session) {
   })
   
   output$input_subs_table <- renderRHandsontable({
-    rhandsontable(data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
+    rhandsontable(values$DFOut, width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
       hot_col(col = "To_Replace", type = "autocomplete", source = values$suggestions, strict = FALSE) #%>%
       #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
   })
   
-  output$display_user_subs <- renderDT({
-    if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) 
-      values$tablesList[[input$colsToSub]] else values$DFOut
-  }, rownames = FALSE, options = list(dom = "t"))
+  #output$display_user_subs <- renderDT({
+  #  if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) 
+  #    values$tablesList[[input$colsToSub]] else values$DFOut
+  #}, rownames = FALSE, options = list(dom = "t"))
   
   observeEvent(input$input_subs_table, {
     values$DFIn <- hot_to_r(input$input_subs_table)
   }, ignoreInit = T, ignoreNULL = T)
   
-  eventReactive(input$colsToSub, {
-    currentCol <- input$colsToSub
-    if (!("To_Replace" %in% colnames(values$tablesList[[currentCol]]))) {
-      values$tablesList[[currentCol]] <- data.frame(To_Replace = "", stringsAsFactors = FALSE)
-      values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], New_Val = "")
-    }
-    values$DFOut <- values$tablesList[[currentCol]]
-  }) 
+  #eventReactive(input$colsToSub, {
+  #  currentCol <- input$colsToSub
+  #  if (!("To_Replace" %in% colnames(values$tablesList[[currentCol]]))) {
+  #    values$tablesList[[currentCol]] <- data.frame(To_Replace = "", stringsAsFactors = FALSE)
+  #    values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], New_Val = "")
+  #  }
+  #  values$DFOut <- values$tablesList[[currentCol]]
+  #}) 
   
+  if (FALSE) {
   observeEvent(input$add_val_to_sub, {
     if (!is.null(input$colsToSub) && input$colsToSub != "") {
       #format the table correctly according to the colsToSub selected
@@ -847,23 +863,35 @@ server <- function(input, output, session) {
       }
     }
   })
+  }
   
-  observeEvent(input$remove_val_to_sub, {
-    if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) {
-      if (!identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0)) && values$tablesList[[input$colsToSub]][,"To_Replace"] != "") {
-        toRemove <- 1
-        if (!is.null(input$hotOut_rows_selected)) {
-          toRemove <- input$hotOut_rows_selected
-        }
-        values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-toRemove,]
-        values$DFOut <- values$tablesList[[input$colsToSub]]
+  observeEvent(input$add_val_to_sub, {
+    if (!is.null(input$colsToSub) && input$colsToSub != "") {
+      if (all(values$DFIn["To_Replace"] == "")) {
+        values$DFIn["To_Replace"] <- paste("RANGE:", paste(input$slideInSub, collapse = "-"))
+      } else {
+        values$DFIn <- rbind(values$DFIn, c(paste("RANGE:", paste(input$slideInSub, collapse = "-")), ""))
       }
-      if (identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0))) {
-        values$tablesList[[input$colsToSub]][1,] <- c("", "")
-        values$DFOut <- values$tablesList[[input$colsToSub]]
-      }
+      values$DFOut <- values$DFIn
     }
   })
+  
+  #observeEvent(input$remove_val_to_sub, {
+  #  if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) {
+  #    if (!identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0)) && values$tablesList[[input$colsToSub]][,"To_Replace"] != "") {
+  #      toRemove <- 1
+  #      if (!is.null(input$hotOut_rows_selected)) {
+  #        toRemove <- input$hotOut_rows_selected
+  #      }
+  #      values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-toRemove,]
+  #      values$DFOut <- values$tablesList[[input$colsToSub]]
+  #    }
+  #    if (identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0))) {
+  #      values$tablesList[[input$colsToSub]][1,] <- c("", "")
+  #      values$DFOut <- values$tablesList[[input$colsToSub]]
+  #    }
+  #  }
+  #})
   
   observeEvent(input$evaluate_subs, {
     #if (!identical(values$tablesList, list())) {

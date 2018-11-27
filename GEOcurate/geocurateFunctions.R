@@ -405,8 +405,9 @@ substituteVals <- function(classAndClinical, subSpecs, is_reg_ex = FALSE)
     newVal <- subs$New_Val
     for (i in 1:length(toSub)) {
       if (grepl("RANGE", toSub[i])) {
-        mySub <- str_split(toSub[i], "RANGE: ")[[1]][2]
+        mySub <- str_remove(toSub[i], "RANGE: ")
         mySub <- str_split(mySub, "-")[[1]]
+        classAndClinical[,colToSub] <- as.numeric(classAndClinical[,colToSub])
         classAndClinical[,colToSub] <- sapply(classAndClinical[,colToSub], 
                                               function(x){
                                                 if (mySub[1] <= x && x <= mySub[2]) newVal[i] else x
