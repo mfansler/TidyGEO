@@ -247,10 +247,6 @@ ui <- fluidPage(
                                                uiOutput("display_cols_to_rename"),
                                                #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
-                                               tertiary_button("save", "Save"),
-                                               tertiary_button("delete", "Remove"), br(),
-                                               br(), HTML("<p><b>Here are the new names you have specified so far: </b></p>"),
-                                               tableOutput("new_name_contents"),
                                                primary_button(id = "rename", label = "Rename columns"),
                                                hr(), uiOutput("nav_4_ui")
                                       ),
@@ -745,33 +741,19 @@ server <- function(input, output, session) {
     selectInput(inputId = "colsToRename", label = "Which column would you like to rename?", choices = colNames)
   })
   
-  observeEvent(input$save, {
-    #values$newNames[[input$colsToRename]] <- if (!is.null(values$newName)) values$newName else input$colsToRename
-    #values$newNames[[input$colsToRename]] <- if (!is.null(input$newNameSelect) && input$newNameSelect != "") input$newNameSelect else input$colsToRename
-    values$newNames[[input$colsToRename]] <- if (!is.null(input$rename_new_name) && input$rename_new_name != "") input$rename_new_name else input$colsToRename
-  })
-  
-  observeEvent(input$delete, {
-    values$newNames <- values$newNames[-(length(values$newNames))]
-  })
-  
-  output$new_name_contents <- renderTable(colnames = FALSE, {
-    data.frame(names(values$newNames), values$newNames)
-  })
-  
   observeEvent(input$rename, ({
     values$lastData <- values$metaData
-    values$metaData <- renameCols(values$metaData, values$newNames, session)
+    new_name <- list(input$rename_new_name)
+    names(new_name) <- input$colsToRename
+    values$metaData <- renameCols(values$metaData, new_name, session)
     
     #WRITING COMMANDS TO R SCRIPT
     before <- length(values$oFile)
     values$oFile <- saveLines(commentify("rename columns"), values$oFile)
-    values$oFile <- saveLines(paste0("newNames <- NULL"), values$oFile)
-    for (i in 1:length(values$newNames)) {
-      values$oFile <- saveLines(paste0("newNames[[", format_string(names(values$newNames)[i]), "]] <- ", format_string(values$newNames[[i]])), values$oFile)
-    }
-    values$oFile <- saveLines("metaData <- renameCols(metaData, newNames)", 
+    values$oFile <- saveLines(c(paste0("newNames <- list(", format_string(input$rename_new_name), ")"),
+                                "names(newNames) <- ", format_string(input$colsToRename)), 
                               values$oFile)
+    values$oFile <- saveLines("metaData <- renameCols(metaData, newNames)", values$oFile)
     values$currChunkLen <- length(values$oFile) - before
     
     values$newNames <- NULL

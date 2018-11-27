@@ -377,29 +377,21 @@ findOffendingChars <- function(x){
 }
 
 renameCols <- function(metaData, newNames, session) {
-  updatedCols <- NULL
-  for (colName in colnames(metaData)) {
-    if (colName %in% names(newNames)) {
-      offendingChars <- findOffendingChars(newNames[colName])
-      if (any(offendingChars)) {
-        createAlert(session, "alert", "offendingChars",
-                    content = paste("The following characters were removed from", 
-                                    newNames[colName], 
-                                    "because they might cause problems later:", 
-                                    paste(names(offendingChars[which(offendingChars == T)]), collapse = ", ")))
-      }
-      updatedCols <- c(updatedCols, newNames[colName])
-    }
-    else {
-      updatedCols <- c(updatedCols, colName)
-    }
-  }
-  updatedCols <- make.names(updatedCols, unique = TRUE)
-  colnames(metaData) <- updatedCols
   
+  if (names(newNames) %in% colnames(metaData)) {
+    #offendingChars <- findOffendingChars(unname(newNames))
+    #if (any(offendingChars)) {
+    #  createAlert(session, "alert", "offendingChars",
+    #              content = paste("The following characters were removed from", 
+    #                              newNames[colName], 
+    #                              "because they might cause problems later:", 
+    #                              paste(names(offendingChars[which(offendingChars == T)]), collapse = ", ")))
+    #newNames[1] <- str_replace_all(unname(newNames), "[^\._\s0-9A-Za-z]", ".")
+    #}
+    colnames(metaData)[which(colnames(metaData) == names(newNames))] <- unname(newNames)
+  }
   return(metaData)
 }
-
 
 substituteVals <- function(classAndClinical, subSpecs)
 {

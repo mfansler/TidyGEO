@@ -285,17 +285,10 @@ findOffendingChars <- function(x){
 }
 
 renameCols <- function(metaData, newNames) {
-  updatedCols <- NULL
-  for (colName in colnames(metaData)) {
-    if (colName %in% names(newNames)) {
-      updatedCols <- c(updatedCols, newNames[colName])
-    }
-    else {
-      updatedCols <- c(updatedCols, colName)
-    }
+  if (names(newNames) %in% colnames(metaData)) {
+    #newNames[1] <- str_replace_all(unname(newNames), "[^\._\s0-9A-Za-z]", ".")
+    colnames(metaData)[which(colnames(metaData) == names(newNames))] <- unname(newNames)
   }
-  updatedCols <- make.names(updatedCols)
-  colnames(metaData) <- updatedCols
   
   return(metaData)
 }
