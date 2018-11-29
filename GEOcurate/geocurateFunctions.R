@@ -90,6 +90,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
     
     incProgress(message = "Extracting expression data")
     expressionData <- assayData(expressionSet)$exprs
+    #expressionData <- data.frame("ID" = rownames(expressionData), expressionData)
     expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
 
     incProgress(message = "Extracting feature data")
@@ -104,6 +105,12 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
       featureData <- featureData[, -which(hasNA)]
     }
     
+    if (nrow(expressionData) == 0) {
+      expressionData <- NULL
+    }
+    if (nrow(featureData) == 0) {
+      featureData <- NULL
+    }
     metaData <- NULL
     
   } else {

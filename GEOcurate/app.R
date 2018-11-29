@@ -419,12 +419,15 @@ server <- function(input, output, session) {
   values <-
     reactiveValues(
       allData = NULL,
+      default_metaData = data.frame("Please enter a GSE ID"),
       metaData = NULL,
       origData = NULL,
       lastData = NULL,
+      default_expr_data = data.frame("Please download some data"),
       orig_expr = NULL,
       expr_data = NULL,
       expr_to_display = NULL,
+      default_ft_data = data.frame("Please download some data"),
       orig_feature = NULL,
       last_feature = NULL,
       feature_to_display = NULL,
@@ -578,7 +581,7 @@ server <- function(input, output, session) {
       )
     }
     else {
-      datatable(data.frame("Please enter a GSE ID"), rownames = FALSE, colnames = "NO DATA")
+      datatable(values$default_metaData, rownames = FALSE, colnames = "NO DATA")
     }
   })
   
@@ -1249,29 +1252,25 @@ server <- function(input, output, session) {
       values$orig_expr <- extracted_data[["expressionData"]]
       values$last_expr <- values$orig_expr
       values$expr_data <- values$orig_expr
-      values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
-      values$orig_feature <- extracted_data[["featureData"]]
-      values$last_feature <- values$orig_feature
-      values$feature_to_display <- find_intersection(values$last_feature, values$expr_to_display)
-      
-      
-      #values$exprData <- extracted_data[["expressionData"]]
-      #values$exprToDisplay <- values$exprData
-      #values$previewExprData <- advance_columns_view(values$exprToDisplay, start = 1, forward_distance = 5)
-      #values$ftData <- extracted_data[["featureData"]]
-      #values$ftToDisplay <- values$ftData %>%
-      #  filter(ID %in% values$previewExprData[,"ID"])
-      #filter(ID %in% values$exprToDisplay[,"ID"])
-      
-      values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
-      values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
-      values$expression_oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)),
-                                             "allData <- downloadExpression(geoID, dataSetIndex)",
-                                             "expressionData <- allData[['expressionData']]",
-                                             "featureData <- allData[['featureData']]"), 
-                                           values$expression_oFile)
-      
-      values$expression_downloadChunkLen <- length(values$expression_oFile)
+      if (is.null(values$expr_data)) {
+        values$default_expr_data <- data.frame(paste0("No assay data available for ", input$geoID))
+        values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
+      } else {
+        values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+        values$orig_feature <- extracted_data[["featureData"]]
+        values$last_feature <- values$orig_feature
+        values$feature_to_display <- find_intersection(values$last_feature, values$expr_to_display)
+        
+        values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
+        values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
+        values$expression_oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)),
+                                               "allData <- downloadExpression(geoID, dataSetIndex)",
+                                               "expressionData <- allData[['expressionData']]",
+                                               "featureData <- allData[['featureData']]"), 
+                                             values$expression_oFile)
+        
+        values$expression_downloadChunkLen <- length(values$expression_oFile)
+      }
     }
   })
   
@@ -1468,7 +1467,7 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_to_display)) {
       datatable(values$expr_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp"))
     } else {
-      datatable(data.frame("Please download some data"), rownames = FALSE, 
+      datatable(values$default_expr_data, rownames = FALSE, 
                 colnames = "NO DATA", options = list(dom = "tp"))
     }
   }) 
@@ -1502,7 +1501,7 @@ server <- function(input, output, session) {
       datatable(values$feature_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp"))
     }
     else {
-      datatable(data.frame("Please download some data"), rownames = FALSE, 
+      datatable(values$default_ft_data, rownames = FALSE, 
                 colnames = "NO DATA", options = list(dom = "tp"))
     }
   }) 
