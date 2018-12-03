@@ -178,12 +178,11 @@ ui <- fluidPage(
                                                p("Sometimes columns contain multiple values in them. This makes it so that the values
                                                  cannot be analyzed separately. Here, you can indicate that there are multiple values in a
                                                  column so that the values can be separate."),
-                                               #checkboxInput(inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
-                                               #                                                 icon("caret-down"),
-                                               #                                                help_link(id = "split_help")
-                                               #                                                )),
+                                               checkboxInput(inputId = "to_split", label = div("Choose columns with key-value pairs separated by a delimiter",
+                                                                                               help_link(id = "split_help")
+                                                                                               )),
                                                #div(actionLink(inputId = "to_split", label = icon("caret-square-o-down")), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help")),                                                
-                                               uiOutput("to_split_toggle"),
+                                               #uiOutput("to_split_toggle"),
                                                #prettyToggle(inputId = "to_split", 
                                               #              label_on = div("Columns contain key-value pairs",
                                               #                             help_link(id = "split_help")),
@@ -200,19 +199,19 @@ ui <- fluidPage(
                                                                 checkboxInput(inputId = "split_all_but", label = tags$i("Split all BUT the specified")),
                                                                 textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
-                                               #checkboxInput(inputId = "to_divide", label = div("Contains multiple values in one column",
-                                              #                                                  help_link(id = "divide_help"))),
-                                              prettyToggle(inputId = "to_divide", 
-                                                           label_on = div("Columns contain multiple values",
-                                                                          help_link(id = "divide_help")),
-                                                           label_off = div("Columns contain multiple values",
-                                                                           help_link(id = "divide_help")),
-                                                           icon_on = icon("caret-up"),
-                                                           icon_off = icon("caret-down"),
-                                                           status_on = "info",
-                                                           status_off = "primary",
-                                                           shape = "curve",
-                                                           animation = "rotate"),
+                                               checkboxInput(inputId = "to_divide", label = div("Choose columns with multiple values in one column",
+                                                                                                help_link(id = "divide_help"))),
+                                              #prettyToggle(inputId = "to_divide", 
+                                              #             label_on = div("Columns contain multiple values",
+                                              #                            help_link(id = "divide_help")),
+                                              #             label_off = div("Columns contain multiple values",
+                                              #                             help_link(id = "divide_help")),
+                                              #             icon_on = icon("caret-up"),
+                                              #             icon_off = icon("caret-down"),
+                                              #v            status_on = "info",
+                                              #             status_off = "primary",
+                                              #             shape = "curve",
+                                              #             animation = "rotate"),
                                                conditionalPanel(condition = "input.to_divide == true",
                                                                 uiOutput("choose_cols_to_divide"),
                                                                 checkboxInput(inputId = "divide_all_but", label = tags$i("Split all BUT the specified")),
@@ -384,6 +383,9 @@ ui <- fluidPage(
                                                  tabPanel("Feature data",
                                                           withSpinner(dataTableOutput("featureData"), type = 5),
                                                           primary_button("feature_evaluate_filters", label = "Evaluate filters")
+                                                          ),
+                                                 tabPanel("Graphical summary",
+                                                          uiOutput("histograms_expression")
                                                           )
                                                )
                                                #fluidRow(
@@ -432,6 +434,8 @@ server <- function(input, output, session) {
       last_feature = NULL,
       feature_to_display = NULL,
       to_split_selected = FALSE,
+      last_selected_rename = NULL,
+      last_selected_substitute = NULL,
       newName = NULL,
       newNames = NULL,
       NAvalsList = list(),
@@ -656,20 +660,20 @@ server <- function(input, output, session) {
   # extract columns ---------------------------------------------------------
   
   
-  observeEvent(input$to_split, {
+  #observeEvent(input$to_split, {
   #  updateCheckboxInput(session, inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
   #                                                                 icon("caret-up"),
   #                                                                 help_link(id = "split_help")
     #))
     #
     #updateActionButton(session, "to_split", label = icon("caret-square-o-up"))
-    values$to_split_selected <- if (values$to_split_selected) FALSE else TRUE
-  })
+  #  values$to_split_selected <- if (values$to_split_selected) FALSE else TRUE
+  #})
   
-  output$to_split_toggle <- renderUI({
-    icon_type <- if (values$to_split_selected) "caret-square-o-down" else "caret-square-o-up"
-    div(actionLink(inputId = "to_split", label = icon(icon_type)), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help"))
-  })
+  #output$to_split_toggle <- renderUI({
+  #  icon_type <- if (values$to_split_selected) "caret-square-o-down" else "caret-square-o-up"
+  #  div(actionLink(inputId = "to_split", label = icon(icon_type)), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help"))
+  #})
   
   output$choose_cols_to_split <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
@@ -693,6 +697,8 @@ server <- function(input, output, session) {
                                                      input$divide_delimiter,
                                                      input$split_all_but,
                                                      input$divide_all_but), message = "Extracting columns")
+    updateCheckboxInput(session, inputId = "to_split", value = FALSE)
+    updateCheckboxInput(session, inputId = "to_divide", value = FALSE)
     #WRITING COMMANDS TO R SCRIPT
     before <- length(values$oFile)
     values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
@@ -756,10 +762,15 @@ server <- function(input, output, session) {
   output$display_cols_to_rename <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
-    selectInput(inputId = "colsToRename", label = "Which column would you like to rename?", choices = colNames)
+    print(values$last_selected_rename)
+    selectInput(inputId = "colsToRename", 
+                label = "Which column would you like to rename?", 
+                choices = colNames, 
+                selected = values$last_selected_rename)
   })
   
   observeEvent(input$rename, ({
+    values$last_selected_rename <- input$rename_new_name
     values$lastData <- values$metaData
     new_name <- list(input$rename_new_name)
     names(new_name) <- input$colsToRename
@@ -802,7 +813,8 @@ server <- function(input, output, session) {
     setNames(colNames, colNames)
     selectInput(inputId = "colsToSub", label = div("Please select a column with values to substitute: ", 
                                                    help_link(id = "substitute_help")), 
-                choices = colNames)
+                choices = colNames,
+                selected = values$last_selected_substitute)
   })
   
   observeEvent(input$colsToSub, {
@@ -900,6 +912,7 @@ server <- function(input, output, session) {
     #if (!identical(values$tablesList, list())) {
     #print("tablesList")
     #print(values$tablesList)
+    values$last_selected_substitute <- input$colsToSub
     sub_specs <- list(values$DFIn)
     names(sub_specs) <- input$colsToSub
     #print("DFIn")
@@ -1523,6 +1536,46 @@ server <- function(input, output, session) {
                                          values$expression_oFile)
     values$expression_currChunkLen <- length(values$expression_oFile) - before
   })
+
+  # graphical summary -------------------------------------------------------
+  
+  #output$expression_summary_histogram <- renderPlot({
+  #  
+  #})
+  #output$expression_summary_boxplot <- renderPlot({
+  #  
+  #})
+  
+  histograms_expression_input <- reactive({
+    if (!is.null(values$expr_data)) {
+      n_plot <- ncol(values$expr_data)
+      total_data <- lapply(1:n_plot, function(i){c(table(values$expr_data[,i]))})
+      return(list("n_plot" = n_plot, "total_data" = total_data))
+    }
+  })
+  
+  # Create divs
+  output$histograms_expression <- renderUI({
+    
+    if (!is.null(values$expr_data)) {
+      plot_output_list <- lapply(1:histograms_expression_input()$n_plot, function(i) {
+        plotname <- make.names(colnames(values$expr_data)[i])
+        plotOutput(plotname, height = 500, width = "auto")
+      })   
+      do.call(tagList, plot_output_list)
+    }
+  })
+  # Create the actual plots associated with the plot names
+  observe({
+    if (!is.null(values$expr_data)) {
+      lapply(1:histograms_expression_input()$n_plot, function(i){
+        output[[ make.names(colnames(values$expr_data)[i]) ]] <- renderPlot({
+          hist(as.numeric(as.character(histograms_expression_input()$total_data[[i]])), main = colnames(values$expr_data)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
+        })
+      })
+    }
+  })
+  
   
 }
 
