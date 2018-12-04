@@ -371,36 +371,39 @@ renameCols <- function(metaData, newNames, session) {
   return(metaData)
 }
 
-substituteVals <- function(classAndClinical, subSpecs, is_reg_ex = FALSE)
+substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
 {
-  for (colToSub in names(subSpecs)) {
-    subs <- subSpecs[[colToSub]]
-    toSub <- subs$To_Replace
-    if (any(subs$New_Val == "NA")) {
-      subs$New_Val[which(subs$New_Val == "NA")] <- NA
-    }
-    newVal <- subs$New_Val
-    for (i in 1:length(toSub)) {
-      if (grepl("RANGE", toSub[i])) {
-        mySub <- str_remove(toSub[i], "RANGE: ")
-        mySub <- str_split(mySub, "-")[[1]]
-        print(head(classAndClinical[,colToSub]))
-        classAndClinical[,colToSub] <- as.numeric(classAndClinical[,colToSub])
-        classAndClinical[,colToSub] <- sapply(classAndClinical[,colToSub], 
-                                              function(x){
-                                                if (!is.na(x) && mySub[1] <= x && x <= mySub[2]) newVal[i] else x
-                                              })
-      } else {
-        classAndClinical[,colToSub] <- sapply(as.character(classAndClinical[,colToSub]), 
-                                       function(x){
-                                         gsub(x, pattern = toSub[i], replacement = newVal[i], fixed = is_reg_ex)
-                                         }
-                                       )
-      }
+  col_to_sub <- names(sub_specs) 
+  subs <- sub_specs[[col_to_sub]]
+  
+  if (any(subs$New_Val == "NA" | subs$New_Val == "")) {
+    subs$New_Val[which(subs$New_Val == "NA" | subs$New_Val == "")] <- NA
+  }
+  
+  for (i in 1:nrow(subs)) {
+    if (grepl("RANGE", subs$To_Replace[i])) {
+      
+      mySub <- str_remove(subs$To_Replace[i], "RANGE: ")
+      mySub <- as.numeric(str_split(mySub, "-")[[1]])
+      
+      new_col <- suppressWarnings(as.numeric(clinical_data[,col_to_sub]))
+      new_col[
+        which(!is.na(new_col) & 
+                mySub[1] <= new_col &
+                new_col <= mySub[2])
+        ] <- as.character(subs$New_Val[i])
+      
+      clinical_data[which(!is.na(new_col)), col_to_sub] <- new_col[which(!is.na(new_col))]
+      
+    } else {
+      
+      clinical_data[,col_to_sub] <- sapply(as.character(clinical_data[,col_to_sub]), 
+                                           function(x){
+                                             gsub(x, pattern = subs$To_Replace[i], replacement = subs$New_Val[i], fixed = isnt_reg_ex)
+                                           })
     }
   }
-
-  return(classAndClinical)
+  return(clinical_data)
 }
 
 excludeVars <- function(metaData, specs) {

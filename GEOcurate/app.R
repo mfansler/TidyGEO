@@ -923,7 +923,7 @@ server <- function(input, output, session) {
     #print("DFIn")
     #print(sub_specs)
       values$lastData <- values$metaData
-      values$metaData <- withProgress(substituteVals(values$metaData, #values$tablesList
+      values$metaData <- withProgress(substitute_vals(values$metaData, #values$tablesList
                                                      sub_specs))
       
       #WRITING COMMANDS TO R SCRIPT
@@ -949,7 +949,7 @@ server <- function(input, output, session) {
                                          colnames(values$DFIn)[2], "=c(", 
                                          paste(format_string(as.character(values$DFIn[,2])), collapse = ", "), "))"), values$oFile)
       }
-      values$oFile <- saveLines("metaData <- substituteVals(metaData, tablesList)", 
+      values$oFile <- saveLines("metaData <- substitute_vals(metaData, tablesList)", 
                                 values$oFile)
       values$currChunkLen <- length(values$oFile) - before
       
