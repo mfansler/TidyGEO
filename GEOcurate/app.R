@@ -86,7 +86,7 @@ format_string <- function(element) {
   if (is.null(element)) {
     return("NULL")
   }
-  else if (is.na(element)) {
+  else if (suppressWarnings(is.na(element))) {
     return("NA")
   }
   else if (mode(element) == "numeric" || mode(element) == "logical") {
@@ -352,7 +352,11 @@ ui <- fluidPage(
                                                hr(),
                                                uiOutput("exprLabels"),
                                                uiOutput("summarizeOptions"),
-                                               uiOutput("transposeCheckbox"),
+                                               #uiOutput("transposeCheckbox"),
+                                               
+                                               checkboxInput(inputId = "transposeExpr", 
+                                                             label = div("Transpose the data", 
+                                                                         help_button("Values in the ID column become the column names and column names become the ID column."))),
                                                br(),
                                                fluidRow(
                                                  column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
@@ -762,7 +766,6 @@ server <- function(input, output, session) {
   output$display_cols_to_rename <- renderUI({
     colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     setNames(colNames, colNames)
-    print(values$last_selected_rename)
     selectInput(inputId = "colsToRename", 
                 label = "Which column would you like to rename?", 
                 choices = colNames, 
@@ -1302,15 +1305,12 @@ server <- function(input, output, session) {
     }
   })
   
-  output$transposeCheckbox <- renderUI({
-    textColor <- if_else(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
-                           !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display) &&
-                           input$howToSummarize == "keep all",
-                         "color:gray", "color:black")
-    checkboxInput(inputId = "transposeExpr", 
-                  label = div(style = textColor, "Transpose the data", 
-                              help_button("Values in the ID column become the column names and column names become the ID column.")))
-  })
+  #output$transposeCheckbox <- renderUI({
+  #  textColor <- if_else(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
+  #                         !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display) &&
+  #                         input$howToSummarize == "keep all",
+  #                       "color:gray", "color:black")
+  #})
   
   observe({
     if (!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
@@ -1549,7 +1549,8 @@ server <- function(input, output, session) {
   histograms_expression_input <- reactive({
     if (!is.null(values$expr_data)) {
       n_plot <- ncol(values$expr_data)
-      total_data <- lapply(1:n_plot, function(i){c(table(values$expr_data[,i]))})
+      total_data <- lapply(2:n_plot, function(i){values$expr_data[,i]})
+      print(paste("Duplicate plots:", any(duplicated(total_data))))
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
@@ -1558,7 +1559,7 @@ server <- function(input, output, session) {
   output$histograms_expression <- renderUI({
     
     if (!is.null(values$expr_data)) {
-      plot_output_list <- lapply(1:histograms_expression_input()$n_plot, function(i) {
+      plot_output_list <- lapply(2:histograms_expression_input()$n_plot, function(i) {
         plotname <- make.names(colnames(values$expr_data)[i])
         plotOutput(plotname, height = 500, width = "auto")
       })   
@@ -1568,9 +1569,9 @@ server <- function(input, output, session) {
   # Create the actual plots associated with the plot names
   observe({
     if (!is.null(values$expr_data)) {
-      lapply(1:histograms_expression_input()$n_plot, function(i){
+      lapply(2:histograms_expression_input()$n_plot, function(i){
         output[[ make.names(colnames(values$expr_data)[i]) ]] <- renderPlot({
-          hist(as.numeric(as.character(histograms_expression_input()$total_data[[i]])), main = colnames(values$expr_data)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
+          hist(as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])), main = colnames(values$expr_data)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
         })
       })
     }

@@ -82,7 +82,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
   return(expressionSet)
 }
 
-processData <- function(expressionSet, index, toFilter, extractExprData = FALSE) {
+processData <- function(expressionSet, index, toFilter, extractExprData = FALSE, session = NULL) {
   
   expressionSet <- expressionSet[[index]]
   
@@ -118,7 +118,17 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
     incProgress(message = "Extracting metadata")
     metaData <- as.data.frame(pData(expressionSet), stringsAsFactors = FALSE)
     incProgress(message = "Filtering metadata.")
-    metaData <- filterUninformativeCols(metaData, toFilter)
+    filtered_data <- filterUninformativeCols(metaData, toFilter)
+    if (is.null(filtered_data)) {
+      if (!is.null(session)) {
+        createAlert(session, "alert", "parseError", title = "No columns removed",
+                    content = "The specified column filters would have removed all the columns.")
+      }
+    } else {
+      metaData <- filtered_data
+    }
+    
+    metaData <- cbind(metaData, evalSame = rep(1, nrow(metaData)))
     
     expressionData <- NULL
     featureData <- NULL
@@ -128,82 +138,42 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE)
   return(list("metaData" = metaData, "expressionData" = expressionData, "featureData" = featureData))
 }
 
-#filter columns with all different entries or all the same entry
+evaluate_cols_to_keep <- function(col, toFilter = list()) {
+  functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
+                    "url" = function(x) all(!grepl("ftp:\\/\\/", x)),
+                    "dates" = function(x) all(!grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", x)),
+                    "same_vals" = function(x) length(unique(as.factor(as.character(toupper(x))))) > 1,
+                    "all_diff" = function(x) length(unique(as.factor(as.character(toupper(x))))) != total_rows,
+                    "tooLong" = function(x) {
+                      isTooLong <- as.logical(nchar(x) > 100)
+                      sum(isTooLong) < (length(x) / 2)
+                    })
+  col_no_NA <- if (any(is.na(col))) col[-is.na(col)] else col
+  col_no_NA <- if (any(col_no_NA == "")) col_no_NA[-which(col_no_NA == "")] else col_no_NA
+  total_rows <- length(col)
+  if (length(col_no_NA) > 0) {
+    if (length(toFilter > 0)) {
+      return(all(sapply(toFilter, function(x) {
+        do.call(what = functions[x][[1]], args = list("x" = col_no_NA))
+      })))
+    }
+    return(TRUE)
+  }
+  return(FALSE)
+}
+
 filterUninformativeCols <- function(metaData, toFilter = list("none"))
 {
   metaData <- metaData[!duplicated(as.list(metaData))]
   
-  filteredData <- as.data.frame(row.names(metaData))
-  #dataToFilter <- matrix(nrow = nrow(metaData), ncol = 1)
+  cols_to_keep <- apply(metaData, 2, evaluate_cols_to_keep, toFilter = toFilter)
   
-  #metaDataCols <- colnames(metaData)
-  colNames <- NULL
-  unFilteredCount = 0
-  evalSame <- rep(0, nrow(metaData))
-  
-  for (i in 1:ncol(metaData)) {
-    colName <- as.character(colnames(metaData)[i])
-
-    temp <- metaData[,i]
-    temp <- temp[which(temp != "NA")]
-    temp <- temp[which(temp != "")]
-    if (length(temp) > 0) {
-      isReanalyzed <- if ("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
-      isURL <- if ("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
-      isDate <- if ("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
-      #isTooLong <- if("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
-      
-      #isTooLong <- sum(isTooLong) > (length(temp) / 2)
-      
-      if (all(grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp))) {
-        
-        uniqueDates <- unique(temp)
-        dateCounts <- NULL
-        for (uniqueDate in uniqueDates) {
-          #count the number of rows that have this date and store it in a list
-          dateCounts[[uniqueDate]] <- length(which(temp == uniqueDate))
-        }
-        
-        m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[1,i], perl = TRUE)
-        prev <- regmatches(metaData[1,i], m)
-        
-        for (j in 1:length(metaData[,i])) {
-          #extract the actual date part
-          m <- regexpr("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", metaData[j,i], perl = TRUE)
-          myDate <- regmatches(metaData[j,i], m)
-          
-          #the date is not the same as the previous one and the current date and the previous date represent a substantial amount of the entries
-          if (myDate != prev && (dateCounts[[metaData[j,i]]] > (nrow(metaData)/3)) && (dateCounts[[metaData[j - 1,i]]] > (nrow(metaData)/3))) {
-            evalSame[j] <- 1
-          }
-          prev <- myDate
-        }
-      }
-      
-      uniqueVals <- unique(as.factor(as.character(toupper(temp))))
-      notAllSame <- if ("same_vals" %in% toFilter) length(uniqueVals) > 1 else TRUE
-      notAllDifferent <- if ("all_diff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
-      
-      # && !isTooLong
-      
-      if (notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && !all(metaData[i] == rownames(metaData))) {
-        filteredData <- cbind(filteredData, metaData[,i], stringsAsFactors = FALSE)
-        colNames <- c(colNames, colName)
-        unFilteredCount <- unFilteredCount + 1
-      }
-    }
-  }
-  if (unFilteredCount == 0) {
+  if (all(!cols_to_keep)) {
     print("No informative columns found.")
+    NULL
+  } else {
+    metaData <- metaData[,cols_to_keep]
   }
-  filteredData <- as.data.frame(filteredData[,2:ncol(filteredData)], stringsAsFactors = FALSE)
-  row.names(filteredData) <- row.names(metaData)
-  colnames(filteredData) <- colNames
-  
-  if (!("evalSame" %in% colnames(metaData))) {
-    filteredData <- cbind(filteredData, evalSame)
-  }
-  return(filteredData)
 }
 
 isAllNum <- function(metaData) {
@@ -583,7 +553,7 @@ advance_columns_view <- function(data, start, forward_distance) {
     end_point <- ncol(data)
   }
   
-  if (start > end_point ) {
+  if (start >= end_point ) {
     return(NULL)
   }
   
