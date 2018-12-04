@@ -83,18 +83,22 @@ tertiary_button <- function(id, label, icon = NULL) {
 
 
 format_string <- function(element) {
-  if (is.null(element)) {
+  suppressWarnings(if (is.null(element)) {
     return("NULL")
   }
-  else if (suppressWarnings(is.na(element))) {
+  else if (is.na(element)) {
     return("NA")
   }
-  else if (mode(element) == "numeric" || mode(element) == "logical") {
+  else if (mode(element) == "numeric" ||
+           mode(element) == "logical") {
     element <- as.character(element)
   }
   else if (mode(element) == "character") {
-    element <- sapply(element, function(x){paste0("'", x, "'")}, USE.NAMES = FALSE)
-  }
+    element <-
+      sapply(element, function(x) {
+        paste0("'", x, "'")
+      }, USE.NAMES = FALSE)
+  })
   if (length(element) > 1) {
     element <- paste0("c(", paste(element, collapse = ", "), ")")
   }
@@ -579,14 +583,7 @@ server <- function(input, output, session) {
   output$dataset <- DT::renderDT({
     if (!is.null(values$metaData)) {
       closeAlert(session, "fileError")
-      datatable(values$metaData, rownames = TRUE, options = list(
-        columnDefs = list(list(targets = which(colnames(values$metaData) == "evalSame"), visible = FALSE))
-      )) %>% formatStyle(
-        ncol(values$metaData),
-        valueColumns = which(colnames(values$metaData) == "evalSame"),
-        target = "row",
-        backgroundColor = styleEqual(1, "yellow")
-      )
+      datatable(values$metaData, rownames = TRUE)
     }
     else {
       datatable(values$default_metaData, rownames = FALSE, colnames = "NO DATA")
@@ -612,11 +609,11 @@ server <- function(input, output, session) {
     
     if (!is.null(values$metaData)) {
       plot_output_list <- lapply(1:plotInput()$n_plot, function(i) {
-        if (!grepl("evalSame", colnames(values$metaData)[i])) {
-          plotname <- make.names(colnames(values$metaData)[i])
-          plotHeight <- if (isAllNum(values$metaData[i])) 500 else 280
-          plotOutput(plotname, height = plotHeight, width = "auto")
-        }
+        #if (!grepl("evalSame", colnames(values$metaData)[i])) {
+        plotname <- make.names(colnames(values$metaData)[i])
+        plotHeight <- if (isAllNum(values$metaData[i])) 500 else 280
+        plotOutput(plotname, height = plotHeight, width = "auto")
+        #}
       })   
       do.call(tagList, plot_output_list)
     }
@@ -647,19 +644,19 @@ server <- function(input, output, session) {
   
   # merged warning ----------------------------------------------------------
   
-  output$mergedWarning <- renderUI({
-    #if any of the values$metaData last column are false, then color yellow and print the warning message
-    #else, just put a grey box there or nothing at all
-    if (!is.null(values$metaData) && any(values$metaData[,"evalSame"] == 1)) {
-      wellPanel(id = "well",
-                tags$head(tags$style(
-                  HTML('
-                       #well {
-                       background-color: #FFFF00;
-    }'))),
-                HTML("<p>There is more than one date in this dataset. This could indicate that this is two merged datasets.</p>"))
-    }
-  })
+  #output$mergedWarning <- renderUI({
+  #  #if any of the values$metaData last column are false, then color yellow and print the warning message
+  #  #else, just put a grey box there or nothing at all
+  #  if (!is.null(values$metaData) && any(values$metaData[,"evalSame"] == 1)) {
+  #   wellPanel(id = "well",
+  #              tags$head(tags$style(
+  #                HTML('
+  #                     #well {
+  #                     background-color: #FFFF00;
+  #  }'))),
+  #              HTML("<p>There is more than one date in this dataset. This could indicate that this is two merged datasets.</p>"))
+  #  }
+  #})
   
   # extract columns ---------------------------------------------------------
   
@@ -680,12 +677,14 @@ server <- function(input, output, session) {
   #})
   
   output$choose_cols_to_split <- renderUI({
-    colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    colNames <- colnames(values$metaData)
     checkboxGroupInput(inputId = "cols_to_split", label = "Which columns contain key-value pairs?", colNames)
   })
   
   output$choose_cols_to_divide <- renderUI({
-    colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    colNames <- colnames(values$metaData)
     checkboxGroupInput(inputId = "colsToDivide", label = "Which columns contain multiple values?", colNames)
   })
   
@@ -734,7 +733,8 @@ server <- function(input, output, session) {
   
   
   output$display_vars_to_keep <- renderUI({
-    colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    colNames <- colnames(values$metaData)
     checkboxGroupInput(inputId = "varsToKeep", label = div("Which columns would you like to keep?",
                                                            help_button("This will drop any unselected columns from the dataset.")), 
                        choices = colNames, selected = colNames)
@@ -764,7 +764,8 @@ server <- function(input, output, session) {
   # rename columns ----------------------------------------------------------
   
   output$display_cols_to_rename <- renderUI({
-    colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    colNames <- colnames(values$metaData)
     setNames(colNames, colNames)
     selectInput(inputId = "colsToRename", 
                 label = "Which column would you like to rename?", 
@@ -812,7 +813,8 @@ server <- function(input, output, session) {
   })
   
   output$display_cols_to_sub <- renderUI({
-    colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    colNames <- colnames(values$metaData)
     setNames(colNames, colNames)
     selectInput(inputId = "colsToSub", label = div("Please select a column with values to substitute: ", 
                                                    help_link(id = "substitute_help")), 
@@ -979,7 +981,8 @@ server <- function(input, output, session) {
   })
   
   output$display_cols_for_exclude <- renderUI({
-    colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
+    colNames <- colnames(values$metaData)
     setNames(colNames, colNames)
     selectInput(inputId = "col_valsToExclude", label = div("Please select a column with values to exclude: ", 
                                                            help_link(id = "exclude_help")), 
@@ -1046,7 +1049,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       myData <- values$metaData
-      myData <- myData[-which(grepl("evalSame", colnames(myData)))]
+      #myData <- myData[-which(grepl("evalSame", colnames(myData)))]
       myData <- cbind(rownames(myData), myData)
       colnames(myData)[1] <- ""
       

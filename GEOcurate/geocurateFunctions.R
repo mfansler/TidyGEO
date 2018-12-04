@@ -128,7 +128,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
       metaData <- filtered_data
     }
     
-    metaData <- cbind(metaData, evalSame = rep(1, nrow(metaData)))
+    #metaData <- cbind(metaData, evalSame = rep(1, nrow(metaData)))
     
     expressionData <- NULL
     featureData <- NULL
@@ -148,8 +148,7 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
                       isTooLong <- as.logical(nchar(x) > 100)
                       sum(isTooLong) < (length(x) / 2)
                     })
-  col_no_NA <- if (any(is.na(col))) col[-is.na(col)] else col
-  col_no_NA <- if (any(col_no_NA == "")) col_no_NA[-which(col_no_NA == "")] else col_no_NA
+  col_no_NA <- if (any(is.na(col)) || any(col == "")) col[-which(is.na(col) | col == "")] else col
   total_rows <- length(col)
   if (length(col_no_NA) > 0) {
     if (length(toFilter > 0)) {
@@ -162,7 +161,7 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
   return(FALSE)
 }
 
-filterUninformativeCols <- function(metaData, toFilter = list("none"))
+filterUninformativeCols <- function(metaData, toFilter = list())
 {
   metaData <- metaData[!duplicated(as.list(metaData))]
   
@@ -174,6 +173,7 @@ filterUninformativeCols <- function(metaData, toFilter = list("none"))
   } else {
     metaData <- metaData[,cols_to_keep]
   }
+  metaData
 }
 
 isAllNum <- function(metaData) {
@@ -192,8 +192,8 @@ isAllUnique <- function(metaData) {
 printVarsSummary <- function(metaData) {
   summFrame <- data.frame(a = "", b = "", stringsAsFactors = FALSE)
   for (variable in colnames(metaData)) {
-    if (variable == "evalSame")
-      next
+    #if (variable == "evalSame")
+    #  next
     varName <- c(paste0("Summary for variable \"", variable, "\":"), "")
     summFrame <- rbind(summFrame, varName)
     
@@ -300,7 +300,7 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
     #delimiterInfo <- NULL
     if (allButSplit) {
       colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
-      colsToSplit <- colsToSplit[-which(colsToSplit == "evalSame")]
+      #colsToSplit <- colsToSplit[-which(colsToSplit == "evalSame")]
     }
     
     metaData <- extractColNames(metaData, delimiter, colsToSplit)
@@ -312,7 +312,7 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
     
     if (allButDivide) {
       colsToDivide <- if (is.null(colsToDivide)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToDivide)])
-      colsToDivide <- colsToDivide[-which(colsToDivide == "evalSame")]
+      #colsToDivide <- colsToDivide[-which(colsToDivide == "evalSame")]
     }
     
     for (col in colsToDivide) {
@@ -339,7 +339,7 @@ filterCols <- function(metaData, varsToKeep, allButKeep) {
 
   }
   else {
-    varsToKeep <- c(varsToKeep, "evalSame")
+    #varsToKeep <- c(varsToKeep, "evalSame")
     metaData <- metaData[which(colnames(metaData) %in% varsToKeep)]
   }
   return(metaData)
@@ -384,10 +384,11 @@ substituteVals <- function(classAndClinical, subSpecs, is_reg_ex = FALSE)
       if (grepl("RANGE", toSub[i])) {
         mySub <- str_remove(toSub[i], "RANGE: ")
         mySub <- str_split(mySub, "-")[[1]]
+        print(head(classAndClinical[,colToSub]))
         classAndClinical[,colToSub] <- as.numeric(classAndClinical[,colToSub])
         classAndClinical[,colToSub] <- sapply(classAndClinical[,colToSub], 
                                               function(x){
-                                                if (mySub[1] <= x && x <= mySub[2]) newVal[i] else x
+                                                if (!is.na(x) && mySub[1] <= x && x <= mySub[2]) newVal[i] else x
                                               })
       } else {
         classAndClinical[,colToSub] <- sapply(as.character(classAndClinical[,colToSub]), 
