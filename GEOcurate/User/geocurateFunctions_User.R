@@ -299,8 +299,8 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
   col_to_sub <- names(sub_specs) 
   subs <- sub_specs[[col_to_sub]]
   
-  if (any(subs$New_Val == "NA" | subs$New_Val == "")) {
-    subs$New_Val[which(subs$New_Val == "NA" | subs$New_Val == "")] <- NA
+  if (any(subs$New_Val == "NA")) {
+    subs$New_Val[which(subs$New_Val == "NA")] <- NA
   }
   
   for (i in 1:nrow(subs)) {
@@ -326,6 +326,7 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
                                            })
     }
   }
+  clinical_data <- clinical_data %>% mutate_all(~ replace(., . == "", NA))
   return(clinical_data)
 }
 

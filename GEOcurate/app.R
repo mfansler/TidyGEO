@@ -1553,7 +1553,6 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_data)) {
       n_plot <- ncol(values$expr_data)
       total_data <- lapply(2:n_plot, function(i){values$expr_data[,i]})
-      print(paste("Duplicate plots:", any(duplicated(total_data))))
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
@@ -1574,6 +1573,11 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_data)) {
       lapply(2:histograms_expression_input()$n_plot, function(i){
         output[[ make.names(colnames(values$expr_data)[i]) ]] <- renderPlot({
+          #ggplot(data = data.frame(measured = as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])))) +
+          #  geom_hist(aes(x = measured), color = "darkblue") +
+          #  labs(x = "Expression",
+          #       y = "Number of spots") +
+          #  theme_bw(base_size = 18)
           hist(as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])), main = colnames(values$expr_data)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
         })
       })
