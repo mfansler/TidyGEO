@@ -133,7 +133,15 @@ ui <- fluidPage(
            left: calc(50% - 400px);;
            }
            ")
-      )
+      ),
+    #For finding which plot the user wants to save
+    #https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
+    tags$script(HTML("$(document).on('click', '.clinical_plot', function () {
+                                Shiny.onInputChange('last_btn_clinical',this.id);
+                             });"),
+                HTML("$(document).on('click', '.expression_plot', function () {
+                                Shiny.onInputChange('last_btn_expression',this.id);
+                             });"))
     ),
   navbarPage(title = "GEOcurate", id = "top_level",
              tabPanel(title = "Clinical data",
@@ -332,7 +340,8 @@ ui <- fluidPage(
                                      bsAlert("alert"), withSpinner(DTOutput("dataset"), type = 5)
                             ),
                             tabPanel("Graphical Summary",
-                                     
+                                     colorSelectorInput("clinical_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
+                                     sliderInput("clinical_binwidths", "Width of bars (for numeric):", min = 0, max = 3000, value = 30),
                                      uiOutput("plots")
                             )
                           ) #tab panel in main panel
@@ -393,6 +402,8 @@ ui <- fluidPage(
                                                           primary_button("feature_evaluate_filters", label = "Evaluate filters")
                                                           ),
                                                  tabPanel("Graphical summary",
+                                                          colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
+                                                          sliderInput("expression_binwidths", "Width of bars:", min = 0, max = 3000, value = 1000),
                                                           uiOutput("histograms_expression")
                                                           )
                                                )
@@ -1550,9 +1561,9 @@ server <- function(input, output, session) {
   #})
   
   histograms_expression_input <- reactive({
-    if (!is.null(values$expr_data)) {
-      n_plot <- ncol(values$expr_data)
-      total_data <- lapply(2:n_plot, function(i){values$expr_data[,i]})
+    if (!is.null(values$expr_to_display)) {
+      n_plot <- ncol(values$expr_to_display)
+      total_data <- lapply(2:n_plot, function(i){values$expr_to_display[,i]})
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
@@ -1560,28 +1571,33 @@ server <- function(input, output, session) {
   # Create divs
   output$histograms_expression <- renderUI({
     
-    if (!is.null(values$expr_data)) {
+    if (!is.null(values$expr_to_display)) {
       plot_output_list <- lapply(2:histograms_expression_input()$n_plot, function(i) {
-        plotname <- make.names(colnames(values$expr_data)[i])
-        plotOutput(plotname, height = 500, width = "auto")
+        plotname <- make.names(colnames(values$expr_to_display)[i])
+        div(withSpinner(plotOutput(plotname, height = 500, width = "auto"), type = 5), actionButton(paste0("savePlot", i), "save Plot", class = "expression_plot"))
       })   
       do.call(tagList, plot_output_list)
     }
   })
   # Create the actual plots associated with the plot names
   observe({
-    if (!is.null(values$expr_data)) {
+    if (!is.null(values$expr_to_display)) {
       lapply(2:histograms_expression_input()$n_plot, function(i){
-        output[[ make.names(colnames(values$expr_data)[i]) ]] <- renderPlot({
-          #ggplot(data = data.frame(measured = as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])))) +
-          #  geom_hist(aes(x = measured), color = "darkblue") +
-          #  labs(x = "Expression",
-          #       y = "Number of spots") +
-          #  theme_bw(base_size = 18)
-          hist(as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])), main = colnames(values$expr_data)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
+        output[[ make.names(colnames(values$expr_to_display)[i]) ]] <- renderPlot({
+          ggplot(data = data.frame(measured = as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]]))), aes(x = measured)) +
+            geom_histogram(binwidth = input$expression_binwidths, fill = input$expr_plot_color) +
+            labs(x = "Expression",
+                 y = "Number of spots") +
+            ggtitle(colnames(values$expr_to_display)[i]) +
+            theme_bw(base_size = 18)
+          #hist(as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])), main = colnames(values$expr_to_display)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
         })
       })
     }
+  })
+  
+  observeEvent(input$last_btn_expression, {
+    print(input$last_btn_expression)
   })
   
   
