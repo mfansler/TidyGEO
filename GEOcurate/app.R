@@ -10,6 +10,7 @@ library(shinysky)
 library(shinyFiles)
 library(tidyverse)
 library(shinyWidgets)
+library(RColorBrewer)
 source("geocurateFunctions.R")
 
 series_list <- read_feather("www/series_list.feather")
@@ -403,7 +404,8 @@ ui <- fluidPage(
                                                           ),
                                                  tabPanel("Graphical summary",
                                                           colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
-                                                          sliderInput("expression_binwidths", "Width of bars:", min = 0, max = 3000, value = 1000),
+                                                          uiOutput("expr_select_binwidths"),
+                                                          checkboxInput("expr_display_labels", "Display labels above columns?"),
                                                           uiOutput("histograms_expression")
                                                           )
                                                )
@@ -477,7 +479,8 @@ server <- function(input, output, session) {
       expression_currChunkLen = 0,
       subAllNums = F,
       expression_id_col = "ID",
-      feature_id_col = "ID"
+      feature_id_col = "ID",
+      expr_plot_to_save = NULL
     )
   
   # reset -------------------------------------------------------------------
@@ -1560,6 +1563,15 @@ server <- function(input, output, session) {
   #  
   #})
   
+  output$expr_select_binwidths <- renderUI({
+    if (is.null(values$expr_to_display)) {
+      upper_lim <- 10
+    } else {
+      upper_lim <- ceiling(max(values$expr_to_display[,which(colnames(values$expr_to_display) != "ID")]))
+    }
+    sliderInput("expression_binwidths", "Width of bars:", min = 0, max = upper_lim, value = ceiling(upper_lim / 2))
+  })
+  
   histograms_expression_input <- reactive({
     if (!is.null(values$expr_to_display)) {
       n_plot <- ncol(values$expr_to_display)
@@ -1584,12 +1596,17 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_to_display)) {
       lapply(2:histograms_expression_input()$n_plot, function(i){
         output[[ make.names(colnames(values$expr_to_display)[i]) ]] <- renderPlot({
-          ggplot(data = data.frame(measured = as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]]))), aes(x = measured)) +
+          p <- ggplot(data = data.frame(measured = as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]]))), aes(x = measured)) +
             geom_histogram(binwidth = input$expression_binwidths, fill = input$expr_plot_color) +
             labs(x = "Expression",
                  y = "Number of spots") +
             ggtitle(colnames(values$expr_to_display)[i]) +
             theme_bw(base_size = 18)
+          if (input$expr_display_labels) {
+            p + stat_bin(binwidth = input$expression_binwidths, geom = "text", aes(label = ..count..), vjust = -1)
+          } else {
+            p
+          }
           #hist(as.numeric(as.character(histograms_expression_input()$total_data[[i - 1]])), main = colnames(values$expr_to_display)[i], xlab = "Expression", ylab = "Number of spots", col = "darkblue", labels = TRUE)
         })
       })
@@ -1597,9 +1614,34 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$last_btn_expression, {
-    print(input$last_btn_expression)
+    values$expr_plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_expression, "savePlot")))
+    showModal(
+      modalDialog(
+        sliderInput("expr_plot_width", label = "Image width (inches):", min = 1, max = 36, value = 6),
+        sliderInput("expr_plot_height", label = "Image height (inches):", min = 1, max = 36, value = 6),
+        radioButtons("expr_plot_filetype", label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
+        downloadButton("expr_plot_download"),
+        footer = modalButton("Close")
+      ))
   })
   
+  output$expr_plot_download <- downloadHandler(
+    filename = function() {
+      paste(make.names(colnames(values$expr_to_display)[values$expr_plot_to_save]), input$expr_plot_filetype, sep = ".")
+    },
+    content = function(file) {
+      
+      plot_to_save <- ggplot(data = data.frame(measured = as.numeric(as.character(histograms_expression_input()$total_data[[values$expr_plot_to_save - 1]]))), aes(x = measured)) +
+        geom_histogram(binwidth = input$expression_binwidths, fill = input$expr_plot_color) +
+        labs(x = "Expression",
+             y = "Number of spots") +
+        ggtitle(colnames(values$expr_to_display)[values$expr_plot_to_save]) +
+        theme_bw(base_size = 18)
+      
+      ggsave(file, plot_to_save, width = input$expr_plot_width, height = input$expr_plot_height, device = input$expr_plot_filetype)
+      
+    }
+  )
   
 }
 
