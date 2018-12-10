@@ -613,7 +613,7 @@ server <- function(input, output, session) {
   plotInput <- reactive({
     if (!is.null(values$metaData)) {
       n_plot <- ncol(values$metaData)
-      total_data <- lapply(1:n_plot, function(i){c(table(values$metaData[,i]), Num_NA = sum(is.na(values$metaData[,i])))})
+      total_data <- lapply(1:n_plot, function(i){values$metaData[,i]})
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
@@ -625,8 +625,9 @@ server <- function(input, output, session) {
       plot_output_list <- lapply(1:plotInput()$n_plot, function(i) {
         #if (!grepl("evalSame", colnames(values$metaData)[i])) {
         plotname <- make.names(colnames(values$metaData)[i])
-        plotHeight <- if (isAllNum(values$metaData[i])) 500 else 280
-        plotOutput(plotname, height = plotHeight, width = "auto")
+        #plotHeight <- if (isAllNum(values$metaData[i])) 500 else 280
+        #plotOutput(plotname, height = plotHeight, width = "auto")
+        plotOutput(plotname)
         #}
       })   
       do.call(tagList, plot_output_list)
@@ -639,16 +640,30 @@ server <- function(input, output, session) {
         output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlot({
           #create a histogram if it's numeric, a barplot if it's a factor
           if (isAllNum(values$metaData[i])) {
-            hist(as.numeric(as.character(plotInput()$total_data[[i]])), main = colnames(values$metaData)[i], xlab = "Value range", ylab = "Frequency", col = "darkblue", labels = TRUE)
+            ggplot(data = data.frame(measured = as.numeric(as.character(plotInput()$total_data[[i]]))), aes(x = measured)) +
+              geom_histogram(binwidth = input$clinical_binwidths, fill = input$clinical_plot_color) +
+              labs(x = "Values",
+                   y = "Frequency") +
+              ggtitle(colnames(values$metaData)[i]) +
+              theme_bw(base_size = 18)
           }
           else {
-            if (isAllUnique(values$metaData[i])) {
-              barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = "All values are unique.")
+            #if (isAllUnique(values$metaData[i])) {
+            ggplot(data = as.data.frame(table(plotInput()$total_data[[i]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
+              geom_bar(stat = "identity", fill = input$clinical_plot_color) +
+              geom_text(aes(label = Freq), vjust = -0.3, size = 3.5) +
+              labs(x = "Values",
+                   y = "Count") +
+              ggtitle(colnames(values$metaData)[i]) +
+              theme_bw(base_size = 18) +
+              theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
+            
+              #barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = "All values are unique.")
               
-            }
-            else {
-              barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = FALSE)
-            }
+            #}
+            #else {
+            #  barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = FALSE)
+            #}
           }
         })
       })
