@@ -480,6 +480,7 @@ server <- function(input, output, session) {
       subAllNums = F,
       expression_id_col = "ID",
       feature_id_col = "ID",
+      clinical_plot_to_save = NULL,
       expr_plot_to_save = NULL
     )
   
@@ -625,9 +626,7 @@ server <- function(input, output, session) {
       plot_output_list <- lapply(1:plotInput()$n_plot, function(i) {
         #if (!grepl("evalSame", colnames(values$metaData)[i])) {
         plotname <- make.names(colnames(values$metaData)[i])
-        #plotHeight <- if (isAllNum(values$metaData[i])) 500 else 280
-        #plotOutput(plotname, height = plotHeight, width = "auto")
-        plotOutput(plotname)
+        div(withSpinner(plotOutput(plotname, height = 700, width = "auto"), type = 5), actionButton(paste0("savePlot", i), "save Plot", class = "clinical_plot"))
         #}
       })   
       do.call(tagList, plot_output_list)
@@ -648,7 +647,7 @@ server <- function(input, output, session) {
               theme_bw(base_size = 18)
           }
           else {
-            #if (isAllUnique(values$metaData[i])) {
+            #if (isAllUnique(values$metaData[i])) { 
             ggplot(data = as.data.frame(table(plotInput()$total_data[[i]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
               geom_bar(stat = "identity", fill = input$clinical_plot_color) +
               geom_text(aes(label = Freq), vjust = -0.3, size = 3.5) +
@@ -669,6 +668,48 @@ server <- function(input, output, session) {
       })
     }
   })
+  
+  observeEvent(input$last_btn_clinical, {
+    values$clinical_plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_clinical, "savePlot")))
+    showModal(
+      modalDialog(
+        sliderInput("clinical_plot_width", label = "Image width (inches):", min = 1, max = 36, value = 6),
+        sliderInput("clinical_plot_height", label = "Image height (inches):", min = 1, max = 36, value = 6),
+        radioButtons("clinical_plot_filetype", label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
+        downloadButton("clinical_plot_download"),
+        footer = modalButton("Close")
+      ))
+  })
+  
+  output$clinical_plot_download <- downloadHandler(
+    filename = function() {
+      paste(make.names(colnames(values$metaData)[values$clinical_plot_to_save]), input$clinical_plot_filetype, sep = ".")
+    },
+    content = function(file) {
+      
+      if (isAllNum(values$metaData[values$clinical_plot_to_save])) {
+        plot_to_save <- ggplot(data = data.frame(measured = as.numeric(as.character(plotInput()$total_data[[values$clinical_plot_to_save]]))), aes(x = measured)) +
+          geom_histogram(binwidth = input$clinical_binwidths, fill = input$clinical_plot_color) +
+          labs(x = "Values",
+               y = "Frequency") +
+          ggtitle(colnames(values$metaData)[values$clinical_plot_to_save]) +
+          theme_bw(base_size = 18)
+      }
+      else {
+        plot_to_save <- ggplot(data = as.data.frame(table(plotInput()$total_data[[values$clinical_plot_to_save]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
+          geom_bar(stat = "identity", fill = input$clinical_plot_color) +
+          geom_text(aes(label = Freq), vjust = -0.3, size = 3.5) +
+          labs(x = "Values",
+               y = "Count") +
+          ggtitle(colnames(values$metaData)[values$clinical_plot_to_save]) +
+          theme_bw(base_size = 18) +
+          theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
+      }
+      
+      ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, device = input$clinical_plot_filetype)
+      
+    }
+  )
   
   
   # merged warning ----------------------------------------------------------
@@ -888,17 +929,17 @@ server <- function(input, output, session) {
       currentDF <- values$tablesList[[currentCol]]
       if (all(currentDF["To_Replace"] == "")) {
         values$tablesList[[currentCol]] <- data.frame(
-          To_Replace = if (input$substitute_isrange) paste("RANGE:", paste(input$slideInSub, collapse = "-")) else values$DFIn["To_Replace"], 
+          To_Replace = if (input$substitute_isrange) paste("RANGE:", paste(input$slideInSub, collapse = " - ")) else values$DFIn["To_Replace"], 
           stringsAsFactors = FALSE)
         values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], 
                                                  New_Val = if (input$substitute_isrange) input$newRangeVal else values$DFIn["New_Val"], stringsAsFactors = F)
       }
       #if the values are not there, add them to the end of the table
       else if ((values$DFIn[["To_Replace"]] %in% currentDF[["To_Replace"]]) || 
-              (paste("RANGE:", paste(input$slideInSub, collapse = "-")) %in% currentDF[["To_Replace"]])) {
+              (paste("RANGE:", paste(input$slideInSub, collapse = " - ")) %in% currentDF[["To_Replace"]])) {
         if (input$substitute_isrange) {
-          currentDF[which(paste("RANGE:", paste(input$slideInSub, collapse = "-")) %in% currentDF[["To_Replace"]]),] <- 
-            c(paste("RANGE:", paste(input$slideInSub, collapse = "-")), input$newRangeVal)
+          currentDF[which(paste("RANGE:", paste(input$slideInSub, collapse = " - ")) %in% currentDF[["To_Replace"]]),] <- 
+            c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal)
         }
         else {
           currentDF[which(currentDF[["To_Replace"]] == values$DFIn[["To_Replace"]]),] <- values$DFIn[1,]
@@ -907,7 +948,7 @@ server <- function(input, output, session) {
       }
       else {
         values$tablesList[[currentCol]] <- rbind(values$tablesList[[currentCol]], 
-                                                 if (input$substitute_isrange) c(paste("RANGE:", paste(input$slideInSub, collapse = "-")), 
+                                                 if (input$substitute_isrange) c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), 
                                                                      input$newRangeVal) else values$DFIn[1,])
       }
     }
@@ -917,9 +958,9 @@ server <- function(input, output, session) {
   observeEvent(input$add_val_to_sub, {
     if (!is.null(input$colsToSub) && input$colsToSub != "") {
       if (all(values$DFIn["To_Replace"] == "")) {
-        values$DFIn["To_Replace"] <- paste("RANGE:", paste(input$slideInSub, collapse = "-"))
+        values$DFIn["To_Replace"] <- paste("RANGE:", paste(input$slideInSub, collapse = " - "))
       } else {
-        values$DFIn <- rbind(values$DFIn, c(paste("RANGE:", paste(input$slideInSub, collapse = "-")), ""))
+        values$DFIn <- rbind(values$DFIn, c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), ""))
       }
       values$DFOut <- values$DFIn
     }
@@ -1032,7 +1073,7 @@ server <- function(input, output, session) {
     currentCol <- input$col_valsToExclude
     if (!is.null(currentCol)) {
       if (input$exclude_isrange) {
-        values$excludesList[[currentCol]] <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = "-"), sep = ": ")
+        values$excludesList[[currentCol]] <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
       } 
       else if (!is.null(input$valsToExclude)) {
         values$excludesList[[currentCol]] <- input$valsToExclude
@@ -1345,8 +1386,12 @@ server <- function(input, output, session) {
   #})
   
   observe({
-    if (!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
-       !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display)) {
+    if (!is.null(input$colForExprLabels) && 
+        input$colForExprLabels != "" &&
+       !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display) &&
+       !is.null(input$howToSummarize) &&
+       input$howToSummarize == "keep all") {
+      print(findExprLabelColumns(values$feature_to_display))
       shinyjs::disable("transposeExpr")
     }
   })

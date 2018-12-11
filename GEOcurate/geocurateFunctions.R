@@ -58,7 +58,8 @@ downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FAL
       if (!grepl("GSE", geoID)) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
-      expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
+      #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
+      expressionSet <- getGEO(geoID)
       saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
     }, error = function(e){
@@ -96,14 +97,14 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
     incProgress(message = "Extracting feature data")
     featureData <- data.frame(fData(expressionSet), stringsAsFactors = TRUE)
     
-    hasNA <- as.logical(apply(featureData, 2, function(x) 
-    {
-      return(any(is.na(x)) || any(x == ""))
-    }
-    ))
-    if (any(hasNA)) {
-      featureData <- featureData[, -which(hasNA)]
-    }
+    #hasNA <- as.logical(apply(featureData, 2, function(x) 
+    #{
+    #  return(any(is.na(x)) || any(x == ""))
+    #}
+    #))
+    #if (any(hasNA)) {
+      #featureData <- featureData[, -which(hasNA)]
+    #}
     
     if (nrow(expressionData) == 0) {
       expressionData <- NULL
@@ -165,13 +166,16 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 {
   metaData <- metaData[!duplicated(as.list(metaData))]
   
-  cols_to_keep <- apply(metaData, 2, evaluate_cols_to_keep, toFilter = toFilter)
-  
-  if (all(!cols_to_keep)) {
-    print("No informative columns found.")
-    NULL
-  } else {
-    metaData <- metaData[,cols_to_keep]
+  if (ncol(metaData) > 1) {
+    
+    cols_to_keep <- apply(metaData, 2, evaluate_cols_to_keep, toFilter = toFilter)
+    
+    if (all(!cols_to_keep)) {
+      print("No informative columns found.")
+      NULL
+    } else {
+      metaData <- metaData[,cols_to_keep]
+    }
   }
   metaData
 }
@@ -375,6 +379,7 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
 {
   col_to_sub <- names(sub_specs) 
   subs <- sub_specs[[col_to_sub]]
+  row_names <- rownames(clinical_data)
   
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA
@@ -384,7 +389,7 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
     if (grepl("RANGE", subs$To_Replace[i])) {
       
       mySub <- str_remove(subs$To_Replace[i], "RANGE: ")
-      mySub <- as.numeric(str_split(mySub, "-")[[1]])
+      mySub <- as.numeric(str_split(mySub, " - ")[[1]])
       
       new_col <- suppressWarnings(as.numeric(clinical_data[,col_to_sub]))
       new_col[
@@ -404,40 +409,48 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
     }
   }
   clinical_data <- clinical_data %>% mutate_all(~ replace(., . == "", NA))
+  rownames(clinical_data) <- row_names
   return(clinical_data)
 }
 
 excludeVars <- function(metaData, specs) {
+  metaData <- cbind(ID = rownames(metaData), metaData)
   for (variable in names(specs)) {
     toExclude <- specs[[variable]]
-    if (any(toExclude == "NA") && any(is.na(metaData[,variable]))) {
-      toExclude <- toExclude[-which(toExclude == "NA")]
-      metaData <- metaData[-which(is.na(metaData[,variable])),]
+    metaData <- dplyr::rename(metaData, filter_var = variable)
+    if (any(toExclude == "NA")) {
+      metaData <- filter(metaData, !is.na(filter_var))
     }
     if (!identical(toExclude, character(0))) {
-      for (el in toExclude[which(!toExclude %in% metaData[,variable])]) {
+      for (el in toExclude[which(!toExclude %in% metaData$filter_var)]) {
         if (grepl("exclude", el)) {
           el <- str_split(el, "exclude: ")[[1]][2]
-          bounds <- as.numeric(str_split(el, "-")[[1]])
+          bounds <- as.numeric(str_split(el, " - ")[[1]])
           
-          indices <- sapply(metaData[,variable], 
-                                                function(x){
-                                                  if (bounds[1] <= x && x <= bounds[2]) FALSE else TRUE
-                                                })
-          metaData <- metaData[which(indices),]
+          metaData <- metaData %>%
+            within({
+              filter_var <- as.numeric(filter_var)
+            }) %>%
+            filter(filter_var >= bounds[1], filter_var <= bounds[2])
         }
         else if (grepl("keep", el)) {
           el <- str_split(el, "keep: ")[[1]][2]
-          bounds <- str_split(el, "-")[[1]]
-          metaData <- metaData[which(as.numeric(metaData[,variable]) >= bounds[1]),]
-          metaData <- metaData[which(as.numeric(metaData[,variable]) <= bounds[2]),]
+          bounds <- str_split(el, " - ")[[1]]
+          metaData <- metaData %>%
+            within({
+              filter_var <- as.numeric(filter_var)
+            }) %>%
+            filter(filter_var >= bounds[1]) %>%
+            filter(filter_var <= bounds[2])
         }
-        metaData[,variable] <- as.numeric(metaData[,variable])
       }
-      toExclude <- toExclude[which(toExclude %in% metaData[,variable])]
-      metaData <- if (!identical(toExclude, character(0))) metaData[which(!(metaData[,variable] %in% toExclude)),] else metaData
+      toExclude <- toExclude[which(toExclude %in% metaData$filter_var)]
+      metaData <- if (!identical(toExclude, character(0))) filter(metaData, !filter_var %in% toExclude) else metaData
     }
   }
+  rownames(metaData) <- metaData$ID
+  metaData <- metaData[-which(colnames(metaData) == "ID")]
+  colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   return(metaData)
 }
 
@@ -453,7 +466,7 @@ fixSpecialCharacters <- function(x, offendingChars)
 quickTranspose <- function(dataToTranspose) {
   
   incProgress()
-  if (any(duplicated(dataToTranspose$ID))) {
+  if (any(duplicated(dataToTranspose$ID, incomparables = NA))) {
     transposed <- dataToTranspose
     
     showNotification("Data cannot be transposed because the ID column is not all unique. Please specify a summarize option.")
@@ -479,7 +492,8 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   
   replacementWRowNames <- replacement %>%
     dplyr::rename(replace = replaceCol) %>%
-    select(ID, replace)
+    select(ID, replace) %>%
+    filter(!is.na(replace) & replace != "")
   
   incProgress()
   
@@ -515,7 +529,7 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
 
 findExprLabelColumns <- function(ftData) {
   allDiff <- as.logical(lapply(ftData, function(x){
-    length(unique(x)) == nrow(ftData)
+    length(unique(x)[which(!is.na(unique(x)))]) == nrow(ftData)
   }))
   return(colnames(ftData[allDiff]))
 }
