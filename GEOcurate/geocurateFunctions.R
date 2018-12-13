@@ -96,6 +96,16 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
 
     incProgress(message = "Extracting feature data")
     featureData <- data.frame(fData(expressionSet), stringsAsFactors = TRUE)
+    if (!"ID" %in% colnames(featureData)) {
+      featureData <- cbind(ID = rownames(featureData), featureData)
+      
+      rows_to_keep <- sapply(1:nrow(featureData), function(i) {
+        if (!all(is.na(featureData[i,]))) {
+          i
+        }
+      })
+      featureData <- featureData[unlist(rows_to_keep),]
+    }
     
     #hasNA <- as.logical(apply(featureData, 2, function(x) 
     #{
@@ -601,7 +611,7 @@ retract_columns_view <- function(data, last_column, backward_distance) {
 
 #finds all of data1 in data2
 find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
-  
+  #browser()
   search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else data2[,id_col2]
   
   if (id_col1 == "colnames") {

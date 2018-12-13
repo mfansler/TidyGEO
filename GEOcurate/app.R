@@ -250,8 +250,10 @@ ui <- fluidPage(
                                                p("It can be helpful to filter out unneeded columns for better storage capacity and improved
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest."),
-                                               uiOutput("display_vars_to_keep"),
+                                               div(tags$b("Which columns would you like to keep?"),
+                                                          help_button("This will drop any unselected columns from the dataset.")),
                                                checkboxInput(inputId = "keep_all_but", label = tags$i("Keep all BUT the specified")),
+                                               uiOutput("display_vars_to_keep"),
                                                primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
                                                hr(), uiOutput("nav_3_ui")
                                       ),
@@ -268,7 +270,7 @@ ui <- fluidPage(
                                                uiOutput("display_cols_to_rename"),
                                                #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
-                                               primary_button(id = "rename", label = "Rename columns"),
+                                               primary_button(id = "rename", label = "Rename column"),
                                                hr(), uiOutput("nav_4_ui")
                                       ),
                                       
@@ -324,15 +326,9 @@ ui <- fluidPage(
                                                tags$b("Download:"),
                                                fluidRow(
                                                  column(1, downloadButton("clinical_evaluate_save", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-                                                 column(1, offset = 3, downloadButton("clinical_save_rscript", 
-                                                                                      div("R script", 
-                                                                                          help_button(paste0("If you have R installed, this R script ",
-                                                                                                             "can act as a set of instructions to parse ",
-                                                                                                             "the data as you have specified. This is helpful ",
-                                                                                                             "if you want to show the steps you used to parse the data, ",
-                                                                                                             "and it allows other scientists to run this script and ", 
-                                                                                                             "get the same result."))), 
-                                                                                      style = "color: #fff; background-color: #62c18b; border-color: #62c18b"))
+                                                 column(7, offset = 3, div(downloadButton("clinical_save_rscript", "R script", 
+                                                                                      style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
+                                                                           help_link(id = "clinical_r_help")))
                                                ),
                                                hr(), uiOutput("nav_7_ui")
                                       )
@@ -388,9 +384,9 @@ ui <- fluidPage(
                                                                          help_button("Values in the ID column become the column names and column names become the ID column."))),
                                                br(),
                                                fluidRow(
-                                                 column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
-                                                 column(1, offset = 2, tertiary_button(id = "resetExpr", label = "Reset")),
-                                                 column(1, offset = 3, primary_button(id = "previewExpr", label = "Update"))
+                                                 column(2, primary_button(id = "previewExpr", label = "Update")),
+                                                 column(1, offset = 3, tertiary_button(id = "undoEvalExpr", label = "Undo")),
+                                                 column(1, offset = 2, tertiary_button(id = "resetExpr", label = "Reset"))
                                                ),
                                                hr(),
                                                radioButtons("expression_fileType", "File type:", 
@@ -400,8 +396,10 @@ ui <- fluidPage(
                                                tags$b("Download:"),
                                                fluidRow(
                                                  column(1, downloadButton("expression_downloadData", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-                                                 column(1, offset = 3, downloadButton("expression_downloadRscript", "R script", style = "color: #fff; background-color: #62c18b; border-color: #62c18b"))
-                                               )
+                                                 column(7, offset = 3, div(downloadButton("expression_downloadRscript", "R script", 
+                                                                                          style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
+                                                                           help_link(id = "expression_r_help")))
+                                                )
                                              ),
                                              mainPanel(
                                                tabsetPanel(
@@ -823,8 +821,7 @@ server <- function(input, output, session) {
   output$display_vars_to_keep <- renderUI({
     #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     colNames <- colnames(values$metaData)
-    checkboxGroupInput(inputId = "varsToKeep", label = div("Which columns would you like to keep?",
-                                                           help_button("This will drop any unselected columns from the dataset.")), 
+    checkboxGroupInput(inputId = "varsToKeep", label = NULL, 
                        choices = colNames, selected = colNames)
   })
   
@@ -1339,7 +1336,11 @@ server <- function(input, output, session) {
     create_image_grid(images, image_names)
   })
   
-  observeEvent(input$r_help, {
+  observeEvent(input$clinical_r_help, {
+    help_modal("www/R_Help_Documentation.md")
+  })
+  
+  observeEvent(input$expression_r_help, {
     help_modal("www/R_Help_Documentation.md")
   })
   
