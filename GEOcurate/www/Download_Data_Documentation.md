@@ -19,4 +19,4 @@ After inputting the GSE ID, you may specify some columns to filter out of the da
 * Web addresses
     + Columns in which every row contains a web address starting with `ftp:://` are often unhelpful because they simply specify where the data was published. If you select this option, columns with web addresses in every row will be dropped.
     
-Here is an example of the filtering functionality with GSE68849:
+**Here is an example of the filtering functionality with GSE68849:**

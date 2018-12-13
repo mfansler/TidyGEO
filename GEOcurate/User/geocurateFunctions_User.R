@@ -52,7 +52,7 @@ downloadClinical <- function(geoID, toFilter, dataSetIndex, fileName = NA)
 }
 
 downloadData <- function(geoID, dataSetIndex) {
-  expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = FALSE)
+  expressionSet <- getGEO(geoID, getGPL = "FALSE")
   
   expressionSet <- expressionSet[[dataSetIndex]]
   
@@ -63,7 +63,7 @@ downloadData <- function(geoID, dataSetIndex) {
 }
 
 downloadExpression <- function(geoID, dataSetIndex) {
-  expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE)
+  expressionSet <- getGEO(geoID, getGPL = FALSE)
   
   expressionSet <- expressionSet[[dataSetIndex]]
   
@@ -73,59 +73,54 @@ downloadExpression <- function(geoID, dataSetIndex) {
   
   
   featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
-  hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
-  if (all(hasNA) != FALSE) {
-    featureData <- featureData[, -which(hasNA)]
-  }
+  #hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
+  #if (all(hasNA) != FALSE) {
+  #  featureData <- featureData[, -which(hasNA)]
+  #}
   
   return(list("expressionData" = expressionData, "featureData" = featureData))
 }
 
 #filter columns with all different entries or all the same entry
-filterUninformativeCols <- function(metaData, toFilter = list("none"))
+evaluate_cols_to_keep <- function(col, toFilter = list()) {
+  functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
+                    "url" = function(x) all(!grepl("ftp:\\/\\/", x)),
+                    "dates" = function(x) all(!grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", x)),
+                    "same_vals" = function(x) length(unique(as.factor(as.character(toupper(x))))) > 1,
+                    "all_diff" = function(x) length(unique(as.factor(as.character(toupper(x))))) != total_rows,
+                    "tooLong" = function(x) {
+                      isTooLong <- as.logical(nchar(x) > 100)
+                      sum(isTooLong) < (length(x) / 2)
+                    })
+  col_no_NA <- if (any(is.na(col)) || any(col == "")) col[-which(is.na(col) | col == "")] else col
+  total_rows <- length(col)
+  if (length(col_no_NA) > 0) {
+    if (length(toFilter > 0)) {
+      return(all(sapply(toFilter, function(x) {
+        do.call(what = functions[x][[1]], args = list("x" = col_no_NA))
+      })))
+    }
+    return(TRUE)
+  }
+  return(FALSE)
+}
+
+filterUninformativeCols <- function(metaData, toFilter = list())
 {
-  #filter out duplicates
   metaData <- metaData[!duplicated(as.list(metaData))]
   
-  filteredData <- as.data.frame(row.names(metaData))
-  dataToFilter <- matrix(nrow = nrow(metaData), ncol = 1)
-  
-  metaDataCols <- colnames(metaData)
-  colNames <- NULL
-  unFilteredCount = 0
-  evalSame <- rep(0, nrow(metaData))
-  
-  for (i in 1:ncol(metaData)) {
-    colName <- as.character(colnames(metaData)[i])
-    temp <- metaData[,i]
-    temp <- temp[which(temp != "NA")]
-    temp <- temp[which(temp != "")]
-    if (length(temp) > 0) {
-      isReanalyzed <- if ("reanalyzed" %in% toFilter) grepl("Reanaly[sz]ed ", temp) else FALSE
-      isURL <- if ("url" %in% toFilter) grepl("ftp:\\/\\/", temp) else FALSE
-      isDate <- if ("dates" %in% toFilter) grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", temp) else FALSE
-      isTooLong <- if ("tooLong" %in% toFilter) as.logical(lapply(temp, function(x) nchar(x) > 100)) else FALSE
-      
-      uniqueVals <- unique(as.factor(as.character(toupper(temp))))
-      notAllSame <- if ("same_vals" %in% toFilter) length(uniqueVals) > 1 else TRUE
-      notAllDifferent <- if ("all_diff" %in% toFilter) length(uniqueVals) != length(rownames(metaData)) else TRUE
-      
-      if (notAllSame && notAllDifferent && !all(isReanalyzed) && !all(isURL) && !all(isDate) && 
-         !all(isTooLong) && metaData[i] != rownames(metaData)) {
-        filteredData <- cbind(filteredData, metaData[,i])
-        colNames <- c(colNames, colName)
-        unFilteredCount <- unFilteredCount + 1
-      }
+  if (ncol(metaData) > 1) {
+    
+    cols_to_keep <- apply(metaData, 2, evaluate_cols_to_keep, toFilter = toFilter)
+    
+    if (all(!cols_to_keep)) {
+      print("No informative columns found.")
+      NULL
+    } else {
+      metaData <- metaData[,cols_to_keep]
     }
   }
-  if (unFilteredCount == 0) {
-    print("No informative columns found.")
-  }
-  filteredData <- as.data.frame(filteredData[,2:ncol(filteredData)])
-  row.names(filteredData) <- row.names(metaData)
-  colnames(filteredData) <- colNames
-  
-  return(filteredData)
+  metaData
 }
 
 isAllNum <- function(metaData) {
@@ -194,7 +189,13 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     }))
     if (all(hasDelim)) {
       inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
+      
+      col_names <- colnames(inputDataFrame)
+      col_names <- append(col_names, unique(inputDataFrame$key)[which(!is.na(unique(inputDataFrame$key)))], which(col_names == "key"))
+      col_names <- col_names[-which(col_names %in% c("key", "value"))]
+      
       inputDataFrame <- spread(inputDataFrame, key = "key", value = "value")
+      inputDataFrame <- inputDataFrame[,col_names]
     } else {
       
       offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
@@ -298,6 +299,7 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
 {
   col_to_sub <- names(sub_specs) 
   subs <- sub_specs[[col_to_sub]]
+  row_names <- rownames(clinical_data)
   
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA
@@ -307,7 +309,7 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
     if (grepl("RANGE", subs$To_Replace[i])) {
       
       mySub <- str_remove(subs$To_Replace[i], "RANGE: ")
-      mySub <- as.numeric(str_split(mySub, "-")[[1]])
+      mySub <- as.numeric(str_split(mySub, " - ")[[1]])
       
       new_col <- suppressWarnings(as.numeric(clinical_data[,col_to_sub]))
       new_col[
@@ -327,46 +329,48 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
     }
   }
   clinical_data <- clinical_data %>% mutate_all(~ replace(., . == "", NA))
+  rownames(clinical_data) <- row_names
   return(clinical_data)
 }
 
 excludeVars <- function(metaData, specs) {
+  metaData <- cbind(ID = rownames(metaData), metaData)
   for (variable in names(specs)) {
     toExclude <- specs[[variable]]
-    if (any(toExclude == "NA") && any(is.na(metaData[,variable]))) {
-      toExclude <- toExclude[-which(toExclude == "NA")]
-      metaData <- metaData[-which(is.na(metaData[,variable])),]
-      #take the nas out of toExclude
-      #exclude all the stuff in toExclude
-      #exclude the nas in the column
+    metaData <- dplyr::rename(metaData, filter_var = variable)
+    if (any(toExclude == "NA")) {
+      metaData <- filter(metaData, !is.na(filter_var))
     }
     if (!identical(toExclude, character(0))) {
-      #print(toExclude[which(!toExclude %in% metaData[,variable])])
-      for (el in toExclude[which(!toExclude %in% metaData[,variable])]) {
+      for (el in toExclude[which(!toExclude %in% metaData$filter_var)]) {
         if (grepl("exclude", el)) {
           el <- str_split(el, "exclude: ")[[1]][2]
-          bounds <- as.numeric(str_split(el, "-")[[1]])
+          bounds <- as.numeric(str_split(el, " - ")[[1]])
           
-          indices <- sapply(metaData[,variable], 
-                            function(x){
-                              if (bounds[1] <= x && x <= bounds[2]) FALSE else TRUE
-                            })
-          metaData <- metaData[which(indices),]
+          metaData <- metaData %>%
+            within({
+              filter_var <- as.numeric(filter_var)
+            }) %>%
+            filter(filter_var >= bounds[1], filter_var <= bounds[2])
         }
         else if (grepl("keep", el)) {
           el <- str_split(el, "keep: ")[[1]][2]
-          bounds <- str_split(el, "-")[[1]]
-          metaData <- metaData[which(as.numeric(metaData[,variable]) >= bounds[1]),]
-          metaData <- metaData[which(as.numeric(metaData[,variable]) <= bounds[2]),]
+          bounds <- str_split(el, " - ")[[1]]
+          metaData <- metaData %>%
+            within({
+              filter_var <- as.numeric(filter_var)
+            }) %>%
+            filter(filter_var >= bounds[1]) %>%
+            filter(filter_var <= bounds[2])
         }
-        metaData[,variable] <- as.numeric(metaData[,variable])
       }
-      #print(metaData)
-      toExclude <- toExclude[which(toExclude %in% metaData[,variable])]
-      #print(toExclude)
-      metaData <- if (!identical(toExclude, character(0))) metaData[which(!(metaData[,variable] %in% toExclude)),] else metaData
+      toExclude <- toExclude[which(toExclude %in% metaData$filter_var)]
+      metaData <- if (!identical(toExclude, character(0))) filter(metaData, !filter_var %in% toExclude) else metaData
     }
   }
+  rownames(metaData) <- metaData$ID
+  metaData <- metaData[-which(colnames(metaData) == "ID")]
+  colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   return(metaData)
 }
 
@@ -423,7 +427,8 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   
   replacementWRowNames <- replacement %>%
     dplyr::rename(replace = replaceCol) %>%
-    select(ID, replace)
+    select(ID, replace) %>%
+    filter(!is.na(replace) & replace != "")
   
   mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
     select(-ID) %>%

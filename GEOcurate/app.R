@@ -32,16 +32,19 @@ help_link <- function(id) {
   #                      footer = modalButton()))
 }
 
-help_modal <- function(help_file, images_id) {
+help_modal <- function(help_file, images_id = NULL) {
   showModal(
     modalDialog(
       includeMarkdown(help_file),
-      uiOutput(images_id),
-      tags$script(HTML(
-        "$(document).on('click', '.clickimg', function() {",
-        "  Shiny.onInputChange('clickimg', $(this).data('value'));",
-        "});"
-      )),
+      conditionalPanel(
+        condition = !is.null(images_id),
+        uiOutput(images_id)
+      ),
+      #tags$script(HTML(
+      #  "$(document).on('click', '.clickimg', function() {",
+      #  "  Shiny.onInputChange('clickimg', $(this).data('value'));",
+      #  "});"
+      #)),
       footer = modalButton("Close"),
       size = "l"
       )
@@ -75,9 +78,9 @@ secondary_button <- function(id, label, icon = NULL) {
                style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f")
 }
 
-tertiary_button <- function(id, label, icon = NULL) {
+tertiary_button <- function(id, label, icon = NULL, class = NULL) {
   shiny::actionButton(id, div(label, icon), 
-               style = "color: #fff; background-color: #6baed6; border-color: #6baed6")
+               style = "color: #fff; background-color: #6baed6; border-color: #6baed6", class = class)
 }
 
 # detects variable type & formats string to be written to R script --------
@@ -134,16 +137,20 @@ ui <- fluidPage(
            left: calc(50% - 400px);;
            }
            ")
-      ),
+      )#,
     #For finding which plot the user wants to save
     #https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
-    tags$script(HTML("$(document).on('click', '.clinical_plot', function () {
-                                Shiny.onInputChange('last_btn_clinical',this.id);
-                             });"),
-                HTML("$(document).on('click', '.expression_plot', function () {
-                                Shiny.onInputChange('last_btn_expression',this.id);
-                             });"))
+    #tags$script(HTML("$(document).on('click', '.clinical_plot', function () {
+    #                            Shiny.onInputChange('last_btn_clinical',this.id);
+    #                         });"),
+    #            HTML("$(document).on('click', '.expression_plot', function () {
+    #                            Shiny.onInputChange('last_btn_expression',this.id);
+    #                         });"),
+    #            HTML("$(document).addCustomMessageHandler('resetValue', function(variableName) {
+    #                            Shiny.onInputChange(variableName, null);
+    #                        });"))
     ),
+    includeScript("reactive_preferences.js"),
   navbarPage(title = "GEOcurate", id = "top_level",
              tabPanel(title = "Clinical data",
                       
@@ -161,8 +168,8 @@ ui <- fluidPage(
                                                h4("Importing the data"),
                                                div("Welcome to GEOcurate! This application will allow you to reformat data
                                                    from ",
-                                                 a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus"),
-                                                 ", which can then be used to answer research questions. To get started,",
+                                                 a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
+                                                 " which can then be used to answer research questions. To get started,",
                                                  a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "find a series of interest"),
                                                    "and take a look at the help documentation or"
                                                  ),
@@ -317,7 +324,15 @@ ui <- fluidPage(
                                                tags$b("Download:"),
                                                fluidRow(
                                                  column(1, downloadButton("clinical_evaluate_save", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-                                                 column(1, offset = 3, downloadButton("clinical_save_rscript", "R script", style = "color: #fff; background-color: #62c18b; border-color: #62c18b"))
+                                                 column(1, offset = 3, downloadButton("clinical_save_rscript", 
+                                                                                      div("R script", 
+                                                                                          help_button(paste0("If you have R installed, this R script ",
+                                                                                                             "can act as a set of instructions to parse ",
+                                                                                                             "the data as you have specified. This is helpful ",
+                                                                                                             "if you want to show the steps you used to parse the data, ",
+                                                                                                             "and it allows other scientists to run this script and ", 
+                                                                                                             "get the same result."))), 
+                                                                                      style = "color: #fff; background-color: #62c18b; border-color: #62c18b"))
                                                ),
                                                hr(), uiOutput("nav_7_ui")
                                       )
@@ -375,7 +390,7 @@ ui <- fluidPage(
                                                fluidRow(
                                                  column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
                                                  column(1, offset = 2, tertiary_button(id = "resetExpr", label = "Reset")),
-                                                 column(1, offset = 3, primary_button(id = "previewExpr", label = "Evaluate"))
+                                                 column(1, offset = 3, primary_button(id = "previewExpr", label = "Update"))
                                                ),
                                                hr(),
                                                radioButtons("expression_fileType", "File type:", 
@@ -626,7 +641,7 @@ server <- function(input, output, session) {
       plot_output_list <- lapply(1:plotInput()$n_plot, function(i) {
         #if (!grepl("evalSame", colnames(values$metaData)[i])) {
         plotname <- make.names(colnames(values$metaData)[i])
-        div(withSpinner(plotOutput(plotname, height = 700, width = "auto"), type = 5), actionButton(paste0("savePlot", i), "save Plot", class = "clinical_plot"))
+        div(withSpinner(plotOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "clinical_plot"))
         #}
       })   
       do.call(tagList, plot_output_list)
@@ -670,15 +685,18 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$last_btn_clinical, {
-    values$clinical_plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_clinical, "savePlot")))
-    showModal(
-      modalDialog(
-        sliderInput("clinical_plot_width", label = "Image width (inches):", min = 1, max = 36, value = 6),
-        sliderInput("clinical_plot_height", label = "Image height (inches):", min = 1, max = 36, value = 6),
-        radioButtons("clinical_plot_filetype", label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
-        downloadButton("clinical_plot_download"),
-        footer = modalButton("Close")
-      ))
+    if (!is.null(input$last_btn_clinical)) {
+      values$clinical_plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_clinical, "savePlot")))
+      showModal(
+        modalDialog(
+          sliderInput("clinical_plot_width", label = "Image width (inches):", min = 1, max = 36, value = 6),
+          sliderInput("clinical_plot_height", label = "Image height (inches):", min = 1, max = 36, value = 6),
+          radioButtons("clinical_plot_filetype", label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
+          downloadButton("clinical_plot_download"),
+          footer = modalButton("Close")
+        ))
+      session$sendCustomMessage(type = "resetValue", "last_btn_clinical")
+    }
   })
   
   output$clinical_plot_download <- downloadHandler(
@@ -1011,15 +1029,15 @@ server <- function(input, output, session) {
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("substitute values"), values$oFile)
-      values$oFile <- saveLines(paste0("sub_specs <- NULL"), values$oFile)
-      for (i in 1:length(values$tablesList)) {
+      values$oFile <- saveLines(paste0("sub_specs <- list()"), values$oFile)
+      #for (i in 1:length(values$tablesList)) {
         values$oFile <- saveLines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
                                          "data.frame(", colnames(values$DFIn)[1], "=c(", 
                                          paste(format_string(as.character(values$DFIn[,1])), collapse = ", "), "), ",
                                          colnames(values$DFIn)[2], "=c(", 
                                          paste(format_string(as.character(values$DFIn[,2])), collapse = ", "), "))"), values$oFile)
-      }
-      values$oFile <- saveLines("metaData <- substitute_vals(metaData, tablesList)", 
+      #}
+      values$oFile <- saveLines("metaData <- substitute_vals(metaData, sub_specs)", 
                                 values$oFile)
       values$currChunkLen <- length(values$oFile) - before
       
@@ -1319,6 +1337,10 @@ server <- function(input, output, session) {
     image_names <- c("Download Without Filters", "Download With Filters")
     
     create_image_grid(images, image_names)
+  })
+  
+  observeEvent(input$r_help, {
+    help_modal("www/R_Help_Documentation.md")
   })
   
   observeEvent(input$clickimg, {
@@ -1646,7 +1668,7 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_to_display)) {
       plot_output_list <- lapply(2:histograms_expression_input()$n_plot, function(i) {
         plotname <- make.names(colnames(values$expr_to_display)[i])
-        div(withSpinner(plotOutput(plotname, height = 500, width = "auto"), type = 5), actionButton(paste0("savePlot", i), "save Plot", class = "expression_plot"))
+        div(withSpinner(plotOutput(plotname, height = 500, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "expression_plot"))
       })   
       do.call(tagList, plot_output_list)
     }
