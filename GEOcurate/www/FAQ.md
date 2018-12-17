@@ -21,7 +21,7 @@ FAQ
     + If the culprit is missing values ("NA", "?", "-" , etc.), you will have to substitute those values for NA. 
     + Then, try pressing "Reformat columns" again.
 * __Why are my columns disappearing?__
-    + Columns that are identical (have all the same values in the same positions) are automatically filtered out at every evaluation.
+    + Columns that are identical (have all the same values in the same positions) are automatically filtered out every time you make a change.
   
 #### Excluding columns
 #### Renaming columns

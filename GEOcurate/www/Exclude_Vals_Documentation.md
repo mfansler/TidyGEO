@@ -1,6 +1,6 @@
 ## Excluding values from a column
 
-You may want to remove some of the values in a column, for example, if you have missing (`NA`) values. Excluding a value will take out the entire row that contains that value in the selected column.
+You may want to remove some of the values in a column, for example, you may want to remove missing (`NA`) values. Excluding a value will drop the entire row with that value in the selected column.
 
 You may choose to either remove particular values from the data, or to remove a range of numeric values from the data.
 

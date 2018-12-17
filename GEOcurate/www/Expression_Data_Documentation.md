@@ -8,7 +8,7 @@ This tool allows users to do four things:
     + The ID column in the expression dataset often represents probe set identifiers, but it is often more intuitive to represent the IDs as a different feature. 
     + This option allows you to take one of the columns from the feature dataset and use that column as identifiers for the expression dataset.
 2. Transpose the data
-    + Transposing the data switches the axes. In other words, the "x axis", or the column names, become the ID column, and the "y axis", or the ID column, becomes the column names.
+    + Transposing the data switches the axes. In other words, the "x axis" (the column names) becomes the ID column, and the "y axis" (the ID column) becomes the column names.
     + This can be helpful because it makes the dataset wider or narrower, which can be easier to view and analyze.
 3. Filter the data
     + Because these datasets are so large, you might want to filter the data to include only the variables that are interesting to you.
