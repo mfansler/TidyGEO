@@ -375,13 +375,13 @@ ui <- fluidPage(
                                                primary_button("download_expr", "Load Expression Data", 
                                                               icon = help_button("Please make sure to download some clinical data first.")),
                                                hr(),
-                                               uiOutput("exprLabels"),
-                                               uiOutput("summarizeOptions"),
-                                               #uiOutput("transposeCheckbox"),
+                                               #uiOutput("exprLabels"),
+                                               #uiOutput("summarizeOptions"),
+                                               ##uiOutput("transposeCheckbox"),
                                                
-                                               checkboxInput(inputId = "transposeExpr", 
-                                                             label = div("Transpose the data", 
-                                                                         help_button("Values in the ID column become the column names and column names become the ID column."))),
+                                               #checkboxInput(inputId = "transposeExpr", 
+                                              #               label = div("Transpose the data", 
+                                              #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
                                                br(),
                                                fluidRow(
                                                  column(2, primary_button(id = "previewExpr", label = "Update")),
@@ -409,10 +409,11 @@ ui <- fluidPage(
                                                             column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
                                                           ),
                                                           withSpinner(dataTableOutput("exprPreview"), type = 5),
+                                                          primary_button("expression_replace_id", label = "Use a different ID"),
                                                           primary_button("expression_evaluate_filters", label = "Evaluate filters")
                                                           ),
                                                  tabPanel("Feature data",
-                                                          withSpinner(dataTableOutput("featureData"), type = 5),
+                                                          #withSpinner(dataTableOutput("featureData"), type = 5),
                                                           primary_button("feature_evaluate_filters", label = "Evaluate filters")
                                                           ),
                                                  tabPanel("Graphical summary",
@@ -1607,11 +1608,35 @@ server <- function(input, output, session) {
   #  print(input$exprPreview_search_columns)
   #})
   
+  observeEvent(input$expression_replace_id, {
+    showModal(modalDialog(
+      withSpinner(dataTableOutput("featureData"), type = 5),
+      uiOutput("exprLabels"),
+      uiOutput("summarizeOptions"),
+      checkboxInput(inputId = "transposeExpr", 
+                    label = div("Transpose the data", 
+                                help_button("Values in the ID column become the column names and column names become the ID column."))),
+                          footer = primary_button(id = "expression_evaluate_id", label = "Replace ID column"), 
+      size = "l",
+      easyClose = TRUE))
+  })
+  
   # main panel feature data -------------------------------------------------
 
   output$featureData <- DT::renderDT({
     if (!is.null(values$feature_to_display)) {
-      datatable(values$feature_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp"))
+      datatable(values$feature_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp", 
+                                                                                            pageLength = 5,
+                                                                                            columnDefs = list(list(
+                                                                                            targets = "_all",
+                                                                                            ##Makes it so that the table will only display the first 30 chars.
+                                                                                            ##See https://rstudio.github.io/DT/options.html
+                                                                                            render = JS(
+                                                                                              "function(data, type, row, meta) {",
+                                                                                              "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
+                                                                                              "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
+                                                                                              "}")
+                                                                                            ))))
     }
     else {
       datatable(values$default_ft_data, rownames = FALSE, 
