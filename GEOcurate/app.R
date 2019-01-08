@@ -382,11 +382,26 @@ ui <- fluidPage(
                                                #checkboxInput(inputId = "transposeExpr", 
                                               #               label = div("Transpose the data", 
                                               #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
-                                               br(),
-                                               fluidRow(
-                                                 column(2, primary_button(id = "previewExpr", label = "Update")),
-                                                 column(1, offset = 3, tertiary_button(id = "undoEvalExpr", label = "Undo")),
-                                                 column(1, offset = 2, tertiary_button(id = "resetExpr", label = "Reset"))
+                                              tags$b("Options:"),
+                                              fluidRow(
+                                                column(2, primary_button("expression_replace_id", label = div("Use a different ID", 
+                                                                                                      help_button('Search the feature data for different values to use as the "ID" column.'))))
+                                                
+                                              ),
+                                              fluidRow(
+                                                column(2, primary_button(id = "expression_transpose", 
+                                                                                     label = div("Transpose", 
+                                                                                                 help_button("Values in the ID column become the column names and column names become the ID column")
+                                                                                     )))
+                                              ),
+                                              primary_button("expression_evaluate_filters", label = div("Save filters", help_button("The filters below the column names are just previews for now. Clicking this drops the rows from the table."))),
+                                              tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
+                                              tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
+                                              tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
+                                              fluidRow(
+                                                 #column(2, primary_button(id = "previewExpr", label = "Update")),
+                                                 column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
+                                                 column(1, offset = 5, tertiary_button(id = "resetExpr", label = "Reset"))
                                                ),
                                                hr(),
                                                radioButtons("expression_fileType", "File type:", 
@@ -408,9 +423,8 @@ ui <- fluidPage(
                                                             column(1, secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
                                                             column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
                                                           ),
-                                                          withSpinner(dataTableOutput("exprPreview"), type = 5),
-                                                          primary_button("expression_replace_id", label = "Use a different ID"),
-                                                          primary_button("expression_evaluate_filters", label = "Evaluate filters")
+                                                          withSpinner(dataTableOutput("exprPreview"), type = 5)#,
+                                                          #primary_button("expression_evaluate_filters", label = "Evaluate filters")
                                                           ),
                                                  tabPanel("Feature data",
                                                           #withSpinner(dataTableOutput("featureData"), type = 5),
@@ -467,6 +481,7 @@ server <- function(input, output, session) {
       default_ft_data = data.frame("Please download some data"),
       orig_feature = NULL,
       last_feature = NULL,
+      feature_data = NULL,
       feature_to_display = NULL,
       to_split_selected = FALSE,
       last_selected_rename = NULL,
@@ -495,7 +510,8 @@ server <- function(input, output, session) {
       expression_id_col = "ID",
       feature_id_col = "ID",
       clinical_plot_to_save = NULL,
-      expr_plot_to_save = NULL
+      expr_plot_to_save = NULL,
+      expression_disable_btns = FALSE
     )
   
   # reset -------------------------------------------------------------------
@@ -1370,9 +1386,10 @@ server <- function(input, output, session) {
         values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
       } else {
         values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
-        values$orig_feature <- extracted_data[["featureData"]]
+        values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
         values$last_feature <- values$orig_feature
-        values$feature_to_display <- find_intersection(values$last_feature, values$expr_to_display)
+        values$feature_data <- values$orig_feature
+        values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
         
         values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
         values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
@@ -1387,15 +1404,109 @@ server <- function(input, output, session) {
     }
   })
   
+  # feature data modal -------------------------------------------------
+  
+  output$featureData <- DT::renderDT({
+    if (!is.null(values$feature_to_display)) {
+      datatable(values$feature_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp", 
+                                                                                            pageLength = 5,
+                                                                                            columnDefs = list(list(
+                                                                                              targets = "_all",
+                                                                                              ##Makes it so that the table will only display the first 30 chars.
+                                                                                              ##See https://rstudio.github.io/DT/options.html
+                                                                                              render = JS(
+                                                                                                "function(data, type, row, meta) {",
+                                                                                                "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
+                                                                                                "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
+                                                                                                "}")
+                                                                                            ))))
+    }
+    else {
+      datatable(values$default_ft_data, rownames = FALSE, 
+                colnames = "NO DATA", options = list(dom = "tp"))
+    }
+  }) 
+  
+  observeEvent(input$expression_replace_id, {
+    showModal(
+      modalDialog(
+        fluidRow(
+          column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
+          column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
+        ),
+        withSpinner(dataTableOutput("featureData"), type = 5),
+        uiOutput("exprLabels"),
+        uiOutput("summarizeOptions"),
+        
+        footer = primary_button(id = "expression_evaluate_id", label = "Replace ID column"), 
+        title = "Feature data",
+        size = "l",
+        easyClose = TRUE
+      )
+    )
+  })
+  
+  observeEvent(input$feature_next_cols, {
+    next_cols <- advance_columns_view(values$feature_data, start = colnames(values$feature_to_display)[ncol(values$feature_to_display)], forward_distance = 4)
+    values$feature_to_display <- if (!is.null(next_cols)) next_cols else values$feature_to_display
+  })
+  
+  observeEvent(input$feature_prev_cols, {
+    prev_cols <- retract_columns_view(values$feature_data, last_column = colnames(values$feature_to_display)[1], backward_distance = 4)
+    values$feature_to_display <- if (!is.null(prev_cols)) prev_cols else values$feature_to_display
+  })
+  
+  observeEvent(input$expression_evaluate_id, {
+    
+    removeModal()
+    
+    if (!is.null(values$expr_data)) {
+      values$last_expr <- values$expr_data
+      
+      feature_data <- values$feature_data
+      
+      if (values$feature_id_col != "ID") {
+        colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
+          colnames(values$orig_feature[which(colnames(feature_data) == "ID")])
+        colnames(feature_data)[which(colnames(feature_data) == values$feature_id_col)] <- "ID"
+        if (length(which(colnames(feature_data) == "ID")) > 1) {
+          feature_data <- feature_data[,-1]
+        }
+      }
+      
+      values$expr_data <- withProgress(message = "Replacing the ID column", 
+                                       replaceID(values$expr_data, feature_data, input$colForExprLabels, input$howToSummarize))
+      values$feature_id_col <- input$colForExprLabels
+      
+      before <- length(values$expression_oFile)
+      
+      #WRITING COMMANDS TO EXPRESSION RSCRIPT
+      values$expression_oFile <- saveLines(c(commentify("replace ID column"),
+                                             paste0("expressionData <- replaceID(expressionData, featureData, ", 
+                                                    format_string(input$colForExprLabels), ", ",
+                                                    format_string(input$howToSummarize), ")")), 
+                                           values$expression_oFile)
+      
+      values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+      
+      after <- length(values$expression_oFile)
+      
+      values$expression_currChunkLen <- after - before
+    }
+    
+    #shinyjs::disable("expression_replace_id")
+    
+  })
+  
   output$exprLabels <- renderUI({
     selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
                                                 help_button("To keep the same ID column, please choose ID.")), 
-                choices = colnames(values$feature_to_display))
+                choices = colnames(values$feature_data)[which(!colnames(values$feature_data) == "ID")])
   })
   
   output$summarizeOptions <- renderUI({
     if (!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
-       !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display)) {
+       !input$colForExprLabels %in% findExprLabelColumns(values$feature_data)) {
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                   How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
                   choices = c("mean", "median", "max", "min", "keep all"))
@@ -1410,58 +1521,129 @@ server <- function(input, output, session) {
   #})
   
   observe({
-    if (!is.null(input$colForExprLabels) && 
-        input$colForExprLabels != "" &&
-       !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display) &&
-       !is.null(input$howToSummarize) &&
-       input$howToSummarize == "keep all") {
-      print(findExprLabelColumns(values$feature_to_display))
-      shinyjs::disable("transposeExpr")
-    }
+    shinyjs::toggleState("expression_replace_id", condition = !values$expression_disable_btns)
   })
   
-  observeEvent(input$previewExpr, {
-    
+  observe({
+    disable_transpose <- !values$expression_disable_btns & length(unique(values$expr_data$ID)) == nrow(values$expr_data)
+    shinyjs::toggleState("expression_transpose", disable_transpose)
+  })
+  
+  #observe({
+  #  if (!is.null(input$colForExprLabels) && 
+  #      input$colForExprLabels != "" &&
+  #     !input$colForExprLabels %in% findExprLabelColumns(values$feature_data) &&
+  #     !is.null(input$howToSummarize) &&
+  #     input$howToSummarize == "keep all") {
+  #    print(findExprLabelColumns(values$feature_data))
+  #    shinyjs::disable("transposeExpr")
+  #  }
+  #})
+
+  # other expression options ------------------------------------------------
+
+  observeEvent(input$expression_transpose, {
     if (!is.null(values$expr_data)) {
       values$last_expr <- values$expr_data
       
-      values$expr_data <- withProgress(message = "Replacing the ID column", 
-                                           replaceID(values$expr_data, values$feature_to_display, input$colForExprLabels, input$howToSummarize))
-      values$feature_id_col <- input$colForExprLabels
-      
       before <- length(values$expression_oFile)
       
+      values$expr_data <- withProgress(message = "Transposing the data", 
+                                       quickTranspose(values$expr_data))
+      
+      values$expression_id_col <- "colnames"
+      
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
-      values$expression_oFile <- saveLines(c(commentify("replace ID column"),
-                                             paste0("expressionData <- replaceID(expressionData, featureData, ", 
-                                                    format_string(input$colForExprLabels), ", ",
-                                                    format_string(input$howToSummarize), ")")), 
+      values$expression_oFile <- saveLines(c(commentify("transpose data"), 
+                                             "expressionData <- quickTranspose(expressionData)"), 
                                            values$expression_oFile)
-      if (input$transposeExpr) {
-        values$expr_data <- withProgress(message = "Transposing the data", 
-                                             quickTranspose(values$expr_data))
-        
-        values$expression_id_col <- "colnames"
-        
-        #WRITING COMMANDS TO EXPRESSION RSCRIPT
-        values$expression_oFile <- saveLines(c(commentify("transpose data"), 
-                                               "expressionData <- quickTranspose(expressionData)"), 
-                                             values$expression_oFile)
-      }
       
       values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
       
       after <- length(values$expression_oFile)
       
       values$expression_currChunkLen <- after - before
+      values$expression_disable_btns <- TRUE
     }
-    
-    #updateTabsetPanel(session, "expressionPanel", selected = "2")
   })
+  
+  
+  
+  observeEvent(input$expression_evaluate_filters, {
+    values$last_expr <- values$expr_data
+    values$last_feature <- values$feature_data
+    values$expr_data <- filterExpressionData(values$expr_data, input$exprPreview_search_columns)
+    values$feature_data <- filterExpressionData(values$feature_data, input$exprPreview_search_columns)
+    ##TODO: TEST WHETHER IT IS FASTER TO FILTER ALL OF THE DATAFRAMES OR TO FILTER ONE AND FIND INTERSECTIONS FOR THE REST
+    values$expr_to_display <- filterExpressionData(values$expr_to_display, input$exprPreview_search_columns)
+    values$feature_to_display <- find_intersection(values$feature_to_display, values$expr_data, values$feature_id_col, values$expression_id_col)
+    #WRITING COMMANDS TO EXPRESSION RSCRIPT
+    before <- length(values$expression_oFile)
+    values$expression_oFile <- saveLines(c(commentify("filter data"),
+                                           paste0("filterSpecs <- ", format_string(input$exprPreview_search_columns)),
+                                           "expressionData <- filterExpressionData(expressionData, filterSpecs)",
+                                           paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
+                                           paste0("featureIdCol <- ", format_string(values$feature_id_col)),
+                                           "expressionData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"), 
+                                         values$expression_oFile)
+    values$expression_currChunkLen <- length(values$expression_oFile) - before
+  })
+  
+  #observeEvent(input$viewFilters, {
+  #  print(input$exprPreview_search_columns)
+  #})
+  
+  #observeEvent(input$previewExpr, {
+  #  
+  #  if (!is.null(values$expr_data)) {
+  #    values$last_expr <- values$expr_data
+  #    
+  #    values$expr_data <- withProgress(message = "Replacing the ID column", 
+  #                                         replaceID(values$expr_data, values$feature_data, input$colForExprLabels, input$howToSummarize))
+  #    values$feature_id_col <- input$colForExprLabels
+  #    
+  #    before <- length(values$expression_oFile)
+  #    
+  #    #WRITING COMMANDS TO EXPRESSION RSCRIPT
+  #    values$expression_oFile <- saveLines(c(commentify("replace ID column"),
+  #                                           paste0("expressionData <- replaceID(expressionData, featureData, ", 
+  #                                                  format_string(input$colForExprLabels), ", ",
+  #                                                  format_string(input$howToSummarize), ")")), 
+  #                                         values$expression_oFile)
+  #    if (input$transposeExpr) {
+  #      values$expr_data <- withProgress(message = "Transposing the data", 
+  #                                           quickTranspose(values$expr_data))
+  #      
+  #      values$expression_id_col <- "colnames"
+  #      
+  #      #WRITING COMMANDS TO EXPRESSION RSCRIPT
+  #      values$expression_oFile <- saveLines(c(commentify("transpose data"), 
+  #                                             "expressionData <- quickTranspose(expressionData)"), 
+  #                                           values$expression_oFile)
+  #    }
+  #    
+  #    values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+  #    
+  #    after <- length(values$expression_oFile)
+  #    
+  #    values$expression_currChunkLen <- after - before
+  #  }
+  #  
+  #  #updateTabsetPanel(session, "expressionPanel", selected = "2")
+  #})
   
   observeEvent(input$undoEvalExpr, {
     if (!is.null(values$expr_data)) {
-      values$feature_to_display <- values$last_feature
+      
+      #if replaceID is in the last chunk, then enable the button again
+      file_len <- length(values$expression_oFile)
+      print(values$expression_oFile)
+      if (any(grepl("quickTranspose", values$expression_oFile[(file_len - (values$expression_currChunkLen - 1)):file_len]))) {
+        values$expression_disable_btns <- FALSE
+      }
+      
+      values$feature_data <- values$last_feature
+      values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
       values$expr_data <- values$last_expr
       values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
       values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_currChunkLen)
@@ -1471,7 +1653,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$resetExpr, {
     if (!is.null(values$expr_data)) {
-      values$feature_to_display <- values$orig_feature
+      values$expression_disable_btns <- FALSE
+      values$feature_data <- values$orig_feature
+      values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
       values$expr_data <- values$orig_expr
       values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
       values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_downloadChunkLen, all = T)
@@ -1586,81 +1770,27 @@ server <- function(input, output, session) {
     }
   }) 
   
-  observeEvent(input$expression_evaluate_filters, {
-    values$last_expr <- values$expr_data
-    values$last_feature <- values$feature_to_display
-    values$expr_to_display <- filterExpressionData(values$expr_to_display, input$exprPreview_search_columns)
-    values$expr_data <- find_intersection(values$expr_data, values$expr_to_display)
-    values$feature_to_display <- find_intersection(values$feature_to_display, values$expr_data, values$feature_id_col, values$expression_id_col)
-    #WRITING COMMANDS TO EXPRESSION RSCRIPT
-    before <- length(values$expression_oFile)
-    values$expression_oFile <- saveLines(c(commentify("filter data"),
-                                           paste0("filterSpecs <- ", format_string(input$exprPreview_search_columns)),
-                                           "expressionData <- filterExpressionData(expressionData, filterSpecs)",
-                                           paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
-                                           paste0("featureIdCol <- ", format_string(values$feature_id_col)),
-                                           "expressionData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"), 
-                                         values$expression_oFile)
-    values$expression_currChunkLen <- length(values$expression_oFile) - before
-  })
   
-  #observeEvent(input$viewFilters, {
-  #  print(input$exprPreview_search_columns)
-  #})
   
-  observeEvent(input$expression_replace_id, {
-    showModal(modalDialog(
-      withSpinner(dataTableOutput("featureData"), type = 5),
-      uiOutput("exprLabels"),
-      uiOutput("summarizeOptions"),
-      checkboxInput(inputId = "transposeExpr", 
-                    label = div("Transpose the data", 
-                                help_button("Values in the ID column become the column names and column names become the ID column."))),
-                          footer = primary_button(id = "expression_evaluate_id", label = "Replace ID column"), 
-      size = "l",
-      easyClose = TRUE))
-  })
-  
-  # main panel feature data -------------------------------------------------
 
-  output$featureData <- DT::renderDT({
-    if (!is.null(values$feature_to_display)) {
-      datatable(values$feature_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp", 
-                                                                                            pageLength = 5,
-                                                                                            columnDefs = list(list(
-                                                                                            targets = "_all",
-                                                                                            ##Makes it so that the table will only display the first 30 chars.
-                                                                                            ##See https://rstudio.github.io/DT/options.html
-                                                                                            render = JS(
-                                                                                              "function(data, type, row, meta) {",
-                                                                                              "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
-                                                                                              "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
-                                                                                              "}")
-                                                                                            ))))
-    }
-    else {
-      datatable(values$default_ft_data, rownames = FALSE, 
-                colnames = "NO DATA", options = list(dom = "tp"))
-    }
-  }) 
   
-  observeEvent(input$feature_evaluate_filters, {
-    values$last_feature <- values$feature_to_display
-    values$last_expr <- values$expr_data
-    values$feature_to_display <- filterExpressionData(values$feature_to_display, input$featureData_search_columns)
-    values$expr_data <- find_intersection(values$expr_data, values$feature_to_display, values$expression_id_col, values$feature_id_col)
-    values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
-    #WRITING COMMANDS TO EXPRESSION RSCRIPT
-    before <- length(values$expression_oFile)
-    values$expression_oFile <- saveLines(c(commentify("filter data"),
-                                           paste0("filterSpecs <- c(", paste(format_string(input$featureData_search_columns), collapse = ", "), ")"),
-                                           "featureData <- filterExpressionData(featureData, filterSpecs)",
-                                           paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
-                                           paste0("featureIdCol <- ", format_string(values$feature_id_col)),
-                                           "expressionData <- find_intersection(expressionData, featureData, expressionIdCol, featureIdCol)"), 
-                                         values$expression_oFile)
-    values$expression_currChunkLen <- length(values$expression_oFile) - before
-  })
+  #observeEvent(input$feature_evaluate_filters, {
+  #  values$last_feature <- values$feature_to_display
+  #  values$last_expr <- values$expr_data
+  #  values$feature_to_display <- filterExpressionData(values$feature_to_display, input$featureData_search_columns)
+  #  values$expr_data <- find_intersection(values$expr_data, values$feature_to_display, values$expression_id_col, values$feature_id_col)
+  #  values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+  #  #WRITING COMMANDS TO EXPRESSION RSCRIPT
+  #  before <- length(values$expression_oFile)
+  #  values$expression_oFile <- saveLines(c(commentify("filter data"),
+  #                                         paste0("filterSpecs <- c(", paste(format_string(input$featureData_search_columns), collapse = ", "), ")"),
+  #                                         "featureData <- filterExpressionData(featureData, filterSpecs)",
+  #                                         paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
+  #                                         paste0("featureIdCol <- ", format_string(values$feature_id_col)),
+  #                                         "expressionData <- find_intersection(expressionData, featureData, expressionIdCol, featureIdCol)"), 
+  #                                       values$expression_oFile)
+  #  values$expression_currChunkLen <- length(values$expression_oFile) - before
+  #})
 
   # graphical summary -------------------------------------------------------
   

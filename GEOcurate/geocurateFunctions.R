@@ -95,7 +95,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
     expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
 
     incProgress(message = "Extracting feature data")
-    featureData <- data.frame(fData(expressionSet), stringsAsFactors = TRUE)
+    featureData <- data.frame(fData(expressionSet))
     if (!"ID" %in% colnames(featureData)) {
       featureData <- cbind(ID = rownames(featureData), featureData)
       
@@ -494,18 +494,22 @@ quickTranspose <- function(dataToTranspose) {
 
 replaceID <- function(data, replacement, replaceCol, summaryOption) {
   
-  if (replaceCol == "ID") {
-    return(data)
-  }
+  #if (replaceCol == "ID") {
+  #  return(data)
+  #}
   
   dataWRowNames <- data
   
   replacementWRowNames <- replacement %>%
     dplyr::rename(replace = replaceCol) %>%
     select(ID, replace) %>%
-    filter(!is.na(replace) & replace != "")
+    filter(!is.na(replace) & replace != "") %>%
+    mutate(ID = as.character(ID))
   
   incProgress()
+  
+  print(dataWRowNames$ID)
+  print(replacementWRowNames$ID)
   
   mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
     select(-ID) %>%
