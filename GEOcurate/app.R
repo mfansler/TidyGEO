@@ -1570,13 +1570,14 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$expression_evaluate_filters, {
+    #TODO: debug filtering when the data is transposed
     values$last_expr <- values$expr_data
     values$last_feature <- values$feature_data
-    values$expr_data <- filterExpressionData(values$expr_data, input$exprPreview_search_columns)
-    values$feature_data <- filterExpressionData(values$feature_data, input$exprPreview_search_columns)
-    ##TODO: TEST WHETHER IT IS FASTER TO FILTER ALL OF THE DATAFRAMES OR TO FILTER ONE AND FIND INTERSECTIONS FOR THE REST
     values$expr_to_display <- filterExpressionData(values$expr_to_display, input$exprPreview_search_columns)
-    values$feature_to_display <- find_intersection(values$feature_to_display, values$expr_data, values$feature_id_col, values$expression_id_col)
+    values$feature_to_display <- find_intersection(values$feature_to_display, values$expr_to_display, values$feature_id_col, values$expression_id_col)
+    values$expr_data <- find_intersection(values$expr_data, values$expr_to_display)
+    values$feature_data <- find_intersection(values$feature_data, values$feature_to_display)
+    
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
     before <- length(values$expression_oFile)
     values$expression_oFile <- saveLines(c(commentify("filter data"),
@@ -1637,7 +1638,6 @@ server <- function(input, output, session) {
       
       #if replaceID is in the last chunk, then enable the button again
       file_len <- length(values$expression_oFile)
-      print(values$expression_oFile)
       if (any(grepl("quickTranspose", values$expression_oFile[(file_len - (values$expression_currChunkLen - 1)):file_len]))) {
         values$expression_disable_btns <- FALSE
       }

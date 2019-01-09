@@ -508,9 +508,6 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   
   incProgress()
   
-  print(dataWRowNames$ID)
-  print(replacementWRowNames$ID)
-  
   mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
     select(-ID) %>%
     dplyr::rename(ID = "replace") %>%
@@ -565,7 +562,7 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
         data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
       } else {
         matches <- sapply(data[,i], function(x) {
-          grepl(shinyFilterSpecs[i], x)
+          grepl(shinyFilterSpecs[i], x, ignore.case = TRUE)
         })
         data <- data[matches,]
       }
@@ -615,8 +612,10 @@ retract_columns_view <- function(data, last_column, backward_distance) {
 
 #finds all of data1 in data2
 find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
-  #browser()
-  search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else data2[,id_col2]
+  if (id_col1 != "ID") {
+    browser()
+  }
+  search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else unlist(data2[,id_col2])
   
   if (id_col1 == "colnames") {
     data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
