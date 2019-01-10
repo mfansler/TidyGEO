@@ -516,19 +516,19 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   if (!is.null(summaryOption)) {
     if (summaryOption == "mean") {
       mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(mean) %>%
+        summarize_all(mean, na.rm = TRUE) %>%
         ungroup()
     } else if (summaryOption == "median") {
       mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(median) %>%
+        summarize_all(median, na.rm = TRUE) %>%
         ungroup()
     } else if (summaryOption == "max") {
       mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(max) %>%
+        summarize_all(max, na.rm = TRUE) %>%
         ungroup()
     } else if (summaryOption == "min") {
       mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(min) %>%
+        summarize_all(min, na.rm = TRUE) %>%
         ungroup()
     }
   }
@@ -612,9 +612,9 @@ retract_columns_view <- function(data, last_column, backward_distance) {
 
 #finds all of data1 in data2
 find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
-  if (id_col1 != "ID") {
-    browser()
-  }
+  #if (id_col1 != "ID") {
+  #  browser()
+  #}
   search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else unlist(data2[,id_col2])
   
   if (id_col1 == "colnames") {

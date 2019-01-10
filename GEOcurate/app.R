@@ -340,7 +340,7 @@ ui <- fluidPage(
                         
                         mainPanel(
                           tabsetPanel(
-                            tabPanel(title = "Data", 
+                            tabPanel(title = "Clinical Data", 
                                      br(), 
                                      fluidRow(
                                        column(2, tertiary_button("reset", div("Reset", help_button("Reset the dataset to its original downloaded state.", placement = "bottom")))),
@@ -426,10 +426,10 @@ ui <- fluidPage(
                                                           withSpinner(dataTableOutput("exprPreview"), type = 5)#,
                                                           #primary_button("expression_evaluate_filters", label = "Evaluate filters")
                                                           ),
-                                                 tabPanel("Feature data",
-                                                          #withSpinner(dataTableOutput("featureData"), type = 5),
-                                                          primary_button("feature_evaluate_filters", label = "Evaluate filters")
-                                                          ),
+                                                 #tabPanel("Feature data",
+                                                #          #withSpinner(dataTableOutput("featureData"), type = 5),
+                                                #          primary_button("feature_evaluate_filters", label = "Evaluate filters")
+                                                #          ),
                                                  tabPanel("Graphical summary",
                                                           colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
                                                           uiOutput("expr_select_binwidths"),
@@ -1805,7 +1805,7 @@ server <- function(input, output, session) {
     if (is.null(values$expr_to_display)) {
       upper_lim <- 10
     } else {
-      upper_lim <- ceiling(max(values$expr_to_display[,which(colnames(values$expr_to_display) != "ID")]))
+      upper_lim <- ceiling(max(values$expr_to_display[,which(colnames(values$expr_to_display) != "ID")], na.rm = TRUE))
     }
     sliderInput("expression_binwidths", "Width of bars:", min = 0, max = upper_lim, value = ceiling(upper_lim / 2))
   })
