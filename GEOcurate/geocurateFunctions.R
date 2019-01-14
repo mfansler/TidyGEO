@@ -587,7 +587,13 @@ advance_columns_view <- function(data, start, forward_distance) {
     return(NULL)
   }
   
-  data[,start:end_point]
+  next_cols <- data[,start:end_point]
+  
+  if (!"ID" %in% colnames(next_cols)) {
+    return(cbind(ID = data$ID, next_cols))
+  } else {
+    return(next_cols)
+  }
   
 }
 
@@ -607,7 +613,13 @@ retract_columns_view <- function(data, last_column, backward_distance) {
     return(NULL)
   }
   
-  data[,start_point:last_column]
+  prev_cols <- data[,start_point:last_column]
+  
+  if (!"ID" %in% colnames(prev_cols)) {
+    return(cbind(ID = data$ID, prev_cols))
+  } else {
+    return(prev_cols)
+  }
 }
 
 #finds all of data1 in data2

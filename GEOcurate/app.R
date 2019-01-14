@@ -1385,11 +1385,13 @@ server <- function(input, output, session) {
         values$default_expr_data <- data.frame(paste0("No assay data available for ", input$geoID))
         values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
       } else {
-        values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+        expr_next_cols <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+        values$expr_to_display <- if (!is.null(expr_next_cols)) expr_next_cols else values$expr_data
         values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
         values$last_feature <- values$orig_feature
         values$feature_data <- values$orig_feature
-        values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
+        ft_next_cols <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
+        values$feature_to_display <- if (!is.null(ft_next_cols)) ft_next_cols else values$feature_data
         
         values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
         values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
@@ -1452,7 +1454,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$feature_prev_cols, {
-    prev_cols <- retract_columns_view(values$feature_data, last_column = colnames(values$feature_to_display)[1], backward_distance = 4)
+    prev_cols <- retract_columns_view(values$feature_data, last_column = colnames(values$feature_to_display)[2], backward_distance = 4)
     values$feature_to_display <- if (!is.null(prev_cols)) prev_cols else values$feature_to_display
   })
   
