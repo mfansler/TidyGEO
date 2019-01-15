@@ -11,6 +11,7 @@ library(shinyFiles)
 library(tidyverse)
 library(shinyWidgets)
 library(RColorBrewer)
+library(plotly)
 source("geocurateFunctions.R")
 
 series_list <- read_feather("www/series_list.feather")
@@ -394,7 +395,7 @@ ui <- fluidPage(
                                                                                                  help_button("Values in the ID column become the column names and column names become the ID column")
                                                                                      )))
                                               ),
-                                              primary_button("expression_evaluate_filters", label = div("Save filters", help_button("The filters below the column names are just previews for now. Clicking this drops the rows from the table."))),
+                                              primary_button("expression_evaluate_filters", label = div("Apply filters", help_button("The filters below the column names are just previews for now. Clicking this drops the rows from the table."))),
                                               tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
                                               tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
                                               tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
@@ -640,23 +641,25 @@ server <- function(input, output, session) {
   
   #output$metaSummary <- renderText({printVarsSummary(values$metaData)})
   
+  if (FALSE) {
   # Create the list of plot names
   plotInput <- reactive({
     if (!is.null(values$metaData)) {
       n_plot <- ncol(values$metaData)
-      total_data <- lapply(1:n_plot, function(i){values$metaData[,i]})
+      total_data <- lapply(1:n_plot, function(i){as.character(values$metaData[,i])})
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
+  }
   
   # Create divs
   output$plots <- renderUI({
     
     if (!is.null(values$metaData)) {
-      plot_output_list <- lapply(1:plotInput()$n_plot, function(i) {
+      plot_output_list <- lapply(1:ncol(values$metaData), function(i) {
         #if (!grepl("evalSame", colnames(values$metaData)[i])) {
         plotname <- make.names(colnames(values$metaData)[i])
-        div(withSpinner(plotOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "clinical_plot"))
+        div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "clinical_plot"))
         #}
       })   
       do.call(tagList, plot_output_list)
@@ -665,27 +668,32 @@ server <- function(input, output, session) {
   # Create the actual plots associated with the plot names
   observe({
     if (!is.null(values$metaData)) {
-      lapply(1:plotInput()$n_plot, function(i){
-        output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlot({
+      lapply(1:ncol(values$metaData), function(i){
+        output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlotly({
+          create_plot(as.character(values$metaData[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(values$metaData)[i])
           #create a histogram if it's numeric, a barplot if it's a factor
+          if (FALSE) {
           if (isAllNum(values$metaData[i])) {
-            ggplot(data = data.frame(measured = as.numeric(as.character(plotInput()$total_data[[i]]))), aes(x = measured)) +
+            ggplotly(ggplot(data = data.frame(measured = as.numeric(as.character(plotInput()$total_data[[i]]))), aes(x = measured)) +
               geom_histogram(binwidth = input$clinical_binwidths, fill = input$clinical_plot_color) +
               labs(x = "Values",
                    y = "Frequency") +
               ggtitle(colnames(values$metaData)[i]) +
-              theme_bw(base_size = 18)
+              theme_bw(base_size = 18) +
+              theme(plot.title = element_text(hjust = 0.5)))
           }
           else {
             #if (isAllUnique(values$metaData[i])) { 
-            ggplot(data = as.data.frame(table(plotInput()$total_data[[i]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
+            ggplotly(ggplot(data = as.data.frame(table(plotInput()$total_data[[i]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
               geom_bar(stat = "identity", fill = input$clinical_plot_color) +
-              geom_text(aes(label = Freq), vjust = -0.3, size = 3.5) +
+              #geom_text(aes(label = Freq), vjust = -0.3, size = 3.5) +
               labs(x = "Values",
                    y = "Count") +
               ggtitle(colnames(values$metaData)[i]) +
+              scale_x_discrete(labels = sapply(unique(as.character(plotInput()$total_data[[i]])), shorten_labels, 10)) +
               theme_bw(base_size = 18) +
-              theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
+              theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+                    plot.title = element_text(hjust = 0.5))) %>% config(displayModeBar = F)
             
               #barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = "All values are unique.")
               
@@ -694,8 +702,10 @@ server <- function(input, output, session) {
             #  barplot(plotInput()$total_data[[i]], main = colnames(values$metaData)[i], xlab = "Values represented in the column", ylab = "Frequency", col = "cornflowerblue", legend.text = FALSE)
             #}
           }
+          }
         })
       })
+      #browser()
     }
   })
   
@@ -726,7 +736,8 @@ server <- function(input, output, session) {
           labs(x = "Values",
                y = "Frequency") +
           ggtitle(colnames(values$metaData)[values$clinical_plot_to_save]) +
-          theme_bw(base_size = 18)
+          theme_bw(base_size = 18) +
+          theme(plot.title = element_text(hjust = 0.5))
       }
       else {
         plot_to_save <- ggplot(data = as.data.frame(table(plotInput()$total_data[[values$clinical_plot_to_save]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
@@ -736,7 +747,8 @@ server <- function(input, output, session) {
                y = "Count") +
           ggtitle(colnames(values$metaData)[values$clinical_plot_to_save]) +
           theme_bw(base_size = 18) +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5))
+          theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+                plot.title = element_text(hjust = 0.5))
       }
       
       ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, device = input$clinical_plot_filetype)
@@ -1841,7 +1853,8 @@ server <- function(input, output, session) {
             labs(x = "Expression",
                  y = "Number of spots") +
             ggtitle(colnames(values$expr_to_display)[i]) +
-            theme_bw(base_size = 18)
+            theme_bw(base_size = 18) +
+            theme(plot.title = element_text(hjust = 0.5))
           if (input$expr_display_labels) {
             p + stat_bin(binwidth = input$expression_binwidths, geom = "text", aes(label = ..count..), vjust = -1)
           } else {
@@ -1876,7 +1889,8 @@ server <- function(input, output, session) {
         labs(x = "Expression",
              y = "Number of spots") +
         ggtitle(colnames(values$expr_to_display)[values$expr_plot_to_save]) +
-        theme_bw(base_size = 18)
+        theme_bw(base_size = 18) +
+        theme(plot.title = element_text(hjust = 0.5))
       
       ggsave(file, plot_to_save, width = input$expr_plot_width, height = input$expr_plot_height, device = input$expr_plot_filetype)
       

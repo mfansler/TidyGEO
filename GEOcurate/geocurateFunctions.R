@@ -635,3 +635,38 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
     data1[which(data1[,id_col1] %in% search_terms),]
   }
 }
+
+#shortens values that are too many characters to use as graph labels
+shorten_labels <- function(label, max_char) {
+  if (nchar(label) > max_char) {
+    paste0(substr(label, 1, max_char), "...")
+  } else {
+    label
+  }
+}
+
+create_plot <- function(plot_data, plot_color, plot_binwidth, title) {
+  #browser()
+  if (isAllNum(as.data.frame(plot_data))) {
+    p <- ggplot(data = data.frame(measured = as.numeric(as.character(plot_data))), aes(x = measured)) +
+               geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
+               labs(x = "Values",
+                    y = "Frequency") +
+               ggtitle(title) +
+               theme_bw(base_size = 18) +
+               theme(plot.title = element_text(hjust = 0.5))
+  }
+  else {
+    #browser()
+    p <- ggplot(data = as.data.frame(table(plot_data, useNA = "ifany")), aes(x = plot_data, y = Freq)) +
+               geom_bar(stat = "identity", fill = plot_color) +
+               labs(x = "Values",
+                    y = "Count") +
+               ggtitle(title) +
+               scale_x_discrete(labels = sapply(unique(plot_data), shorten_labels, 10)) +
+               theme_bw(base_size = 18) +
+               theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+                     plot.title = element_text(hjust = 0.5))
+  }
+  return(ggplotly(p) %>% config(displayModeBar = F))
+}
