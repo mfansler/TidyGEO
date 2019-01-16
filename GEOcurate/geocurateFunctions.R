@@ -645,10 +645,10 @@ shorten_labels <- function(label, max_char) {
   }
 }
 
-create_plot <- function(plot_data, plot_color, plot_binwidth, title) {
+create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   #browser()
-  if (isAllNum(as.data.frame(plot_data))) {
-    p <- ggplot(data = data.frame(measured = as.numeric(as.character(plot_data))), aes(x = measured)) +
+  if (is_numeric) {
+    p <- ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
                geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
                labs(x = "Values",
                     y = "Frequency") +
@@ -658,15 +658,38 @@ create_plot <- function(plot_data, plot_color, plot_binwidth, title) {
   }
   else {
     #browser()
-    p <- ggplot(data = as.data.frame(table(plot_data, useNA = "ifany")), aes(x = plot_data, y = Freq)) +
+    p <- ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
                geom_bar(stat = "identity", fill = plot_color) +
                labs(x = "Values",
                     y = "Count") +
                ggtitle(title) +
-               scale_x_discrete(labels = sapply(unique(plot_data), shorten_labels, 10)) +
+               scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10)) +
                theme_bw(base_size = 18) +
                theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
                      plot.title = element_text(hjust = 0.5))
   }
-  return(ggplotly(p) %>% config(displayModeBar = F))
+  ggplotly(p) %>% config(displayModeBar = F)
+}
+
+create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
+  if (is_numeric) {
+    ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
+      geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
+      labs(x = "Values",
+           y = "Frequency") +
+      ggtitle(title) +
+      theme_bw(base_size = 18) +
+      theme(plot.title = element_text(hjust = 0.5))
+  }
+  else {
+    ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
+      geom_bar(stat = "identity", fill = plot_color) +
+      labs(x = "Values",
+           y = "Count") +
+      ggtitle(title) +
+      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10)) +
+      theme_bw(base_size = 18) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+            plot.title = element_text(hjust = 0.5))
+  }
 }
