@@ -14,8 +14,11 @@ library(RColorBrewer)
 library(plotly)
 source("geocurateFunctions.R")
 
+start_time <- Sys.time()
 series_list <- read_feather("www/series_list.feather")
 platform_list <- read_feather("www/platform_list.feather")
+end_time <- Sys.time()
+print(paste("Reading files", end_time - start_time))
 
 # help icon to add as tag to buttons, etc ---------------------------------
 
@@ -385,7 +388,7 @@ ui <- fluidPage(
                                               #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
                                               tags$b("Options:"),
                                               fluidRow(
-                                                column(2, primary_button("expression_replace_id", label = div("Use a different ID", 
+                                                column(2, primary_button("expression_replace_id", label = div("Use a different column as ID", 
                                                                                                       help_button('Search the feature data for different values to use as the "ID" column.'))))
                                                 
                                               ),
@@ -463,7 +466,8 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   #look for setting to get it do not disconnect
-  #session$allowReconnect(TRUE)
+  session$allowReconnect(TRUE)
+  session$onSessionEnded(stopApp)
 
 # reactive values ---------------------------------------------------------
 
@@ -535,6 +539,7 @@ server <- function(input, output, session) {
   # download & display metaData ---------------------------------------------
   
   observe({
+    start_time <- Sys.time()
     updateSelectizeInput(
       session = session, 'geoID', server = TRUE,
       choices = data.frame(label = series_list$Accession, value = series_list$Accession, name = series_list$description),
@@ -550,6 +555,8 @@ server <- function(input, output, session) {
         maxOptions = 100
         )
     )
+    end_time <- Sys.time()
+    print(paste("Populating dropdown", end_time - start_time))
   })
   
   output$gse_link <- renderUI({
@@ -1489,14 +1496,15 @@ server <- function(input, output, session) {
   output$exprLabels <- renderUI({
     selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
                                                 help_button("To keep the same ID column, please choose ID.")), 
-                choices = colnames(values$feature_data)[which(!colnames(values$feature_data) == "ID")])
+                choices = colnames(values$feature_data)[which(!colnames(values$feature_data) == "ID")]
+                )
   })
   
   output$summarizeOptions <- renderUI({
-    if (!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
-       !input$colForExprLabels %in% findExprLabelColumns(values$feature_data)) {
+    can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && !input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
+    if (can_summarize) {
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
-                  How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
+                How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
                   choices = c("mean", "median", "max", "min", "keep all"))
     }
   })
