@@ -542,7 +542,7 @@ server <- function(input, output, session) {
     start_time <- Sys.time()
     updateSelectizeInput(
       session = session, 'geoID', server = TRUE,
-      choices = data.frame(label = series_list$Accession, value = series_list$Accession, name = series_list$description),
+      choices = series_list,
       options = list(render = I(
         '{
           option: function(item, escape) {
@@ -550,7 +550,7 @@ server <- function(input, output, session) {
           }
         }'),
         create = TRUE,
-        multiple = TRUE,
+        multiple = FALSE,
         maxItems = 5,
         maxOptions = 100
         )
@@ -577,8 +577,7 @@ server <- function(input, output, session) {
       closeAlert(session, "fileError")
       values$errorState <- FALSE
       
-      values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session, 
-                                               downloadExpr = input$to_download_expression), 
+      values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session), 
                               message = "Downloading data")
       if (!is.null(values$allData)) {
         closeAlert(session, "fileError")

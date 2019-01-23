@@ -49,7 +49,7 @@ loadRdsFromDropbox <- function(geoID) {
   return(NULL)
 }
 
-downloadClinical <- function(geoID, toFilter, session = NULL, downloadExpr = FALSE) {
+downloadClinical <- function(geoID, toFilter, session = NULL) {
   
   expressionSet <- loadRdsFromDropbox(geoID)
   
@@ -127,7 +127,7 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
   } else {
     
     incProgress(message = "Extracting metadata")
-    metaData <- as.data.frame(pData(expressionSet), stringsAsFactors = FALSE)
+    metaData <- as.data.frame(apply(pData(expressionSet), 2, replace_blank_cells), stringsAsFactors = FALSE)
     incProgress(message = "Filtering metadata.")
     filtered_data <- filterUninformativeCols(metaData, toFilter)
     if (is.null(filtered_data)) {
@@ -174,6 +174,7 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
 
 filterUninformativeCols <- function(metaData, toFilter = list())
 {
+  browser()
   metaData <- metaData[!duplicated(as.list(metaData))]
   
   if (ncol(metaData) > 1) {
@@ -250,6 +251,8 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   errorMessage <- NULL
   
   inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
+  
+  browser()
   
   for (col in colsToSplit) {
     
@@ -473,6 +476,13 @@ fixSpecialCharacters <- function(x, offendingChars)
   return(x)
 }
 
+replace_blank_cells <- function(values) {
+  for (pattern in c("^ $", "^$")) {
+    values <- str_replace(values, pattern, NA_character_)
+  }
+  values
+}
+
 quickTranspose <- function(dataToTranspose) {
   
   incProgress()
@@ -638,7 +648,7 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
 
 #shortens values that are too many characters to use as graph labels
 shorten_labels <- function(label, max_char) {
-  if (nchar(label) > max_char) {
+  if (!is.null(label) && nchar(label) > max_char) {
     paste0(substr(label, 1, max_char), "...")
   } else {
     label

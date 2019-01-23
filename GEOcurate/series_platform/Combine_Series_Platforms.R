@@ -1,5 +1,8 @@
 # list of series on GEO as of 11/13/2018 ----------------------------------
 
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(feather))
+
 temp_file <- tempfile()
 download.file("https://www.ncbi.nlm.nih.gov/geo/browse/?view=series", destfile = temp_file)
 geo_page <- read_lines(temp_file)
@@ -24,12 +27,17 @@ for (i in 2:num_groups) {
   series_list <- rbind(series_list, current_file)
   setTxtProgressBar(pb_series, i)
 }
+
 #start_time <- Sys.time()
 #saveRDS(series_list, "../www/series_list.rds")
 #end_time <- Sys.time()
 #print(c("RDS time:", end_time - start_time))
 #start_time <- Sys.time()
-write_feather(series_list, "../www/series_list.feather")
+#file_name <- "../www/series_list.feather"
+#if (file.exists(file_name)) {
+#  file.remove(file_name)
+#}
+write_feather(data.frame(label = series_list$Accession, value = series_list$Accession, name = series_list$description), "../www/series_list.feather")
 #end_time <- Sys.time()
 #print(c("Feather time:", end_time - start_time))
 
@@ -60,4 +68,8 @@ for (i in 2:num_groups) {
   setTxtProgressBar(pb_platform, i)
 }
 #saveRDS(platform_list, "../www/platform_list.rds")
+#file_name <- "../www/platform_list.feather"
+#if (file.exists(file_name)) {
+#  file.remove(file_name)
+#}
 write_feather(platform_list, "../www/platform_list.feather")
