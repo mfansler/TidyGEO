@@ -127,7 +127,8 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
   } else {
     
     incProgress(message = "Extracting metadata")
-    metaData <- as.data.frame(apply(pData(expressionSet), 2, replace_blank_cells), stringsAsFactors = FALSE)
+    metaData <- pData(expressionSet)
+    metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
     incProgress(message = "Filtering metadata.")
     filtered_data <- filterUninformativeCols(metaData, toFilter)
     if (is.null(filtered_data)) {
@@ -174,7 +175,6 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
 
 filterUninformativeCols <- function(metaData, toFilter = list())
 {
-  browser()
   metaData <- metaData[!duplicated(as.list(metaData))]
   
   if (ncol(metaData) > 1) {
@@ -252,15 +252,14 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
   inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
   
-  browser()
-  
   for (col in colsToSplit) {
     
-    hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
-      str_detect(x, delimiter)
+    hasDelim <- as.logical(sapply(inputDataFrame[, col], function(x){
+      is.na(x) || str_detect(x, delimiter)
     }))
     if (all(hasDelim)) {
-      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
+      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value")) %>%
+        mutate(key = str_trim(key), value = str_trim(value))
       
       col_names <- colnames(inputDataFrame)
       col_names <- append(col_names, unique(inputDataFrame$key)[which(!is.na(unique(inputDataFrame$key)))], which(col_names == "key"))
@@ -296,13 +295,16 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   return(data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE))
 }
 
-splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
-  targetCols <- colsToDivide
-  for (colName in targetCols) {
+splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
+  print(colsToDivide)
+  for (colName in colsToDivide) {
+    numElements <- max(sapply(metaData[,colName], function(x) {
+      length(str_extract_all(x, delimiter)[[1]]) + 1
+    }), na.rm = TRUE)
     #targetCol <- metaData[,colName]
-    if (numElements[[colName]] > 1) {
+    if (numElements > 1) {
       colNames <- NULL
-      for (i in 1:numElements[[colName]]) {
+      for (i in 1:numElements) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
       }
       metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
@@ -332,11 +334,20 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
       #colsToDivide <- colsToDivide[-which(colsToDivide == "evalSame")]
     }
     
-    for (col in colsToDivide) {
-      numElements[[col]] <- length(str_split(metaData[1, col], delimiter2)[[1]])
-    }
+    #for (col in colsToDivide) {
+    #  numElements[[col]] <- length(str_split(metaData[1, col], delimiter2)[[1]])
+    #}
+    #browser()
+    #start_time <- Sys.time()
+    #sapply(colsToDivide, function(col) {
+    #  max(sapply(metaData[,col], function(x) {
+    #    length(str_extract_all(x, delimiter2)[[1]]) + 1
+    #  }), na.rm = TRUE)
+    #})
+    #end_time <- Sys.time()
+    #print(end_time - start_time)
     
-    metaData <- splitCombinedVars(metaData, colsToDivide, delimiter2, numElements)
+    metaData <- splitCombinedVars(metaData, colsToDivide, delimiter2)
   }
   
   metaData <- as.data.frame(apply(metaData, 2, function(x) {
@@ -388,7 +399,7 @@ renameCols <- function(metaData, newNames, session) {
   return(metaData)
 }
 
-substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
+substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 {
   col_to_sub <- names(sub_specs) 
   subs <- sub_specs[[col_to_sub]]
@@ -417,7 +428,7 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
       
       clinical_data[,col_to_sub] <- sapply(as.character(clinical_data[,col_to_sub]), 
                                            function(x){
-                                             gsub(x, pattern = subs$To_Replace[i], replacement = subs$New_Val[i], fixed = isnt_reg_ex)
+                                             gsub(x, pattern = subs$To_Replace[i], replacement = subs$New_Val[i], fixed = !use_reg_ex)
                                            })
     }
   }
@@ -648,7 +659,9 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
 
 #shortens values that are too many characters to use as graph labels
 shorten_labels <- function(label, max_char) {
-  if (!is.null(label) && nchar(label) > max_char) {
+  if (is.na(label)) {
+    "NA"
+  } else if (nchar(label) > max_char) {
     paste0(substr(label, 1, max_char), "...")
   } else {
     label
@@ -656,7 +669,11 @@ shorten_labels <- function(label, max_char) {
 }
 
 create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
-  #browser()
+  
+  #if (!title %in% c("title", "geo_accession", "source_name_ch1", "sex", "age", "grade.of.malignancy", "RNA", "type")) {
+  #  browser()
+  #}
+  
   if (is_numeric) {
     p <- ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
                geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
@@ -667,7 +684,6 @@ create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric =
                theme(plot.title = element_text(hjust = 0.5))
   }
   else {
-    #browser()
     p <- ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
                geom_bar(stat = "identity", fill = plot_color) +
                labs(x = "Values",

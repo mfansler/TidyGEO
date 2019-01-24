@@ -291,12 +291,12 @@ ui <- fluidPage(
                                                checkboxInput(inputId = "substitute_isrange", label = "Specify a range of values to substitute?"),
                                                conditionalPanel(condition = "input.substitute_isrange == true",
                                                                 uiOutput("input_sub_range")),
-                                               #conditionalPanel(condition = "input.substitute_isrange == false",
-                                                                h5('Click "Add" to add rows or "Remove" to remove the last row.'),
-                                                                rHandsontableOutput("input_subs_table")#)
+                                               h5('Click "Add" to add rows or "Remove" to remove the last row.'),
+                                               rHandsontableOutput("input_subs_table"),
+                                               conditionalPanel(condition = "input.substitute_isrange == false",
+                                                                checkboxInput("sub_w_regex", div("Use regex",
+                                                                                                 help_button("What is regex?"))))
                                                ,
-                                               #div(#style = 'overflow-x: scroll', 
-                                              #   DTOutput("display_user_subs")),
                                                primary_button("evaluate_subs", "Substitute"),
                                                hr(), uiOutput("nav_5_ui")
                                       ),
@@ -357,7 +357,7 @@ ui <- fluidPage(
                             ),
                             tabPanel("Graphical Summary",
                                      colorSelectorInput("clinical_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
-                                     sliderInput("clinical_binwidths", "Width of bars (for numeric):", min = 0, max = 3000, value = 30),
+                                     sliderInput("clinical_binwidths", "Width of bars (for numeric):", min = 0, max = 60, value = 30),
                                      uiOutput("plots")
                             )
                           ) #tab panel in main panel
@@ -921,8 +921,11 @@ server <- function(input, output, session) {
       unique(as.character(values$metaData[,input$colsToSub]))
   })
   
+  
+  values$suggestions <- reactive({ unique(as.character(values$metaData[,input$colsToSub])) })
+  
   output$input_subs_table <- renderRHandsontable({
-    rhandsontable(values$DFOut, width = 250, height = 300, stretchH = "all", rowHeaders = FALSE) %>% 
+    rhandsontable(values$DFOut, width = 350, height = 100, rowHeaders = FALSE) %>% 
       hot_col(col = "To_Replace", type = "autocomplete", source = values$suggestions, strict = FALSE) #%>%
       #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
   })
@@ -1017,8 +1020,7 @@ server <- function(input, output, session) {
     #print("DFIn")
     #print(sub_specs)
       values$lastData <- values$metaData
-      values$metaData <- withProgress(substitute_vals(values$metaData, #values$tablesList
-                                                     sub_specs))
+      values$metaData <- withProgress(substitute_vals(values$metaData, sub_specs, input$sub_w_regex))
       
       #WRITING COMMANDS TO R SCRIPT
       #before <- length(values$oFile)
@@ -1049,7 +1051,6 @@ server <- function(input, output, session) {
       
       values$tablesList <- list()
       values$DFOut <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
-      values$suggestions <- unique(as.character(values$metaData[,input$colsToSub]))
       
     #}
   })
