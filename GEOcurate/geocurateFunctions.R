@@ -670,9 +670,7 @@ shorten_labels <- function(label, max_char) {
 
 create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
-  #if (!title %in% c("title", "geo_accession", "source_name_ch1", "sex", "age", "grade.of.malignancy", "RNA", "type")) {
-  #  browser()
-  #}
+  #start_time <- Sys.time()
   
   if (is_numeric) {
     p <- ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
@@ -694,6 +692,8 @@ create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric =
                theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
                      plot.title = element_text(hjust = 0.5))
   }
+  #end_time <- Sys.time()
+  #print(paste("Time making", title, "graph", end_time - start_time))
   ggplotly(p) %>% config(displayModeBar = F)
 }
 

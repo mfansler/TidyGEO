@@ -586,7 +586,8 @@ server <- function(input, output, session) {
         platforms <- sapply(values$allData, annotation)
         platform_links <- list()
         for (i in 1:length(unname(platforms))) {
-          platform_description <- if (platforms[[i]] %in% platform_list$Accession) 
+          #platform_description <- if (platforms[[i]] %in% platform_list$Accession)
+          platform_description <- if (any(str_detect(platform_list$Accession, platforms[[i]])))
             platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
           platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
                                        platforms[[i]]), icon("external-link"), 
@@ -676,7 +677,7 @@ server <- function(input, output, session) {
     if (!is.null(values$metaData)) {
       lapply(1:ncol(values$metaData), function(i){
         output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlotly({
-          create_plot(as.character(values$metaData[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(values$metaData)[i], isAllNum(values$metaData[i]))
+          suppressWarnings(create_plot(as.character(values$metaData[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(values$metaData)[i], isAllNum(values$metaData[i])))
         })
       })
       #browser()
