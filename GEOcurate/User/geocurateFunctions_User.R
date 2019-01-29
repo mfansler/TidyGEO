@@ -285,10 +285,13 @@ findOffendingChars <- function(x){
   return(myChars)
 }
 
-renameCols <- function(metaData, newNames) {
-  if (names(newNames) %in% colnames(metaData)) {
+renameCols <- function(metaData, old_name, new_name) {
+  if (new_name %in% colnames(metaData)) {
+    print(paste0('Cannot name ', old_name, ' "', new_name, 
+                 '" because this would create duplicate column names, which is not allowed.'))
+  } else if (old_name %in% colnames(metaData)) {
     #newNames[1] <- str_replace_all(unname(newNames), "[^\._\s0-9A-Za-z]", ".")
-    colnames(metaData)[which(colnames(metaData) == names(newNames))] <- unname(newNames)
+    colnames(metaData)[which(colnames(metaData) == old_name)] <- new_name
   }
   
   return(metaData)

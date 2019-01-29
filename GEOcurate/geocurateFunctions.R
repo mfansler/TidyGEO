@@ -254,9 +254,8 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
   for (col in colsToSplit) {
     
-    hasDelim <- as.logical(sapply(inputDataFrame[, col], function(x){
-      is.na(x) || str_detect(x, delimiter)
-    }))
+    hasDelim <- is.na(metaData[, col]) | str_detect(metaData[, col], delimiter)
+    
     if (all(hasDelim)) {
       inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value")) %>%
         mutate(key = str_trim(key), value = str_trim(value))
@@ -327,7 +326,7 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
   }
   
   if (toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
-    numElements <- NULL
+    #numElements <- NULL
     
     if (allButDivide) {
       colsToDivide <- if (is.null(colsToDivide)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToDivide)])
@@ -382,9 +381,20 @@ findOffendingChars <- function(x){
   return(myChars)
 }
 
-renameCols <- function(metaData, newNames, session) {
+renameCols <- function(metaData, old_name, new_name) {
   
-  if (names(newNames) %in% colnames(metaData)) {
+  if (new_name %in% colnames(metaData)) {
+    showModal(
+      modalDialog(
+        HTML(
+          paste0('<font color="red"> Cannot name ', old_name, ' "', new_name, 
+                 '" because this would create duplicate column names, which is not allowed. </font>')
+          ), 
+        title = "Error", 
+        footer = modalButton("OK")
+      )
+    )
+  } else if (old_name %in% colnames(metaData)) {
     #offendingChars <- findOffendingChars(unname(newNames))
     #if (any(offendingChars)) {
     #  createAlert(session, "alert", "offendingChars",
@@ -394,7 +404,7 @@ renameCols <- function(metaData, newNames, session) {
     #                              paste(names(offendingChars[which(offendingChars == T)]), collapse = ", ")))
     #newNames[1] <- str_replace_all(unname(newNames), "[^\._\s0-9A-Za-z]", ".")
     #}
-    colnames(metaData)[which(colnames(metaData) == names(newNames))] <- unname(newNames)
+    colnames(metaData)[which(colnames(metaData) == old_name)] <- new_name
   }
   return(metaData)
 }
@@ -404,6 +414,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   col_to_sub <- names(sub_specs) 
   subs <- sub_specs[[col_to_sub]]
   row_names <- rownames(clinical_data)
+  clinical_data[,col_to_sub] <- as.character(clinical_data[,col_to_sub])
   
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA
@@ -426,10 +437,10 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
       
     } else {
       
-      clinical_data[,col_to_sub] <- sapply(as.character(clinical_data[,col_to_sub]), 
-                                           function(x){
-                                             gsub(x, pattern = subs$To_Replace[i], replacement = subs$New_Val[i], fixed = !use_reg_ex)
-                                           })
+      clinical_data[,col_to_sub] <- gsub(metaData[,col_to_sub], 
+                                         pattern = subs$To_Replace[i], 
+                                         replacement = subs$New_Val[i], 
+                                         fixed = !use_reg_ex)
     }
   }
   clinical_data <- clinical_data %>% mutate_all(~ replace(., . == "", NA))

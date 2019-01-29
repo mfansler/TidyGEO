@@ -871,9 +871,7 @@ server <- function(input, output, session) {
   observeEvent(input$rename, ({
     values$last_selected_rename <- input$rename_new_name
     values$lastData <- values$metaData
-    new_name <- list(input$rename_new_name)
-    names(new_name) <- input$colsToRename
-    values$metaData <- renameCols(values$metaData, new_name, session)
+    values$metaData <- renameCols(values$metaData, input$colsToRename, input$rename_new_name)
     
     #WRITING COMMANDS TO R SCRIPT
     before <- length(values$oFile)
@@ -881,7 +879,7 @@ server <- function(input, output, session) {
     values$oFile <- saveLines(c(paste0("newNames <- list(", format_string(input$rename_new_name), ")"),
                                 "names(newNames) <- ", format_string(input$colsToRename)), 
                               values$oFile)
-    values$oFile <- saveLines("metaData <- renameCols(metaData, newNames)", values$oFile)
+    values$oFile <- saveLines(paste0("metaData <- renameCols(metaData, ", format_string(input$colsToRename), ", ", format_string(input$rename_new_name), ")"), values$oFile)
     values$currChunkLen <- length(values$oFile) - before
     
     values$newNames <- NULL
@@ -938,7 +936,7 @@ server <- function(input, output, session) {
   
   observeEvent(input$input_subs_table, {
     values$DFIn <- hot_to_r(input$input_subs_table)
-  }, ignoreInit = T, ignoreNULL = T)
+  })
   
   #eventReactive(input$colsToSub, {
   #  currentCol <- input$colsToSub
