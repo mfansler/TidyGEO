@@ -890,7 +890,7 @@ server <- function(input, output, session) {
   
   output$input_sub_range <- renderUI({
     
-    if (isAllNum(values$metaData[which(colnames(values$metaData) == input$colsToSub)])) {
+    if (isAllNum(values$metaData[input$colsToSub])) {
       output = tagList()
       currCol <- as.numeric(as.character(currCol <- values$metaData[!is.na(values$metaData[,input$colsToSub]),input$colsToSub]))
       output[[1]] <- sliderInput(inputId = "slideInSub", label = "", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
@@ -915,10 +915,10 @@ server <- function(input, output, session) {
                 selected = values$last_selected_substitute)
   })
   
-  observeEvent(input$colsToSub, {
-    values$suggestions <- if (input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) 
-      unique(as.character(values$metaData[,input$colsToSub]))
-  })
+  #observeEvent(input$colsToSub, {
+  #  values$suggestions <- if (input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) 
+  #    unique(as.character(values$metaData[,input$colsToSub]))
+  #})
   
   
   values$suggestions <- reactive({ unique(as.character(values$metaData[,input$colsToSub])) })

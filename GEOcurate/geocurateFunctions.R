@@ -254,7 +254,7 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
   for (col in colsToSplit) {
     
-    hasDelim <- is.na(metaData[, col]) | str_detect(metaData[, col], delimiter)
+    hasDelim <- is.na(inputDataFrame[, col]) | str_detect(inputDataFrame[, col], delimiter)
     
     if (all(hasDelim)) {
       inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value")) %>%
