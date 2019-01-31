@@ -1,9 +1,22 @@
 library(rdrop2)
+library(readr)
 library(GEOquery)
 library(stringr)
 library(dplyr)
-library(readr)
-library(glue)
+library(tidyr)
+
+base_histogram <- ggplot() +
+  labs(x = "Values",
+       y = "Frequency") +
+  theme_bw(base_size = 18) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+base_barplot <- ggplot() +
+  labs(x = "Values",
+       y = "Count") +
+  theme_bw(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        plot.title = element_text(hjust = 0.5))
 
 saveLines <- function(strings, oFile) {
   
@@ -192,7 +205,8 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 }
 
 isAllNum <- function(metaData) {
-  toEvaluate <- metaData[,1][which(!is.na(metaData[,1]))]
+  #toEvaluate <- metaData[which(!is.na(metaData)),]
+  toEvaluate <- na.omit(metaData)
   vals <- unique(toEvaluate)
   temp <- suppressWarnings(as.numeric(as.character(toEvaluate)))
   isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
@@ -295,7 +309,6 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
 }
 
 splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
-  print(colsToDivide)
   for (colName in colsToDivide) {
     numElements <- max(sapply(metaData[,colName], function(x) {
       length(str_extract_all(x, delimiter)[[1]]) + 1
@@ -437,7 +450,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
       
     } else {
       
-      clinical_data[,col_to_sub] <- gsub(metaData[,col_to_sub], 
+      clinical_data[,col_to_sub] <- gsub(clinical_data[,col_to_sub], 
                                          pattern = subs$To_Replace[i], 
                                          replacement = subs$New_Val[i], 
                                          fixed = !use_reg_ex)
@@ -681,52 +694,34 @@ shorten_labels <- function(label, max_char) {
 
 create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
-  #start_time <- Sys.time()
-  
   if (is_numeric) {
-    p <- ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
-               geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
-               labs(x = "Values",
-                    y = "Frequency") +
-               ggtitle(title) +
-               theme_bw(base_size = 18) +
-               theme(plot.title = element_text(hjust = 0.5))
+    p <- base_histogram + 
+      geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                     binwidth = plot_binwidth, fill = plot_color) +
+      ggtitle(title)
   }
   else {
-    p <- ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
-               geom_bar(stat = "identity", fill = plot_color) +
-               labs(x = "Values",
-                    y = "Count") +
-               ggtitle(title) +
-               scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10)) +
-               theme_bw(base_size = 18) +
-               theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
-                     plot.title = element_text(hjust = 0.5))
+    p <- base_barplot +
+      geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
+               stat = "identity", fill = plot_color) +
+      ggtitle(title) +
+      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
   }
-  #end_time <- Sys.time()
-  #print(paste("Time making", title, "graph", end_time - start_time))
   ggplotly(p) %>% config(displayModeBar = F)
 }
 
 create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   if (is_numeric) {
-    ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
-      geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
-      labs(x = "Values",
-           y = "Frequency") +
-      ggtitle(title) +
-      theme_bw(base_size = 18) +
-      theme(plot.title = element_text(hjust = 0.5))
+    base_histogram + 
+      geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                     binwidth = plot_binwidth, fill = plot_color) +
+      ggtitle(title)
   }
   else {
-    ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
-      geom_bar(stat = "identity", fill = plot_color) +
-      labs(x = "Values",
-           y = "Count") +
+    base_barplot +
+      geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
+               stat = "identity", fill = plot_color) +
       ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10)) +
-      theme_bw(base_size = 18) +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
-            plot.title = element_text(hjust = 0.5))
+      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
   }
 }

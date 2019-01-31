@@ -1,18 +1,16 @@
-library(shiny)
-library(DT)
-library(shinycssloaders)
-library(stringr)
-library(shinyBS)
-library(rhandsontable)
-library(shinyjs)
-library(feather)
-library(shinysky)
-library(shinyFiles)
-library(tidyverse)
-library(shinyWidgets)
-library(RColorBrewer)
-library(plotly)
-source("geocurateFunctions.R")
+suppressPackageStartupMessages({
+  library(shiny)
+  library(DT)
+  library(shinycssloaders)
+  library(shinyBS)
+  library(plotly)
+  library(feather)
+  library(shinyjs)
+  library(rhandsontable)
+  library(shinyWidgets)
+  library(RColorBrewer)
+  source("geocurateFunctions.R")
+})
 
 start_time <- Sys.time()
 series_list <- read_feather("www/series_list.feather")
@@ -648,7 +646,7 @@ server <- function(input, output, session) {
   
   #output$metaSummary <- renderText({printVarsSummary(values$metaData)})
   
-  #if (FALSE) {
+  if (FALSE) {
   # Create the list of plot names
   plotInput <- reactive({
     if (!is.null(values$metaData)) {
@@ -657,7 +655,7 @@ server <- function(input, output, session) {
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
-  #}
+  }
   
   # Create divs
   output$plots <- renderUI({
@@ -704,7 +702,8 @@ server <- function(input, output, session) {
       paste(make.names(colnames(values$metaData)[values$clinical_plot_to_save]), input$clinical_plot_filetype, sep = ".")
     },
     content = function(file) {
-      plot_to_save <- create_plot_to_save(plotInput()$total_data[[values$clinical_plot_to_save]], 
+      plot_to_save <- create_plot_to_save(#plotInput()$total_data[[values$clinical_plot_to_save]],
+        values$metaData[,values$clinical_plot_to_save], 
                                           input$clinical_plot_color, 
                                           input$clinical_binwidths, 
                                           colnames(values$metaData)[values$clinical_plot_to_save], 
@@ -1084,12 +1083,14 @@ server <- function(input, output, session) {
   })
   
   output$display_vals_to_exclude <- renderUI({
-    valNames <- unique(as.character(values$metaData[,input$col_valsToExclude]))
-    valNames[which(is.na(valNames))] <- "NA"
-    checkboxGroupInput(inputId = "valsToExclude", 
-                       label = div("Which variables would you like to exclude?", 
-                                   help_button("Excluding a variable will remove the entire row that contains that variable.")),
-                       choices = valNames)
+    if (!is.null(input$col_valsToExclude)) {
+      valNames <- unique(as.character(values$metaData[,input$col_valsToExclude]))
+      valNames[which(is.na(valNames))] <- "NA"
+      checkboxGroupInput(inputId = "valsToExclude", 
+                         label = div("Which variables would you like to exclude?", 
+                                     help_button("Excluding a variable will remove the entire row that contains that variable.")),
+                         choices = valNames)
+    }
   })
   
   observe({
@@ -1148,14 +1149,14 @@ server <- function(input, output, session) {
       colnames(myData)[1] <- ""
       
       if (input$clinical_file_type == "csv") {
-        write.csv(myData, file, row.names = FALSE, col.names = TRUE)
+        write.csv(myData, file, row.names = FALSE)
       }
       else if (input$clinical_file_type == "tsv") {
         write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
       }
       else if (input$clinical_file_type == "JSON") {
         library(jsonlite)
-        library(readr)
+        #library(readr)
         
         myData %>% toJSON() %>% write_lines(file)
       }
@@ -1179,7 +1180,7 @@ server <- function(input, output, session) {
                                   paste0("file <- ", format_string(input$clinical_user_filename))), values$oFile)
       
       if (input$clinical_file_type == "csv") {
-        values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE, col.names = TRUE)"), values$oFile)
+        values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE)"), values$oFile)
       }
       else if (input$clinical_file_type == "tsv") {
         values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
@@ -1679,7 +1680,7 @@ server <- function(input, output, session) {
         #print(values$exprToDisplay, n = 10)
         withProgress(message = "Writing data to file", {
           incProgress()
-          write.csv(values$expr_data, file, row.names = FALSE, col.names = TRUE)
+          write.csv(values$expr_data, file, row.names = FALSE)
           incProgress()
         })
       }
@@ -1689,7 +1690,7 @@ server <- function(input, output, session) {
       }
       else if (input$expression_fileType == "JSON") {
         library(jsonlite)
-        library(readr)
+        #library(readr)
         
         withProgress(message = "Writing data to file", {
           incProgress()
@@ -1722,7 +1723,7 @@ server <- function(input, output, session) {
       values$expression_oFile <- saveLines(paste0("file <- ", format_string(input$expression_userFileName)), values$expression_oFile)
       
       if (input$expression_fileType == "csv") {
-        values$expression_oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE, col.names = TRUE)"), values$expression_oFile)
+        values$expression_oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE)"), values$expression_oFile)
       }
       else if (input$expression_fileType == "tsv") {
         values$expression_oFile <- saveLines("write.table(expressionData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
@@ -1805,13 +1806,13 @@ server <- function(input, output, session) {
     sliderInput("expression_binwidths", "Width of bars:", min = 0, max = upper_lim, value = ceiling(upper_lim / 2))
   })
   
-  histograms_expression_input <- reactive({
-    if (!is.null(values$expr_to_display)) {
-      n_plot <- ncol(values$expr_to_display)
-      total_data <- lapply(2:n_plot, function(i){values$expr_to_display[,i]})
-      return(list("n_plot" = n_plot, "total_data" = total_data))
-    }
-  })
+  #histograms_expression_input <- reactive({
+  #  if (!is.null(values$expr_to_display)) {
+  #    n_plot <- ncol(values$expr_to_display)
+  #    total_data <- lapply(2:n_plot, function(i){values$expr_to_display[,i]})
+  #    return(list("n_plot" = n_plot, "total_data" = total_data))
+  #  }
+  #})
   
   # Create divs
   output$histograms_expression <- renderUI({
@@ -1829,7 +1830,7 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_to_display)) {
       lapply(2:ncol(values$expr_to_display), function(i){
         output[[ make.names(colnames(values$expr_to_display)[i]) ]] <- renderPlotly({
-          create_plot(as.character(values$expr_to_display[,i]), input$expr_plot_color, input$expression_binwidths, colnames(values$expr_to_display)[i], is_numeric = TRUE)
+          suppressWarnings(create_plot(as.character(values$expr_to_display[,i]), input$expr_plot_color, input$expression_binwidths, colnames(values$expr_to_display)[i], is_numeric = TRUE))
         })
       })
     }

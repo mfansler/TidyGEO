@@ -199,29 +199,56 @@ clinical_data2 <- apply(metaData_test, 2, function(x){
 end_time <- Sys.time()
 print(paste("New:", end_time - start_time))
 
-create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
+# loops and canvassing for plots ------------------------------------------
+
+
+base_histogram <- ggplot() +
+  labs(x = "Values",
+       y = "Frequency") +
+  theme_bw(base_size = 18) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+base_barplot <- ggplot() +
+  labs(x = "Values",
+       y = "Count") +
+  theme_bw(base_size = 18) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        plot.title = element_text(hjust = 0.5))
+
+create_plot2 <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
   #start_time <- Sys.time()
+    
   
   if (is_numeric) {
-    p <- ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
-      geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
-      labs(x = "Values",
-           y = "Frequency") +
-      ggtitle(title) +
-      theme_bw(base_size = 18) +
-      theme(plot.title = element_text(hjust = 0.5))
+    #p <- ggplot(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured)) +
+    #  geom_histogram(binwidth = plot_binwidth, fill = plot_color) +
+    #  labs(x = "Values",
+    #       y = "Frequency") +
+    #  ggtitle(title) +
+    #  theme_bw(base_size = 18) +
+    #  theme(plot.title = element_text(hjust = 0.5))
+    
+    p <- base_histogram + 
+      geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                     binwidth = plot_binwidth, fill = plot_color) +
+      ggtitle(title)
   }
   else {
-    p <- ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
-      geom_bar(stat = "identity", fill = plot_color) +
-      labs(x = "Values",
-           y = "Count") +
+    #p <- ggplot(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq)) +
+    #  geom_bar(stat = "identity", fill = plot_color) +
+    #  labs(x = "Values",
+    #       y = "Count") +
+    #  ggtitle(title) +
+    #  scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10)) +
+    #  theme_bw(base_size = 18) +
+    #  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
+    #        plot.title = element_text(hjust = 0.5))
+    p <- base_barplot +
+      geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
+               stat = "identity", fill = plot_color) +
       ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10)) +
-      theme_bw(base_size = 18) +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
-            plot.title = element_text(hjust = 0.5))
+      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
   }
   #end_time <- Sys.time()
   #print(paste("Time making", title, "graph", end_time - start_time))
@@ -232,11 +259,33 @@ color <- "blue"
 binwidths <- 30
 output <- list()
 
-plots <- lapply(1:ncol(metaData), function(i){
-  output[[ make.names(colnames(metaData)[i]) ]] <- 
-    suppressWarnings(create_plot(as.character(metaData[,i]), color, binwidths, colnames(metaData)[i], isAllNum(metaData[i])))
-})
+count <- 0
 
-output <- lapply(metaData, function(x) {
-  suppressWarnings(create_plot(as.character(x), color, binwidths, names(x), isAllNum(x)))
-})
+for (q in 1:10) {
+  start_time <- Sys.time()
+  plots2 <- lapply(1:ncol(metaData), function(i){
+    output[[ make.names(colnames(metaData)[i]) ]] <- 
+      suppressWarnings(create_plot(as.character(metaData[,i]), color, binwidths, colnames(metaData)[i], isAllNum(metaData[i])))
+  })
+  end_time <- Sys.time()
+  original <- end_time - start_time
+  #print(paste("Original:", end_time - start_time))
+  
+  start_time <- Sys.time()
+  plots2 <- lapply(1:ncol(metaData), function(i){
+    output[[ make.names(colnames(metaData)[i]) ]] <- 
+      suppressWarnings(create_plot2(as.character(metaData[,i]), color, binwidths, colnames(metaData)[i], isAllNum(metaData[i])))
+  })
+  end_time <- Sys.time()
+  revised <- end_time - start_time
+  #print(paste("New:", end_time - start_time))
+  
+  if (revised > original) {
+    count <- count + 1
+  }
+}
+print(count / 10)
+  plots2 <- lapply(colnames(metaData), function(i){
+    output[[ make.names(i) ]] <- 
+      suppressWarnings(create_plot(as.character(metaData[,i]), color, binwidths, i, isAllNum(metaData[i])))
+  })
