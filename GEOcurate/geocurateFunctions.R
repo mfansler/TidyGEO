@@ -206,7 +206,7 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 
 isAllNum <- function(metaData) {
   #toEvaluate <- metaData[which(!is.na(metaData)),]
-  toEvaluate <- na.omit(metaData)
+  toEvaluate <- na.omit(unlist(metaData))
   vals <- unique(toEvaluate)
   temp <- suppressWarnings(as.numeric(as.character(toEvaluate)))
   isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
@@ -463,6 +463,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 
 excludeVars <- function(metaData, specs) {
   metaData <- cbind(ID = rownames(metaData), metaData)
+  tryCatch({
   for (variable in names(specs)) {
     toExclude <- specs[[variable]]
     metaData <- dplyr::rename(metaData, filter_var = variable)
@@ -474,31 +475,35 @@ excludeVars <- function(metaData, specs) {
         if (grepl("exclude", el)) {
           el <- str_split(el, "exclude: ")[[1]][2]
           bounds <- as.numeric(str_split(el, " - ")[[1]])
-          
           metaData <- metaData %>%
             within({
               filter_var <- as.numeric(filter_var)
             }) %>%
-            filter(filter_var >= bounds[1], filter_var <= bounds[2])
+            dplyr::filter(filter_var < bounds[1] | filter_var > bounds[2])
         }
         else if (grepl("keep", el)) {
           el <- str_split(el, "keep: ")[[1]][2]
           bounds <- str_split(el, " - ")[[1]]
+          #browser()
           metaData <- metaData %>%
             within({
               filter_var <- as.numeric(filter_var)
             }) %>%
-            filter(filter_var >= bounds[1]) %>%
-            filter(filter_var <= bounds[2])
+            dplyr::filter(filter_var >= bounds[1], filter_var <= bounds[2]) #%>%
+            #filter(filter_var <= bounds[2])
         }
       }
       toExclude <- toExclude[which(toExclude %in% metaData$filter_var)]
       metaData <- if (!identical(toExclude, character(0))) filter(metaData, !filter_var %in% toExclude) else metaData
     }
+    colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   }
+  }, error = function(e) {
+    print(e)
+    browser()
+  })
   rownames(metaData) <- metaData$ID
   metaData <- metaData[-which(colnames(metaData) == "ID")]
-  colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   return(metaData)
 }
 

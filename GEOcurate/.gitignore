@@ -5,3 +5,4 @@ error_log.md
 series*.tsv
 platform*.tsv
 *list.feather
+*.Rprofvis

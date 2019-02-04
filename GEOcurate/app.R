@@ -894,7 +894,7 @@ server <- function(input, output, session) {
       currCol <- as.numeric(as.character(currCol <- values$metaData[!is.na(values$metaData[,input$colsToSub]),input$colsToSub]))
       output[[1]] <- sliderInput(inputId = "slideInSub", label = "", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
       #output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
-      output[[3]] <- tertiary_button("add_val_to_sub", "Add")
+      output[[3]] <- tertiary_button("add_val_to_sub", "Add range to table")
       #output[[4]] <- tertiary_button("remove_val_to_sub", "Remove")
       output
     }
@@ -924,7 +924,7 @@ server <- function(input, output, session) {
   
   output$input_subs_table <- renderRHandsontable({
     rhandsontable(values$DFOut, width = 350, height = 100, rowHeaders = FALSE) %>% 
-      hot_col(col = "To_Replace", type = "autocomplete", source = values$suggestions, strict = FALSE) #%>%
+      hot_col(col = "To_Replace", type = "autocomplete", source = values$suggestions(), strict = FALSE) #%>%
       #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
   })
   
@@ -1095,13 +1095,16 @@ server <- function(input, output, session) {
   
   observe({
     input$valsToExclude
+    input$sliderExclude
     currentCol <- input$col_valsToExclude
     if (!is.null(currentCol)) {
-      if (input$exclude_isrange) {
+      if (input$exclude_isrange && isAllNum(values$metaData[currentCol])) {
         values$excludesList[[currentCol]] <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
+        print(values$excludesList)
       } 
       else if (!is.null(input$valsToExclude)) {
         values$excludesList[[currentCol]] <- input$valsToExclude
+        print(values$excludesList)
       }
       else if (currentCol %in% names(values$excludesList)) {
         values$excludesList <- values$excludesList[-which(names(values$excludesList) == currentCol)]
@@ -1112,6 +1115,7 @@ server <- function(input, output, session) {
   observeEvent(input$clinical_evaluate_exclude, {
     
     values$lastData <- values$metaData
+    print(values$excludesList)
     values$metaData <- withProgress(excludeVars(values$metaData, values$excludesList))
     
     #WRITING COMMANDS TO R SCRIPT
