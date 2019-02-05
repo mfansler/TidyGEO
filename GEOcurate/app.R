@@ -1019,7 +1019,8 @@ server <- function(input, output, session) {
     #print("DFIn")
     #print(sub_specs)
       values$lastData <- values$metaData
-      values$metaData <- withProgress(substitute_vals(values$metaData, sub_specs, input$sub_w_regex))
+      values$metaData <- withProgress(substitute_vals(values$metaData, sub_specs, input$sub_w_regex), 
+                                      message = "Substituting values")
       
       #WRITING COMMANDS TO R SCRIPT
       #before <- length(values$oFile)
@@ -1106,7 +1107,8 @@ server <- function(input, output, session) {
       }
       values$lastData <- values$metaData
       values$last_selected_exclude <- input$col_valsToExclude
-      values$metaData <- withProgress(excludeVars(values$metaData, input$col_valsToExclude, to_exclude))
+      values$metaData <- withProgress(excludeVars(values$metaData, input$col_valsToExclude, to_exclude), 
+                                      message = "Filtering rows")
       
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)

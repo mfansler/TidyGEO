@@ -72,7 +72,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
-      expressionSet <- getGEO(geoID)
+      print(capture.output(expressionSet <- getGEO(geoID)))
       saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
     }, error = function(e){
@@ -139,10 +139,10 @@ processData <- function(expressionSet, index, toFilter, extractExprData = FALSE,
     
   } else {
     
-    incProgress(message = "Extracting metadata")
+    incProgress(message = "Extracting data")
     metaData <- pData(expressionSet)
     metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
-    incProgress(message = "Filtering metadata.")
+    incProgress(message = "Filtering data")
     filtered_data <- filterUninformativeCols(metaData, toFilter)
     if (is.null(filtered_data)) {
       if (!is.null(session)) {
@@ -429,6 +429,8 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   row_names <- rownames(clinical_data)
   clinical_data[,col_to_sub] <- as.character(clinical_data[,col_to_sub])
   
+  incProgress()
+  
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA
   }
@@ -455,8 +457,10 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
                                          replacement = subs$New_Val[i], 
                                          fixed = !use_reg_ex)
     }
+    incProgress()
   }
   clinical_data <- clinical_data %>% mutate_all(~ replace(., . == "", NA))
+  incProgress()
   rownames(clinical_data) <- row_names
   return(clinical_data)
 }
@@ -468,6 +472,7 @@ excludeVars <- function(metaData, variable, to_exclude) {
     if (any(to_exclude == "NA")) {
       metaData <- filter(metaData, !is.na(filter_var))
     }
+    incProgress()
     if (any(!to_exclude %in% metaData$filter_var)) { #indicates that the thing to exclude is a range
       values <- to_exclude[which(!to_exclude %in% metaData$filter_var)]
       if (grepl("exclude", values)) {
@@ -489,9 +494,11 @@ excludeVars <- function(metaData, variable, to_exclude) {
           dplyr::filter(filter_var >= bounds[1], filter_var <= bounds[2])
       }
     }
+    incProgress()
     #keep these lines down here so it won't fool the if statement above
     values <- to_exclude[which(to_exclude %in% metaData$filter_var)]
     metaData <- if (!identical(values, character(0))) filter(metaData, !filter_var %in% values) else metaData
+    incProgress()
     colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   }, error = function(e) {
     print(e)

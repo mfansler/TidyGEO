@@ -336,44 +336,44 @@ substitute_vals <- function(clinical_data, sub_specs, isnt_reg_ex = FALSE)
   return(clinical_data)
 }
 
-excludeVars <- function(metaData, specs) {
+excludeVars <- function(metaData, variable, to_exclude) {
   metaData <- cbind(ID = rownames(metaData), metaData)
-  for (variable in names(specs)) {
-    toExclude <- specs[[variable]]
+  tryCatch({ #for debugging purposes, take out in final product
     metaData <- dplyr::rename(metaData, filter_var = variable)
-    if (any(toExclude == "NA")) {
+    if (any(to_exclude == "NA")) {
       metaData <- filter(metaData, !is.na(filter_var))
     }
-    if (!identical(toExclude, character(0))) {
-      for (el in toExclude[which(!toExclude %in% metaData$filter_var)]) {
-        if (grepl("exclude", el)) {
-          el <- str_split(el, "exclude: ")[[1]][2]
-          bounds <- as.numeric(str_split(el, " - ")[[1]])
-          
-          metaData <- metaData %>%
-            within({
-              filter_var <- as.numeric(filter_var)
-            }) %>%
-            filter(filter_var >= bounds[1], filter_var <= bounds[2])
-        }
-        else if (grepl("keep", el)) {
-          el <- str_split(el, "keep: ")[[1]][2]
-          bounds <- str_split(el, " - ")[[1]]
-          metaData <- metaData %>%
-            within({
-              filter_var <- as.numeric(filter_var)
-            }) %>%
-            filter(filter_var >= bounds[1]) %>%
-            filter(filter_var <= bounds[2])
-        }
+    if (any(!to_exclude %in% metaData$filter_var)) { #indicates that the thing to exclude is a range
+      values <- to_exclude[which(!to_exclude %in% metaData$filter_var)]
+      if (grepl("exclude", values)) {
+        el <- str_split(values, "exclude: ")[[1]][2]
+        bounds <- as.numeric(str_split(el, " - ")[[1]])
+        metaData <- metaData %>%
+          within({
+            filter_var <- as.numeric(filter_var)
+          }) %>%
+          dplyr::filter(filter_var < bounds[1] | filter_var > bounds[2])
       }
-      toExclude <- toExclude[which(toExclude %in% metaData$filter_var)]
-      metaData <- if (!identical(toExclude, character(0))) filter(metaData, !filter_var %in% toExclude) else metaData
+      else if (grepl("keep", values)) {
+        el <- str_split(values, "keep: ")[[1]][2]
+        bounds <- as.numeric(str_split(el, " - ")[[1]])
+        metaData <- metaData %>%
+          within({
+            filter_var <- as.numeric(filter_var)
+          }) %>%
+          dplyr::filter(filter_var >= bounds[1], filter_var <= bounds[2])
+      }
     }
-  }
+    #keep these lines down here so it won't fool the if statement above
+    values <- to_exclude[which(to_exclude %in% metaData$filter_var)]
+    metaData <- if (!identical(values, character(0))) filter(metaData, !filter_var %in% values) else metaData
+    colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
+  }, error = function(e) {
+    print(e)
+    browser()
+  })
   rownames(metaData) <- metaData$ID
   metaData <- metaData[-which(colnames(metaData) == "ID")]
-  colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   return(metaData)
 }
 
