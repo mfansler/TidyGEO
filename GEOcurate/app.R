@@ -489,6 +489,7 @@ server <- function(input, output, session) {
       to_split_selected = FALSE,
       last_selected_rename = NULL,
       last_selected_substitute = NULL,
+      last_selected_exclude = NULL,
       newName = NULL,
       newNames = NULL,
       NAvalsList = list(),
@@ -891,8 +892,8 @@ server <- function(input, output, session) {
     
     if (isAllNum(values$metaData[input$colsToSub])) {
       output = tagList()
-      currCol <- as.numeric(as.character(currCol <- values$metaData[!is.na(values$metaData[,input$colsToSub]),input$colsToSub]))
-      output[[1]] <- sliderInput(inputId = "slideInSub", label = "", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
+      currCol <- as.numeric(as.character(values$metaData[!is.na(values$metaData[,input$colsToSub]),input$colsToSub]))
+      output[[1]] <- sliderInput(inputId = "slideInSub", label = "Please choose a range of values (inclusive)", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
       #output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
       output[[3]] <- tertiary_button("add_val_to_sub", "Add range to table")
       #output[[4]] <- tertiary_button("remove_val_to_sub", "Remove")
@@ -1060,11 +1061,11 @@ server <- function(input, output, session) {
     
     if (isAllNum(values$metaData[input$col_valsToExclude])) {
       output <- tagList()
-      currCol <- as.numeric(as.character(currCol <- values$metaData[!is.na(values$metaData[,input$col_valsToExclude]),input$col_valsToExclude]))
+      currCol <- as.numeric(as.character(values$metaData[!is.na(values$metaData[,input$col_valsToExclude]),input$col_valsToExclude]))
       output[[1]] <- radioButtons("excludeToKeep", label = "I would like to:", 
                                   choices = list("exclude the values within the range." = "exclude", 
                                                  "keep only the values within the range." = "keep"))
-      output[[2]] <- sliderInput(inputId = "sliderExclude", label = paste0("Please choose a range of values:"), min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
+      output[[2]] <- sliderInput(inputId = "sliderExclude", label = "Please choose a range of values (inclusive)", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
       output
     }
     else {
@@ -1079,7 +1080,8 @@ server <- function(input, output, session) {
     setNames(colNames, colNames)
     selectInput(inputId = "col_valsToExclude", label = div("Please select a column with values to exclude: ", 
                                                            help_link(id = "exclude_help")), 
-                choices = colNames)
+                choices = colNames,
+                selected = values$last_selected_exclude)
   })
   
   output$display_vals_to_exclude <- renderUI({
@@ -1093,44 +1095,28 @@ server <- function(input, output, session) {
     }
   })
   
-  observe({
-    input$valsToExclude
-    input$sliderExclude
-    currentCol <- input$col_valsToExclude
-    if (!is.null(currentCol)) {
-      if (input$exclude_isrange && isAllNum(values$metaData[currentCol])) {
-        values$excludesList[[currentCol]] <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
-        print(values$excludesList)
-      } 
-      else if (!is.null(input$valsToExclude)) {
-        values$excludesList[[currentCol]] <- input$valsToExclude
-        print(values$excludesList)
-      }
-      else if (currentCol %in% names(values$excludesList)) {
-        values$excludesList <- values$excludesList[-which(names(values$excludesList) == currentCol)]
-      }
-    }
-  })
-  
   observeEvent(input$clinical_evaluate_exclude, {
     
-    values$lastData <- values$metaData
-    print(values$excludesList)
-    values$metaData <- withProgress(excludeVars(values$metaData, values$excludesList))
-    
-    #WRITING COMMANDS TO R SCRIPT
-    before <- length(values$oFile)
-    values$oFile <- saveLines(commentify("exclude undesired samples"), values$oFile)
-    values$oFile <- saveLines(paste0("excludesList <- NULL"), values$oFile)
-    for (i in 1:length(values$excludesList)) {
-      values$oFile <- saveLines(paste0("excludesList[[", format_string(names(values$excludesList)[i]), "]] <- ", 
-                                       format_string(values$excludesList[[i]])), values$oFile)
+    if (!is.null(input$col_valsToExclude) && (!is.null(input$valsToExclude) || !is.null(input$sliderExclude))) {
+      if (input$exclude_isrange && isAllNum(values$metaData[input$col_valsToExclude])) {
+        to_exclude <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
+      } 
+      else {
+        to_exclude <- input$valsToExclude
+      }
+      values$lastData <- values$metaData
+      values$last_selected_exclude <- input$col_valsToExclude
+      values$metaData <- withProgress(excludeVars(values$metaData, input$col_valsToExclude, to_exclude))
+      
+      #WRITING COMMANDS TO R SCRIPT
+      before <- length(values$oFile)
+      values$oFile <- saveLines(commentify("exclude undesired samples"), values$oFile)
+      values$oFile <- saveLines(c(paste0("variable <- ", format_string(input$col_valsToExclude)),
+                                  paste0("values <- ", format_string(to_exclude))), values$oFile)
+      values$oFile <- saveLines("metaData <- excludeVars(metaData, variable, values)", 
+                                values$oFile)
+      values$currChunkLen <- length(values$oFile) - before
     }
-    values$oFile <- saveLines("metaData <- excludeVars(metaData, excludesList)", 
-                              values$oFile)
-    values$currChunkLen <- length(values$oFile) - before
-    
-    values$excludesList <- list()
   })
   
   

@@ -81,6 +81,9 @@ filterUninformativeCols2 <- function(metaData, toFilter = list())
   metaData
 }
 
+# test data ---------------------------------------------------------------
+
+setwd("~/R_Code/geocurate_repo/GEOcurate")
 geoID <- "GSE3"
 index = 1
 expressionSet <- loadRdsFromDropbox(geoID)
@@ -289,3 +292,109 @@ print(count / 10)
     output[[ make.names(i) ]] <- 
       suppressWarnings(create_plot(as.character(metaData[,i]), color, binwidths, i, isAllNum(metaData[i])))
   })
+
+# exclude vars ------------------------------------------------------------
+
+excludeVars <- function(metaData, specs) {
+  metaData <- cbind(ID = rownames(metaData), metaData)
+  tryCatch({
+    for (variable in names(specs)) {
+      toExclude <- specs[[variable]]
+      metaData <- dplyr::rename(metaData, filter_var = variable)
+      if (any(toExclude == "NA")) {
+        metaData <- filter(metaData, !is.na(filter_var))
+      }
+      if (!identical(toExclude, character(0))) {
+        for (el in toExclude[which(!toExclude %in% metaData$filter_var)]) {
+          if (grepl("exclude", el)) {
+            el <- str_split(el, "exclude: ")[[1]][2]
+            bounds <- as.numeric(str_split(el, " - ")[[1]])
+            metaData <- metaData %>%
+              within({
+                filter_var <- as.numeric(filter_var)
+              }) %>%
+              dplyr::filter(filter_var < bounds[1] | filter_var > bounds[2])
+          }
+          else if (grepl("keep", el)) {
+            el <- str_split(el, "keep: ")[[1]][2]
+            bounds <- str_split(el, " - ")[[1]]
+            #browser()
+            metaData <- metaData %>%
+              within({
+                filter_var <- as.numeric(filter_var)
+              }) %>%
+              dplyr::filter(filter_var >= bounds[1], filter_var <= bounds[2]) #%>%
+            #filter(filter_var <= bounds[2])
+          }
+        }
+        toExclude <- toExclude[which(toExclude %in% metaData$filter_var)]
+        metaData <- if (!identical(toExclude, character(0))) filter(metaData, !filter_var %in% toExclude) else metaData
+      }
+      colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
+    }
+  }, error = function(e) {
+    print(e)
+    browser()
+  })
+  rownames(metaData) <- metaData$ID
+  metaData <- metaData[-which(colnames(metaData) == "ID")]
+  return(metaData)
+}
+
+excludeVars2 <- function(metaData, variable, to_exclude) {
+  metaData <- cbind(ID = rownames(metaData), metaData)
+  tryCatch({
+    metaData <- dplyr::rename(metaData, filter_var = variable)
+    if (any(to_exclude == "NA")) {
+      metaData <- filter(metaData, !is.na(filter_var))
+    }
+    values <- to_exclude[which(to_exclude %in% metaData$filter_var)]
+    metaData <- if (!identical(values, character(0))) filter(metaData, !filter_var %in% values) else metaData
+    if (any(!to_exclude %in% metaData$filter_var)) {
+      if (grepl("exclude", to_exclude)) {
+        el <- str_split(to_exclude, "exclude: ")[[1]][2]
+        bounds <- as.numeric(str_split(el, " - ")[[1]])
+        metaData <- metaData %>%
+          within({
+            filter_var <- as.numeric(filter_var)
+          }) %>%
+          dplyr::filter(filter_var < bounds[1] | filter_var > bounds[2])
+      }
+      else if (grepl("keep", to_exclude)) {
+        el <- str_split(to_exclude, "keep: ")[[1]][2]
+        bounds <- as.numeric(str_split(el, " - ")[[1]])
+        metaData <- metaData %>%
+          within({
+            filter_var <- as.numeric(filter_var)
+          }) %>%
+          dplyr::filter(filter_var >= bounds[1], filter_var <= bounds[2])
+      }
+    }
+    colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
+  }, error = function(e) {
+    print(e)
+    browser()
+  })
+  rownames(metaData) <- metaData$ID
+  metaData <- metaData[-which(colnames(metaData) == "ID")]
+  return(metaData)
+}
+
+test_data <- cbind(metaData, num_col = sample(1:100, nrow(metaData), replace = TRUE))
+start_time <- Sys.time()
+a <- excludeVars(test_data, list("description" = "sex=m"))
+end_time <- Sys.time()
+print(paste("Old, alpha:", end_time - start_time))
+start_time <- Sys.time()
+b <- excludeVars2(test_data, "description", "sex=m")
+end_time <- Sys.time()
+print(paste("New, alpha:", end_time - start_time))
+
+start_time <- Sys.time()
+a <- excludeVars(test_data, list("num_col" = "exclude: 25 - 75"))
+end_time <- Sys.time()
+print(paste("Old, numeric:", end_time - start_time))
+start_time <- Sys.time()
+b <- excludeVars2(test_data, "num_col", "exclude: 25 - 75")
+end_time <- Sys.time()
+print(paste("New, numeric:", end_time - start_time))
