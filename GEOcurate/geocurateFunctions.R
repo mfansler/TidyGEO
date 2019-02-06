@@ -72,7 +72,7 @@ downloadClinical <- function(geoID, toFilter, session = NULL) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
-      print(capture.output(expressionSet <- getGEO(geoID)))
+      expressionSet <- getGEO(geoID)
       saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
     }, error = function(e){
@@ -96,71 +96,57 @@ downloadClinical <- function(geoID, toFilter, session = NULL) {
   return(expressionSet)
 }
 
-processData <- function(expressionSet, index, toFilter, extractExprData = FALSE, session = NULL) {
+process_clinical <- function(expressionSet, index, toFilter, session = NULL) {
   
   expressionSet <- expressionSet[[index]]
-  
-  if (extractExprData) {
     
-    incProgress(message = "Extracting expression data")
-    expressionData <- assayData(expressionSet)$exprs
-    #expressionData <- data.frame("ID" = rownames(expressionData), expressionData)
-    expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
-
-    incProgress(message = "Extracting feature data")
-    featureData <- data.frame(fData(expressionSet))
-    if (!"ID" %in% colnames(featureData)) {
-      featureData <- cbind(ID = rownames(featureData), featureData)
-      
-      rows_to_keep <- sapply(1:nrow(featureData), function(i) {
-        if (!all(is.na(featureData[i,]))) {
-          i
-        }
-      })
-      featureData <- featureData[unlist(rows_to_keep),]
+  incProgress(message = "Extracting data")
+  metaData <- pData(expressionSet)
+  metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  incProgress(message = "Filtering data")
+  filtered_data <- filterUninformativeCols(metaData, toFilter)
+  if (is.null(filtered_data)) {
+    if (!is.null(session)) {
+      createAlert(session, "alert", "parseError", title = "No columns removed",
+                  content = "The specified column filters would have removed all the columns.")
     }
-    
-    #hasNA <- as.logical(apply(featureData, 2, function(x) 
-    #{
-    #  return(any(is.na(x)) || any(x == ""))
-    #}
-    #))
-    #if (any(hasNA)) {
-      #featureData <- featureData[, -which(hasNA)]
-    #}
-    
-    if (nrow(expressionData) == 0) {
-      expressionData <- NULL
-    }
-    if (nrow(featureData) == 0) {
-      featureData <- NULL
-    }
-    metaData <- NULL
-    
   } else {
-    
-    incProgress(message = "Extracting data")
-    metaData <- pData(expressionSet)
-    metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
-    incProgress(message = "Filtering data")
-    filtered_data <- filterUninformativeCols(metaData, toFilter)
-    if (is.null(filtered_data)) {
-      if (!is.null(session)) {
-        createAlert(session, "alert", "parseError", title = "No columns removed",
-                    content = "The specified column filters would have removed all the columns.")
-      }
-    } else {
-      metaData <- filtered_data
-    }
-    
-    #metaData <- cbind(metaData, evalSame = rep(1, nrow(metaData)))
-    
-    expressionData <- NULL
-    featureData <- NULL
-    
+    metaData <- filtered_data
   }
   
-  return(list("metaData" = metaData, "expressionData" = expressionData, "featureData" = featureData))
+  return(metaData)
+}
+
+process_expression <- function(expressionSet, index) {
+  
+  expressionSet <- expressionSet[[index]]
+    
+  incProgress(message = "Extracting expression data")
+  expressionData <- assayData(expressionSet)$exprs
+  #expressionData <- data.frame("ID" = rownames(expressionData), expressionData)
+  expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
+  
+  incProgress(message = "Extracting feature data")
+  featureData <- data.frame(fData(expressionSet))
+  if (!"ID" %in% colnames(featureData)) {
+    featureData <- cbind(ID = rownames(featureData), featureData)
+    
+    rows_to_keep <- sapply(1:nrow(featureData), function(i) {
+      if (!all(is.na(featureData[i,]))) {
+        i
+      }
+    })
+    featureData <- featureData[unlist(rows_to_keep),]
+  }
+  
+  if (nrow(expressionData) == 0) {
+    expressionData <- NULL
+  }
+  if (nrow(featureData) == 0) {
+    featureData <- NULL
+  }
+  
+  return(list("expressionData" = expressionData, "featureData" = featureData))
 }
 
 evaluate_cols_to_keep <- function(col, toFilter = list()) {
@@ -213,9 +199,9 @@ isAllNum <- function(metaData) {
   return(isNum)
 }
 
-isAllUnique <- function(metaData) {
-  vals <- unique(metaData[,1])
-  return(length(vals) == nrow(metaData))
+is_all_unique <- function(my_list) {
+  vals <- unique(my_list[which(!is.na(my_list))])
+  return(length(vals) == length(my_list))
 }
 
 printVarsSummary <- function(metaData) {
@@ -718,6 +704,7 @@ create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric =
 }
 
 create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
+  
   if (is_numeric) {
     base_histogram + 
       geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),

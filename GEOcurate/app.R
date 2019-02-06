@@ -612,9 +612,10 @@ server <- function(input, output, session) {
     
     removeModal()
     
-    extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
+    #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
+    values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
     
-    values$metaData <- extracted_data[["metaData"]]
+    #values$metaData <- extracted_data[["metaData"]]
     
     #WRITING COMMANDS TO R SCRIPT
     values$oFile <- "source('geocurateFunctions_User.R')"
@@ -628,7 +629,7 @@ server <- function(input, output, session) {
     values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
     downloadChunkLen <- length(values$oFile)
     
-    extracted_data <- NULL
+    #extracted_data <- NULL
     values$origData <- values$metaData
   })
   
@@ -1361,7 +1362,8 @@ server <- function(input, output, session) {
     
     if (!is.null(values$allData)) {
       
-      extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
+      #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
+      extracted_data <- withProgress(process_expression(values$allData, input$platformIndex))
     
       values$orig_expr <- extracted_data[["expressionData"]]
       values$last_expr <- values$orig_expr
@@ -1388,6 +1390,7 @@ server <- function(input, output, session) {
         
         values$expression_downloadChunkLen <- length(values$expression_oFile)
       }
+      rm(extracted_data)
     }
   })
   
@@ -1493,7 +1496,7 @@ server <- function(input, output, session) {
   })
   
   output$summarizeOptions <- renderUI({
-    can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && !input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
+    can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && is_all_unique(values$feature_data[, input$colForExprLabels]) #!input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
     if (can_summarize) {
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                 How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
