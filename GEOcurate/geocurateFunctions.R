@@ -184,7 +184,7 @@ filterUninformativeCols <- function(metaData, toFilter = list())
       print("No informative columns found.")
       NULL
     } else {
-      metaData <- metaData[,cols_to_keep]
+      metaData <- metaData[cols_to_keep]
     }
   }
   metaData
