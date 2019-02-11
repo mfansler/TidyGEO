@@ -586,23 +586,21 @@ findExprLabelColumns <- function(ftData) {
 filterExpressionData <- function(data, shinyFilterSpecs) {
   
   for (i in 1:length(shinyFilterSpecs)) {
-    if (shinyFilterSpecs[i] != "") {
-      if (grepl("\"", shinyFilterSpecs[i])) {
-        searchStrs <- shinyFilterSpecs[i] %>%
+    if (shinyFilterSpecs[[i]] != "") {
+      col_index <- which(colnames(data) == names(shinyFilterSpecs)[i])
+      if (grepl("\"", shinyFilterSpecs[[i]])) {
+        searchStrs <- shinyFilterSpecs[[i]] %>%
           str_remove_all("\"") %>%
           str_remove_all("\\[") %>%
           str_remove_all("\\]") %>%
           str_split(",")
         searchStrs <- searchStrs[[1]]
-        data <- data %>% filter_at(i, any_vars(. %in% searchStrs))
-      } else if (grepl(" ... ", shinyFilterSpecs[i])) {
-        searchStrs <- as.numeric(str_split(shinyFilterSpecs[i], " ... ")[[1]])
-        data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
+        data <- data[data[,col_index] %in% searchStrs,]
+      } else if (grepl(" ... ", shinyFilterSpecs[[i]])) {
+        searchStrs <- as.numeric(str_split(shinyFilterSpecs[[i]], " ... ")[[1]])
+        data <- data[data[,col_index] >= searchStrs[1] & data[,col_index] <= searchStrs[2],]
       } else {
-        matches <- sapply(data[,i], function(x) {
-          grepl(shinyFilterSpecs[i], x, ignore.case = TRUE)
-        })
-        data <- data[matches,]
+        data <- data[grepl(shinyFilterSpecs[[i]], data[,col_index], ignore.case = TRUE),]
       }
     }
   }

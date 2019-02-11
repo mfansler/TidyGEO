@@ -1496,7 +1496,7 @@ server <- function(input, output, session) {
   })
   
   output$summarizeOptions <- renderUI({
-    can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && is_all_unique(values$feature_data[, input$colForExprLabels]) #!input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
+    can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && !is_all_unique(values$feature_data[, input$colForExprLabels]) #!input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
     if (can_summarize) {
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                 How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
@@ -1564,10 +1564,14 @@ server <- function(input, output, session) {
     #TODO: debug filtering when the data is transposed
     values$last_expr <- values$expr_data
     values$last_feature <- values$feature_data
-    values$expr_to_display <- filterExpressionData(values$expr_to_display, input$exprPreview_search_columns)
-    values$feature_to_display <- find_intersection(values$feature_to_display, values$expr_to_display, values$feature_id_col, values$expression_id_col)
-    values$expr_data <- find_intersection(values$expr_data, values$expr_to_display)
-    values$feature_data <- find_intersection(values$feature_data, values$feature_to_display)
+    
+    to_filter <- input$exprPreview_search_columns
+    names(to_filter) <- colnames(values$expr_to_display)
+    
+    values$expr_data <- filterExpressionData(values$expr_data, to_filter)
+    values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+    values$feature_data <- find_intersection(values$feature_data, values$expr_data, values$feature_id_col, values$expression_id_col)
+    values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
     before <- length(values$expression_oFile)

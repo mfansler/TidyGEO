@@ -90,6 +90,8 @@ expressionSet <- loadRdsFromDropbox(geoID)
 expressionSet <- expressionSet[[index]]
 metaData <- pData(expressionSet)
 metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+expressionData <- assayData(expressionSet)$exprs
+expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
 
 # different kinds of apply (2 does not work) ------------------------------
 
@@ -398,3 +400,17 @@ start_time <- Sys.time()
 b <- excludeVars2(test_data, "num_col", "exclude: 25 - 75")
 end_time <- Sys.time()
 print(paste("New, numeric:", end_time - start_time))
+
+# filter expression -------------------------------------------------------
+
+searchStrs <- c(500, 700)
+i <- 2
+
+start_time <- Sys.time()
+a <- expressionData %>% filter_at(i, any_vars(. >= searchStrs[1] && . <= searchStrs[2]))
+end_time <- Sys.time()
+print(paste("Old:", end_time - start_time))
+start_time <- Sys.time()
+b <- expressionData[expressionData[i] >= searchStrs[1] & expressionData[i] <= searchStrs[2],]
+end_time <- Sys.time()
+print(paste("New:", end_time - start_time))
