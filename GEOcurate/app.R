@@ -1372,13 +1372,17 @@ server <- function(input, output, session) {
         values$default_expr_data <- data.frame(paste0("No assay data available for ", input$geoID))
         values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
       } else {
-        expr_next_cols <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
-        values$expr_to_display <- if (!is.null(expr_next_cols)) expr_next_cols else values$expr_data
+        values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                               start = 1, 
+                                               forward_distance = 5, 
+                                               previous_view = values$expr_data)
         values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
         values$last_feature <- values$orig_feature
         values$feature_data <- values$orig_feature
-        ft_next_cols <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
-        values$feature_to_display <- if (!is.null(ft_next_cols)) ft_next_cols else values$feature_data
+        values$feature_to_display <- advance_columns_view(values$feature_data, 
+                                                          start = 1, 
+                                                          forward_distance = 4, 
+                                                          previous_view = values$feature_data)
         
         values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
         values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
@@ -1437,13 +1441,17 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$feature_next_cols, {
-    next_cols <- advance_columns_view(values$feature_data, start = colnames(values$feature_to_display)[ncol(values$feature_to_display)], forward_distance = 4)
-    values$feature_to_display <- if (!is.null(next_cols)) next_cols else values$feature_to_display
+    values$feature_to_display <- advance_columns_view(values$feature_data, 
+                                      start = colnames(values$feature_to_display)[ncol(values$feature_to_display)], 
+                                      forward_distance = 4, 
+                                      previous_view = values$feature_to_display)
   })
   
   observeEvent(input$feature_prev_cols, {
-    prev_cols <- retract_columns_view(values$feature_data, last_column = colnames(values$feature_to_display)[2], backward_distance = 4)
-    values$feature_to_display <- if (!is.null(prev_cols)) prev_cols else values$feature_to_display
+    values$feature_to_display <- retract_columns_view(values$feature_data, 
+                                                      last_column = colnames(values$feature_to_display)[2], 
+                                                      backward_distance = 4, 
+                                                      previous_view = values$feature_to_display)
   })
   
   observeEvent(input$expression_evaluate_id, {
@@ -1477,7 +1485,10 @@ server <- function(input, output, session) {
                                                     format_string(input$howToSummarize), ")")), 
                                            values$expression_oFile)
       
-      values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+      values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                                     start = 1, 
+                                                     forward_distance = 5, 
+                                                     values$expr_data)
       
       after <- length(values$expression_oFile)
       
@@ -1549,7 +1560,10 @@ server <- function(input, output, session) {
                                              "expressionData <- quickTranspose(expressionData)"), 
                                            values$expression_oFile)
       
-      values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+      values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                                     start = 1, 
+                                                     forward_distance = 5, 
+                                                     previous_view = values$expr_data)
       
       after <- length(values$expression_oFile)
       
@@ -1569,9 +1583,15 @@ server <- function(input, output, session) {
     names(to_filter) <- colnames(values$expr_to_display)
     
     values$expr_data <- filterExpressionData(values$expr_data, to_filter)
-    values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+    values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                                   start = 1, 
+                                                   forward_distance = 5, 
+                                                   previous_view = values$expr_data)
     values$feature_data <- find_intersection(values$feature_data, values$expr_data, values$feature_id_col, values$expression_id_col)
-    values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
+    values$feature_to_display <- advance_columns_view(values$feature_data, 
+                                                      start = 1, 
+                                                      forward_distance = 4, 
+                                                      previous_view = values$feature_data)
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
     before <- length(values$expression_oFile)
@@ -1638,9 +1658,15 @@ server <- function(input, output, session) {
       }
       
       values$feature_data <- values$last_feature
-      values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
+      values$feature_to_display <- advance_columns_view(values$feature_data, 
+                                                        start = 1, 
+                                                        forward_distance = 4, 
+                                                        previous_view = values$feature_data)
       values$expr_data <- values$last_expr
-      values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+      values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                                     start = 1, 
+                                                     forward_distance = 5, 
+                                                     previous_view = values$expr_data)
       values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_currChunkLen)
       values$expression_currChunkLen <- 0
     }
@@ -1650,9 +1676,15 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_data)) {
       values$expression_disable_btns <- FALSE
       values$feature_data <- values$orig_feature
-      values$feature_to_display <- advance_columns_view(values$feature_data, start = 1, forward_distance = 4)
+      values$feature_to_display <- advance_columns_view(values$feature_data, 
+                                                        start = 1, 
+                                                        forward_distance = 4, 
+                                                        previous_view = values$feature_data)
       values$expr_data <- values$orig_expr
-      values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
+      values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                                     start = 1, 
+                                                     forward_distance = 5, 
+                                                     previous_view = values$expr_data)
       values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_downloadChunkLen, all = T)
       values$expression_currChunkLen <- 0
     }
@@ -1747,13 +1779,17 @@ server <- function(input, output, session) {
   # main panel expression data ----------------------------------------------
   
   observeEvent(input$expression_next_cols, {
-    next_cols <- advance_columns_view(values$expr_data, start = colnames(values$expr_to_display)[ncol(values$expr_to_display)], forward_distance = 5)
-    values$expr_to_display <- if (!is.null(next_cols)) next_cols else values$expr_to_display
+    values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                      start = colnames(values$expr_to_display)[ncol(values$expr_to_display)], 
+                                      forward_distance = 5, 
+                                      previous_view = values$expr_to_display)
   })
   
   observeEvent(input$expression_prev_cols, {
-    prev_cols <- retract_columns_view(values$expr_data, last_column = colnames(values$expr_to_display)[1], backward_distance = 5)
-    values$expr_to_display <- if (!is.null(prev_cols)) prev_cols else values$expr_to_display
+    values$expr_to_display <- retract_columns_view(values$expr_data, 
+                                                   last_column = colnames(values$expr_to_display)[2], 
+                                                   backward_distance = 5, 
+                                                   previous_view = values$expr_to_display)
   })
   
   output$exprPreview <- DT::renderDT({

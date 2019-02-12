@@ -536,20 +536,19 @@ replaceID <- function(data, replacement, replaceCol, summaryOption) {
   #  return(data)
   #}
   
-  dataWRowNames <- data
+  #dataWRowNames <- data
   
-  replacementWRowNames <- replacement %>%
-    dplyr::rename(replace = replaceCol) %>%
-    select(ID, replace) %>%
-    filter(!is.na(replace) & replace != "") %>%
-    mutate(ID = as.character(ID))
+  replacementWRowNames <- replacement[, c("ID", replaceCol)]
+  replacementWRowNames$ID <- as.character(replacementWRowNames$ID)
   
   incProgress()
   
-  mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
+  mergedData <- inner_join(data, replacementWRowNames, by = "ID") %>%
     select(-ID) %>%
-    dplyr::rename(ID = "replace") %>%
+    dplyr::rename(ID = replaceCol) %>%
     select(ID, everything())
+  
+  incProgress()
   
   if (!is.null(summaryOption)) {
     if (summaryOption == "mean") {
@@ -607,10 +606,9 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
   return(data)
 }
 
-advance_columns_view <- function(data, start, forward_distance) {
-  
+advance_columns_view <- function(data, start, forward_distance, previous_view = NULL) {
   if (class(start) == "character") {
-    start <- which(colnames(data) == start) + 1
+    start <- which(colnames(data) == start)
   }
   
   end_point <- start + (forward_distance - 1)
@@ -620,7 +618,7 @@ advance_columns_view <- function(data, start, forward_distance) {
   }
   
   if (start >= end_point ) {
-    return(NULL)
+    return(previous_view)
   }
   
   next_cols <- data[,start:end_point]
@@ -633,10 +631,10 @@ advance_columns_view <- function(data, start, forward_distance) {
   
 }
 
-retract_columns_view <- function(data, last_column, backward_distance) {
+retract_columns_view <- function(data, last_column, backward_distance, previous_view = NULL) {
   
   if (class(last_column) == "character") {
-    last_column <- which(colnames(data) == last_column) - 1
+    last_column <- which(colnames(data) == last_column)
   }
   
   start_point <- last_column - (backward_distance - 1)
@@ -645,8 +643,8 @@ retract_columns_view <- function(data, last_column, backward_distance) {
     start_point <- 1
   }
   
-  if (start_point > last_column) {
-    return(NULL)
+  if (start_point >= last_column) {
+    return(previous_view)
   }
   
   prev_cols <- data[,start_point:last_column]

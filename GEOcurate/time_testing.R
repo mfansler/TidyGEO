@@ -88,10 +88,11 @@ geoID <- "GSE3"
 index = 1
 expressionSet <- loadRdsFromDropbox(geoID)
 expressionSet <- expressionSet[[index]]
-metaData <- pData(expressionSet)
-metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+#metaData <- pData(expressionSet)
+#metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
 expressionData <- assayData(expressionSet)$exprs
 expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
+featureData <- data.frame(fData(expressionSet))
 
 # different kinds of apply (2 does not work) ------------------------------
 
@@ -414,3 +415,61 @@ start_time <- Sys.time()
 b <- expressionData[expressionData[i] >= searchStrs[1] & expressionData[i] <= searchStrs[2],]
 end_time <- Sys.time()
 print(paste("New:", end_time - start_time))
+
+# replace ID & summarize --------------------------------------------------
+
+replacement <- featureData
+data <- expressionData
+replaceCol <- "GB_LIST"
+summaryOption <- "mean"
+
+start_time <- Sys.time()
+replacementWRowNames <- replacement %>%
+  dplyr::rename(replace = replaceCol) %>%
+  select(ID, replace) %>%
+  #filter(!is.na(replace) & replace != "") %>%
+  mutate(ID = as.character(ID))
+end_time <- Sys.time()
+print(paste("Old replace:", end_time - start_time))
+
+start_time <- Sys.time()
+mergedData <- inner_join(data, replacementWRowNames, by = "ID") %>%
+  select(-ID) %>%
+  dplyr::rename(ID = "replace") %>%
+  select(ID, everything())
+end_time <- Sys.time()
+print(paste("Old merge:", end_time - start_time))
+
+start_time <- Sys.time()
+replacementWRowNames2 <- replacement[, c("ID", replaceCol)]
+replacementWRowNames2$ID <- as.character(replacementWRowNames2$ID)# use this one (faster)
+end_time <- Sys.time()
+print(paste("New replace:", end_time - start_time))
+
+start_time <- Sys.time()
+mergedData2 <- inner_join(data, replacementWRowNames2, by = "ID") %>% # use this one (same speed, simpler)
+  select(-ID) %>%
+  dplyr::rename(ID = replaceCol) %>%
+  select(ID, everything())
+end_time <- Sys.time()
+print(paste("New merge:", end_time - start_time))
+
+if (!is.null(summaryOption)) {
+  if (summaryOption == "mean") {
+    mergedData <- mergedData %>% group_by(ID) %>%
+      summarize_all(mean, na.rm = TRUE) %>%
+      ungroup()
+  } else if (summaryOption == "median") {
+    mergedData <- mergedData %>% group_by(ID) %>%
+      summarize_all(median, na.rm = TRUE) %>%
+      ungroup()
+  } else if (summaryOption == "max") {
+    mergedData <- mergedData %>% group_by(ID) %>%
+      summarize_all(max, na.rm = TRUE) %>%
+      ungroup()
+  } else if (summaryOption == "min") {
+    mergedData <- mergedData %>% group_by(ID) %>%
+      summarize_all(min, na.rm = TRUE) %>%
+      ungroup()
+  }
+}
