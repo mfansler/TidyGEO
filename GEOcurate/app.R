@@ -425,6 +425,7 @@ ui <- fluidPage(
                                                             column(1, secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
                                                             column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
                                                           ),
+                                                          bsAlert("alpha_alert"),
                                                           withSpinner(dataTableOutput("exprPreview"), type = 5)#,
                                                           #primary_button("expression_evaluate_filters", label = "Evaluate filters")
                                                           ),

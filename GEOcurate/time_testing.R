@@ -1,4 +1,21 @@
-setwd("C:/Users/Avery/Documents/R_Code/geocurate_repo/GEOcurate")
+# test data ---------------------------------------------------------------
+
+setwd("~/R_Code/geocurate_repo/GEOcurate")
+source("geocurateFunctions.R")
+geoID <- "GSE3"
+index = 1
+expressionSet <- loadRdsFromDropbox(geoID)
+if (is.null(expressionSet)) {
+  expressionSet <- getGEO(geoID)
+}
+expressionSet <- expressionSet[[index]]
+#metaData <- pData(expressionSet)
+#metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+expressionData <- assayData(expressionSet)$exprs
+expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
+featureData <- data.frame(fData(expressionSet))
+
+# different kinds of apply (2 does not work) ------------------------------
 
 evaluate_cols_to_keep <- function(col, toFilter = list()) {
   functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
@@ -80,22 +97,6 @@ filterUninformativeCols2 <- function(metaData, toFilter = list())
   }
   metaData
 }
-
-# test data ---------------------------------------------------------------
-
-setwd("~/R_Code/geocurate_repo/GEOcurate")
-geoID <- "GSE3"
-index = 1
-expressionSet <- loadRdsFromDropbox(geoID)
-expressionSet <- expressionSet[[index]]
-#metaData <- pData(expressionSet)
-#metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
-expressionData <- assayData(expressionSet)$exprs
-expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
-featureData <- data.frame(fData(expressionSet))
-
-# different kinds of apply (2 does not work) ------------------------------
-
 
 toFilter <- c("reanalyzed", "url", "dates", "same_vals", "all_diff")
 start_time <- Sys.time()
@@ -473,3 +474,19 @@ if (!is.null(summaryOption)) {
       ungroup()
   }
 }
+
+# process expression data -------------------------------------------------
+
+expressionData <- assayData(expressionSet)$exprs
+start_time <- Sys.time()
+a <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
+a <- data.frame("ID" = rownames(expressionData), expressionData)
+end_time <- Sys.time()
+print(paste("Old process:", end_time - start_time))
+start_time <- Sys.time()
+expressionNums <- apply(expressionData, 2, as.numeric)
+b <- cbind("ID" = rownames(expressionData), expressionNums)
+end_time <- Sys.time()
+print(paste("New process:", end_time - start_time))
+
+

@@ -117,14 +117,33 @@ process_clinical <- function(expressionSet, index, toFilter, session = NULL) {
   return(metaData)
 }
 
-process_expression <- function(expressionSet, index) {
+process_expression <- function(expressionSet, index, session = NULL) {
   
   expressionSet <- expressionSet[[index]]
     
   incProgress(message = "Extracting expression data")
-  expressionData <- assayData(expressionSet)$exprs
+  expression_raw <- assayData(expressionSet)$exprs
   #expressionData <- data.frame("ID" = rownames(expressionData), expressionData)
-  expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
+  pass <- TRUE
+  tryCatch({
+    expressionData <- data.frame("ID" = rownames(expression_raw), apply(expression_raw, 2, as.numeric))
+  }, warning = function(w) {
+    if (grepl("NAs introduced by coercion", w)) {
+      pass <- FALSE
+    }
+  })
+  if (status != "pass" && !is.null(session)) {
+    if (all(is.na(expressionData[,2:ncol(expressionData)]))) {
+      expressionData <- data.frame("ID" = rownames(expression_raw), expression_raw)
+      message <- "All of the data is non-numeric."
+    } else {
+      message <- "Some of the data is non-numeric."
+    }
+    createAlert(session, "alpha_alert", "alpha_alert", title = "Warning",
+                content = paste(message,
+                                "This data is not supported by our functionality.",
+                                "Feel free to download the data to edit with another application."), append = FALSE)
+  }
   
   incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))
