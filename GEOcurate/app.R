@@ -436,7 +436,7 @@ ui <- fluidPage(
                                                  tabPanel("Graphical summary",
                                                           colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
                                                           uiOutput("expr_select_binwidths"),
-                                                          checkboxInput("expr_display_labels", "Display labels above columns?"),
+                                                          #checkboxInput("expr_display_labels", "Display labels above columns?"),
                                                           uiOutput("histograms_expression")
                                                           )
                                                )
@@ -516,7 +516,8 @@ server <- function(input, output, session) {
       feature_id_col = "ID",
       clinical_plot_to_save = NULL,
       expr_plot_to_save = NULL,
-      expression_disable_btns = FALSE
+      expression_disable_btns = FALSE,
+      expression_warning_state = FALSE
     )
   
   # reset -------------------------------------------------------------------
@@ -1364,7 +1365,9 @@ server <- function(input, output, session) {
     if (!is.null(values$allData)) {
       
       #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
-      extracted_data <- withProgress(process_expression(values$allData, input$platformIndex))
+      extracted_data <- withProgress(process_expression(values$allData, input$platformIndex, session))
+      
+      values$expression_warning_state <- extracted_data[["status"]]
     
       values$orig_expr <- extracted_data[["expressionData"]]
       values$last_expr <- values$orig_expr
@@ -1510,9 +1513,10 @@ server <- function(input, output, session) {
   output$summarizeOptions <- renderUI({
     can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && !is_all_unique(values$feature_data[, input$colForExprLabels]) #!input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
     if (can_summarize) {
+      choices <- if (values$expression_warning_state) c("mean", "median", "max", "min", "keep all") else c("keep all")
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                 How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
-                  choices = c("mean", "median", "max", "min", "keep all"))
+                  choices = choices)
     }
   })
   
@@ -1834,12 +1838,12 @@ server <- function(input, output, session) {
   #})
   
   output$expr_select_binwidths <- renderUI({
-    if (is.null(values$expr_to_display)) {
+    if (is.null(values$expr_to_display) || !values$expression_warning_state) {
       upper_lim <- 10
     } else {
       upper_lim <- ceiling(max(values$expr_to_display[,which(colnames(values$expr_to_display) != "ID")], na.rm = TRUE))
     }
-    sliderInput("expression_binwidths", "Width of bars:", min = 0, max = upper_lim, value = ceiling(upper_lim / 2))
+    sliderInput("expression_binwidths", "Width of bars (for numeric):", min = 0, max = upper_lim, value = ceiling(upper_lim / 2))
   })
   
   #histograms_expression_input <- reactive({
@@ -1866,7 +1870,7 @@ server <- function(input, output, session) {
     if (!is.null(values$expr_to_display)) {
       lapply(2:ncol(values$expr_to_display), function(i){
         output[[ make.names(colnames(values$expr_to_display)[i]) ]] <- renderPlotly({
-          suppressWarnings(create_plot(as.character(values$expr_to_display[,i]), input$expr_plot_color, input$expression_binwidths, colnames(values$expr_to_display)[i], is_numeric = TRUE))
+          suppressWarnings(create_plot(as.character(values$expr_to_display[,i]), input$expr_plot_color, input$expression_binwidths, colnames(values$expr_to_display)[i], is_numeric = isAllNum(values$expr_to_display[i])))
         })
       })
     }
@@ -1894,7 +1898,7 @@ server <- function(input, output, session) {
                                   input$expr_plot_color, 
                                   input$expression_binwidths, 
                                   colnames(values$expr_to_display)[values$expr_plot_to_save], 
-                                  is_numeric = TRUE)
+                                  is_numeric = isAllNum(values$expr_to_display[values$expr_plot_to_save]))
       
       ggsave(file, plot_to_save, width = input$expr_plot_width, height = input$expr_plot_height, device = input$expr_plot_filetype)
       

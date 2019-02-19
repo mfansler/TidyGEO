@@ -124,23 +124,19 @@ process_expression <- function(expressionSet, index, session = NULL) {
   incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
   #expressionData <- data.frame("ID" = rownames(expressionData), expressionData)
-  pass <- TRUE
-  tryCatch({
+  pass <- tryCatch({
     expressionData <- data.frame("ID" = rownames(expression_raw), apply(expression_raw, 2, as.numeric))
+    TRUE
   }, warning = function(w) {
     if (grepl("NAs introduced by coercion", w)) {
-      pass <- FALSE
+      FALSE
     }
   })
-  if (status != "pass" && !is.null(session)) {
-    if (all(is.na(expressionData[,2:ncol(expressionData)]))) {
-      expressionData <- data.frame("ID" = rownames(expression_raw), expression_raw)
-      message <- "All of the data is non-numeric."
-    } else {
-      message <- "Some of the data is non-numeric."
-    }
-    createAlert(session, "alpha_alert", "alpha_alert", title = "Warning",
-                content = paste(message,
+  #browser()
+  if (!pass) {
+    expressionData <- data.frame("ID" = rownames(expression_raw), expression_raw)
+    createAlert(session, "alpha_alert", "parseError", title = "Warning",
+                content = paste("Some of the data is non-numeric.",
                                 "This data is not supported by our functionality.",
                                 "Feel free to download the data to edit with another application."), append = FALSE)
   }
@@ -165,7 +161,7 @@ process_expression <- function(expressionSet, index, session = NULL) {
     featureData <- NULL
   }
   
-  return(list("expressionData" = expressionData, "featureData" = featureData))
+  return(list("expressionData" = expressionData, "featureData" = featureData, "status" = pass))
 }
 
 evaluate_cols_to_keep <- function(col, toFilter = list()) {
