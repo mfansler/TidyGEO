@@ -102,7 +102,12 @@ process_clinical <- function(expressionSet, index, toFilter, session = NULL) {
     
   incProgress(message = "Extracting data")
   metaData <- pData(expressionSet)
-  metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  if (nrow(metaData) == 1) {
+    metaData <- as.data.frame(t(as.matrix(apply(metaData, 2, replace_blank_cells))), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  } else {
+    
+    metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  }
   incProgress(message = "Filtering data")
   filtered_data <- filterUninformativeCols(metaData, toFilter)
   if (is.null(filtered_data)) {
