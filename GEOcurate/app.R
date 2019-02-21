@@ -218,7 +218,9 @@ ui <- fluidPage(
                                               #              animation = "rotate"),
                                                conditionalPanel(condition = "input.to_split == true",
                                                                 uiOutput("choose_cols_to_split"),
-                                                                checkboxInput(inputId = "split_all_but", label = tags$i("Split all BUT the specified")),
+                                                                checkboxInput(inputId = "split_all_but", 
+                                                                              label = div(tags$i("Split all BUT the specified"), 
+                                                                              help_button("Split every column except for those selected."))),
                                                                 textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                checkboxInput(inputId = "to_divide", label = div("Choose columns with multiple values in one column",
@@ -236,7 +238,9 @@ ui <- fluidPage(
                                               #             animation = "rotate"),
                                                conditionalPanel(condition = "input.to_divide == true",
                                                                 uiOutput("choose_cols_to_divide"),
-                                                                checkboxInput(inputId = "divide_all_but", label = tags$i("Split all BUT the specified")),
+                                                                checkboxInput(inputId = "divide_all_but", 
+                                                                              label = div(tags$i("Split all BUT the specified"), 
+                                                                                          help_button("Split every column except for those selected."))),
                                                                 textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                primary_button(id = "reformat_columns", label = "Reformat columns"),
@@ -253,8 +257,9 @@ ui <- fluidPage(
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest."),
                                                div(tags$b("Which columns would you like to keep?"),
-                                                          help_button("This will drop any unselected columns from the dataset.")),
-                                               checkboxInput(inputId = "keep_all_but", label = tags$i("Keep all BUT the specified")),
+                                                          help_button("This will drop unselected columns from the table.")),
+                                               checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
+                                                                                                   help_button("Drops the <i>selected</i> columns from the table."))),
                                                uiOutput("display_vars_to_keep"),
                                                primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
                                                hr(), uiOutput("nav_3_ui")
@@ -266,7 +271,7 @@ ui <- fluidPage(
                                       #renaming any columns
                                       tabPanel("4",
                                                h4("Renaming columns"),
-                                               p("In order to integrate the data with other tables or for humans to be able to understand the data,
+                                               p("In order to integrate the data with other data sources or for humans to be able to understand the data,
                                                  it may be helpful to replace the existing column names with more accurate/descriptive ones.
                                                  Here, you can give any column a new name."),
                                                uiOutput("display_cols_to_rename"),
@@ -286,14 +291,16 @@ ui <- fluidPage(
                                                  some of the values in the data for other values. Here, you can identify values you would like to replace
                                                  and an alternative to replace them with."),
                                                uiOutput("display_cols_to_sub"),
-                                               checkboxInput(inputId = "substitute_isrange", label = "Specify a range of values to substitute?"),
+                                               checkboxInput(inputId = "substitute_isrange", 
+                                                             label = div("Specify a range of values to substitute?", 
+                                                                         help_button("Helpful for numeric data."))),
                                                conditionalPanel(condition = "input.substitute_isrange == true",
                                                                 uiOutput("input_sub_range")),
-                                               h5('Click "Add" to add rows or "Remove" to remove the last row.'),
+                                               h5('Right click to add or remove rows.'),
                                                rHandsontableOutput("input_subs_table"),
                                                conditionalPanel(condition = "input.substitute_isrange == false",
                                                                 checkboxInput("sub_w_regex", div("Use regex",
-                                                                                                 help_button("What is regex?"))))
+                                                                                                 help_link(id = "regex_help"))))
                                                ,
                                                primary_button("evaluate_subs", "Substitute"),
                                                hr(), uiOutput("nav_5_ui")
@@ -308,7 +315,9 @@ ui <- fluidPage(
                                                   Here, you can specify which values you would like to remove.
                                                  Excluding a value will take out the entire row that contains that value in the selected column."),
                                                uiOutput("display_cols_for_exclude"),
-                                               checkboxInput("exclude_isrange", "Specify a range of values"),
+                                               checkboxInput("exclude_isrange", 
+                                                             label = div("Specify a range of values to exclude?", 
+                                                                         help_button("Helpful for numeric data."))),
                                                conditionalPanel(condition = "input.exclude_isrange == true",
                                                                 uiOutput("sliderExclude")),
                                                conditionalPanel(condition = "input.exclude_isrange == false",
@@ -386,17 +395,16 @@ ui <- fluidPage(
                                               #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
                                               tags$b("Options:"),
                                               fluidRow(
-                                                column(2, primary_button("expression_replace_id", label = div("Use a different column as ID", 
-                                                                                                      help_button('Search the feature data for different values to use as the "ID" column.'))))
+                                                column(12, primary_button("expression_replace_id", "Use different column ID"), 
+                                                       help_link(id = "replace_id_help"))
                                                 
                                               ),
                                               fluidRow(
-                                                column(2, primary_button(id = "expression_transpose", 
-                                                                                     label = div("Transpose", 
-                                                                                                 help_button("Values in the ID column become the column names and column names become the ID column")
-                                                                                     )))
+                                                column(12, primary_button(id = "expression_transpose","Transpose"),
+                                                       help_link(id = "transpose_help"))
                                               ),
-                                              primary_button("expression_evaluate_filters", label = div("Apply filters", help_button("The filters below the column names are just previews for now. Clicking this drops the rows from the table."))),
+                                              primary_button("expression_evaluate_filters", "Apply filters"),
+                                              help_link(id = "evaluate_filters_help"),
                                               tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
                                               tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
                                               tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
@@ -1321,6 +1329,10 @@ server <- function(input, output, session) {
     create_image_grid(images, image_names)
   })
   
+  observeEvent(input$regex_help, {
+    help_modal("www/Regular_Expressions_Documentation.md")
+  })
+  
   observeEvent(input$exclude_help, {
     help_modal("www/Exclude_Vals_Documentation.md", "exclude_images")
   })
@@ -1343,6 +1355,18 @@ server <- function(input, output, session) {
   
   observeEvent(input$clinical_r_help, {
     help_modal("www/R_Help_Documentation.md")
+  })
+  
+  observeEvent(input$replace_id_help, {
+    help_modal("www/Different_ID_documentation.md")
+  })
+  
+  observeEvent(input$transpose_help, {
+    help_modal("www/Transpose_Documentation.md")
+  })
+  
+  observeEvent(input$evaluate_filters_help, {
+    
   })
   
   observeEvent(input$expression_r_help, {

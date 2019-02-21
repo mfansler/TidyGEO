@@ -8,7 +8,7 @@ In the New_Val column, you can specify what to insert in the place of the value 
 
 If you would like to add more values to substitute for the selected column, please right-click on one of the cells in the table and select "Add row". You can add as many rows as you like, but values in To_Replace that are not found in the data will not be replaced. Please note that the substitutions are evaluated in the order that they appear in the table.
 
-You can also specify a range of numeric values to substitute. Once you have adjusted the slider to the desired range, please click "Add" to add this substitution to the table. Please note tha the rance includes both the lower and upper limits. Similar to the value substitution, you can add as many range substitutions as you'd like. The range substitutions will be evaluated in the order they appear in the table.
+You can also specify a range of numeric values to substitute. Once you have adjusted the slider to the desired range, please click "Add" to add this substitution to the table. Please note tha the range includes both the lower and upper limits. Similar to the value substitution, you can add as many range substitutions as you'd like. The range substitutions will be evaluated in the order they appear in the table.
 
 When you have finished specifying all the replacements to make, please click "Substitute" to replace all the values with those you have specified.
 

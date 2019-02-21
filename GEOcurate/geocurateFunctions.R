@@ -142,7 +142,7 @@ process_expression <- function(expressionSet, index, session = NULL) {
     expressionData <- data.frame("ID" = rownames(expression_raw), expression_raw)
     createAlert(session, "alpha_alert", "parseError", title = "Warning",
                 content = paste("Some of the data is non-numeric.",
-                                "This data is not supported by our functionality.",
+                                "This data is not supported by our some of our functionality.",
                                 "Feel free to download the data to edit with another application."), append = FALSE)
   }
   
