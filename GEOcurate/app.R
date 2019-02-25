@@ -154,6 +154,29 @@ ui <- fluidPage(
     ),
     includeScript("reactive_preferences.js"),
   navbarPage(title = "GEOcurate", id = "top_level",
+             tabPanel(title = "Choose dataset",
+                      
+                      sidebarLayout(
+                        sidebarPanel(
+                          h4("Importing the data"),
+                          div("Welcome to GEOcurate! This application allows you to reformat data
+                              from ",
+                              a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
+                              " which can then be used to answer research questions. Once you have found a",
+                              a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "series of interest,"),
+                              "complete the instructions below."
+                          ),
+                          selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
+                                                                        help_link(id = "download_help")), choices = NULL),
+                          uiOutput("gse_link"),
+                          primary_button(id = "download_data_evaluate", label = "Import"),
+                          hr(), uiOutput("start_clinical_nav_ui")
+                        ),
+                        mainPanel(
+                          h4("Series information"),
+                          htmlOutput("series_information")
+                        )
+                      )),
              tabPanel(title = "Clinical data",
                       
                       sidebarLayout(
@@ -167,26 +190,39 @@ ui <- fluidPage(
                                       
                                       
                                       tabPanel("1",
-                                               h4("Importing the data"),
-                                               div("Welcome to GEOcurate! This application will allow you to reformat data
-                                                   from ",
-                                                 a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
-                                                 " which can then be used to answer research questions. To get started,",
-                                                 a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "find a series of interest"),
-                                                   "and take a look at the help documentation or"
-                                                 ),
-                                               selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                                                                        help_link(id = "download_help")), choices = NULL),
-                                               uiOutput("gse_link"),
-                                               br(),
-                                               checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
-                                                                                                  help_button("Removes columns right after downloading, according to the following specifications.")),
-                                                                  choiceNames = list("Is the same", 
-                                                                                     "Is unique",
-                                                                                     "Contains a date", 
-                                                                                     "Is a web address"),
-                                                                  choiceValues = list("same_vals", "all_diff", "dates", "url")),
-                                               primary_button(id = "download_data_evaluate", label = "Import"),
+                                               #h4("Importing the data"),
+                                               #div("Welcome to GEOcurate! This application allows you to reformat data
+                                              #     from ",
+                                              #   a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
+                                              #   " which can then be used to answer research questions. Once you have found a",
+                                              #   a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "series of interest,"),
+                                              #     "complete the instructions below."
+                                              #   ),
+                                              # selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
+                                              #                                          help_link(id = "download_help")), choices = NULL),
+                                              # uiOutput("gse_link"),
+                                              # 
+                                              h4("Selecting informative columns"),
+                                              p("It can be helpful to filter out unneeded columns for better storage capacity and improved
+                                                 human readability. Here, you can choose which columns are most important for you to keep
+                                                 and drop the rest. You may either use preset filters that will detect commonly-dropped
+                                                columns, or select specific columns to keep."),
+                                              checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
+                                                                                                               help_button("Removes columns right after downloading, according to the following specifications.")),
+                                                                 choiceNames = list("Is the same", 
+                                                                                    "Is unique",
+                                                                                    "Contains a date", 
+                                                                                    "Is a web address"),
+                                                                 choiceValues = list("same_vals", "all_diff", "dates", "url")),
+                                              div(tags$b("Choose columns to keep:"),
+                                                  help_button("This will drop unselected columns from the table.")),
+                                              checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
+                                                                                                  help_button("Drops the <i>selected</i> columns from the table."))),
+                                              uiOutput("display_vars_to_keep"),
+                                              primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
+                                              #hr(), uiOutput("nav_3_ui"),
+                                              # br(),
+                                               #primary_button(id = "download_data_evaluate", label = "Import"),
                                                hr(), uiOutput("nav_1_ui")
                                       ),
                                       
@@ -198,8 +234,8 @@ ui <- fluidPage(
                                       tabPanel("2",
                                                h4("Formatting the data"),
                                                p("Sometimes columns contain multiple values in them. This makes it so that the values
-                                                 cannot be analyzed separately. Here, you can indicate that there are multiple values in a
-                                                 column so that the values can be separate."),
+                                                 cannot be analyzed separately. If you see any columns in your data that contain multiple values, 
+                                                 you can indicate that here and separate them."),
                                                checkboxInput(inputId = "to_split", label = div("Choose columns with key-value pairs separated by a delimiter",
                                                                                                help_link(id = "split_help")
                                                                                                )),
@@ -251,18 +287,18 @@ ui <- fluidPage(
                                       
                                       
                                       #specify which vars to keep
-                                      tabPanel("3",
-                                               h4("Selecting informative columns"),
-                                               p("It can be helpful to filter out unneeded columns for better storage capacity and improved
-                                                 human readability. Here, you can choose which columns are most important for you to keep
-                                                 and drop the rest."),
-                                               div(tags$b("Which columns would you like to keep?"),
-                                                          help_button("This will drop unselected columns from the table.")),
-                                               checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
-                                                                                                   help_button("Drops the <i>selected</i> columns from the table."))),
-                                               uiOutput("display_vars_to_keep"),
-                                               primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
-                                               hr(), uiOutput("nav_3_ui")
+                                      tabPanel("3"#,
+                                               #h4("Selecting informative columns"),
+                                               #p("It can be helpful to filter out unneeded columns for better storage capacity and improved
+                                              #   human readability. Here, you can choose which columns are most important for you to keep
+                                              #   and drop the rest."),
+                                              # div(tags$b("Which columns would you like to keep?"),
+                                              #            help_button("This will drop unselected columns from the table.")),
+                                              # checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
+                                              #                                                     help_button("Drops the <i>selected</i> columns from the table."))),
+                                              # uiOutput("display_vars_to_keep"),
+                                              # primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
+                                              # hr(), uiOutput("nav_3_ui")
                                       ),
                                       
                                       # rename columns ----------------------------------------------------------
@@ -325,12 +361,16 @@ ui <- fluidPage(
                                                primary_button("clinical_evaluate_exclude", "Exclude"),
                                                hr(), uiOutput("nav_6_ui")
                                       ),
+
+                                      # save clinical data ------------------------------------------------------
+
+                                      
                                       tabPanel("7",
                                                h4("Saving the data"),
-                                               p("Here is where you can download the clinical data to your computer. If you have R installed,
-                                                 you can also download the R script that produced this data. The R script allows other scientists
-                                                to replicate your experiment because it shows how the data was obtained."),
-                                               radioButtons("clinical_file_type", "File type:", 
+                                               p("Here is where you can download the clinical data to your computer. 
+                                                 You can also download the R script that produced this data. The R script allows you
+                                                 to replicate the steps you took so you can see how the data was obtained."),
+                                               radioButtons("clinical_file_type", div("File type:", help_link("clinical_files_help")), 
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
                                                uiOutput("clinical_display_filename"),
@@ -374,7 +414,7 @@ ui <- fluidPage(
              
              # expression data ---------------------------------------------------------
              
-             tabPanel(title = "Expression data",
+             tabPanel(title = "Assay data",
                       #tabsetPanel(id = "expressionPanel",
                                   #tabPanel("1",
                                            sidebarLayout(
@@ -383,7 +423,7 @@ ui <- fluidPage(
                                                p("This portion of the application can reformat the expression (assay) data
                                                  associated with the clinical data for the specified GEO ID. If you have already
                                                  loaded clinical data, please start by clicking the button below."),
-                                               primary_button("download_expr", "Load Expression Data", 
+                                               primary_button("download_expr", "Load Assay Data", 
                                                               icon = help_button("Please make sure to download some clinical data first.")),
                                                hr(),
                                                #uiOutput("exprLabels"),
@@ -527,6 +567,19 @@ server <- function(input, output, session) {
       expression_disable_btns = FALSE,
       expression_warning_state = FALSE
     )
+  
+  get_series_information <- function() {
+    geo_url <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID)
+    return(tags$iframe(src = geo_url, style = "width:100%;",
+                       frameborder = "0",
+                       id = "iframe", 
+                       height = "500px"))
+  }
+  
+  output$series_information <- renderUI({
+    if (!is.null(input$geoID) && input$geoID != "")
+    get_series_information()
+  })
   
   # reset -------------------------------------------------------------------
   
@@ -1207,11 +1260,23 @@ server <- function(input, output, session) {
   
   # navigation --------------------------------------------------------------
   
+  output$start_clinical_nav_ui <- renderUI({
+    fluidRow(
+      column(2, offset = 5, secondary_button('nav_choose_to_clinical_button', 'Next - Process clinical data'))
+    )
+  })
+  observeEvent(input$nav_choose_to_clinical_button, {
+    updateTabsetPanel(session, 'top_level', selected = 'Clinical data')
+  })
   #1  
   output$nav_1_ui <- renderUI({
     fluidRow(
+      column(1, tertiary_button('nav_clinical_to_choose_button', 'Back')),
       column(2, offset = 8, secondary_button('nav_1_to_2_button', 'Next'))
     )
+  })
+  observeEvent(input$nav_clinical_to_choose_button, {
+    updateTabsetPanel(session, 'top_level', selected = "Choose dataset")
   })
   observeEvent(input$nav_1_to_2_button, {
     updateTabsetPanel(session, 'clinical_side_panel', selected = '2')
@@ -1293,7 +1358,7 @@ server <- function(input, output, session) {
     updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
   })
   observeEvent(input$nav_7_to_expression_button, {
-    updateTabsetPanel(session, 'top_level', selected = 'Expression data')
+    updateTabsetPanel(session, 'top_level', selected = 'Assay data')
   })
   
   # help modals -------------------------------------------------------------
@@ -1371,6 +1436,10 @@ server <- function(input, output, session) {
   
   observeEvent(input$expression_r_help, {
     help_modal("www/R_Help_Documentation.md")
+  })
+  
+  observeEvent(input$clinical_files_help, {
+    help_modal("www/File_Types_Documentation.md")
   })
   
   observeEvent(input$clickimg, {
