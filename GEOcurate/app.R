@@ -153,13 +153,13 @@ ui <- fluidPage(
     #                        });"))
     ),
     includeScript("reactive_preferences.js"),
-  navbarPage(title = "GEOcurate", id = "top_level",
+  navbarPage(title = "TidyGEO", id = "top_level",
              tabPanel(title = "Choose dataset",
                       
                       sidebarLayout(
                         sidebarPanel(
                           h4("Importing the data"),
-                          div("Welcome to GEOcurate! This application allows you to reformat data
+                          div("Welcome to TidyGEO! This application allows you to reformat data
                               from ",
                               a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
                               " which can then be used to answer research questions. Once you have found a",
@@ -174,6 +174,7 @@ ui <- fluidPage(
                         ),
                         mainPanel(
                           h4("Series information"),
+                          bsAlert("alert"),
                           htmlOutput("series_information")
                         )
                       )),
@@ -188,10 +189,18 @@ ui <- fluidPage(
                                       
                                       # download data -----------------------------------------------------------
                                       
-                                      
                                       tabPanel("1",
+                                               h4("Formatting the clinical data"),
+                                               p("Some information about clinical data and its uses.
+                                                 Direct user to load clinical data and preview it with the
+                                                 two tabs on the right."),
+                                               primary_button("load_clinical", "Load Clinical Data", 
+                                                              icon = help_button("Please make sure to load the series first.")),
+                                               hr(), uiOutput("nav_1_ui")
+                                      ),
+                                      tabPanel("2",
                                                #h4("Importing the data"),
-                                               #div("Welcome to GEOcurate! This application allows you to reformat data
+                                               #div("Welcome to TidyGEO! This application allows you to reformat data
                                               #     from ",
                                               #   a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
                                               #   " which can then be used to answer research questions. Once you have found a",
@@ -207,23 +216,30 @@ ui <- fluidPage(
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest. You may either use preset filters that will detect commonly-dropped
                                                 columns, or select specific columns to keep."),
-                                              checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
-                                                                                                               help_button("Removes columns right after downloading, according to the following specifications.")),
-                                                                 choiceNames = list("Is the same", 
-                                                                                    "Is unique",
-                                                                                    "Contains a date", 
-                                                                                    "Is a web address"),
-                                                                 choiceValues = list("same_vals", "all_diff", "dates", "url")),
-                                              div(tags$b("Choose columns to keep:"),
-                                                  help_button("This will drop unselected columns from the table.")),
-                                              checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
-                                                                                                  help_button("Drops the <i>selected</i> columns from the table."))),
-                                              uiOutput("display_vars_to_keep"),
+                                              radioButtons(inputId = "radio_buttons", label = div("Name", help_button("Help")),
+                                                           choices = c("Use preset filters" = "preset_filters",
+                                                                       "Select columns by column name" = "column_filters")),
+                                              conditionalPanel(condition = "input.radio_buttons == 'preset_filters'",
+                                                               checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
+                                                                                                                                help_button("Removes columns right after downloading, according to the following specifications.")),
+                                                                                  choiceNames = list("Is the same", 
+                                                                                                     "Is unique",
+                                                                                                     "Contains a date", 
+                                                                                                     "Is a web address"),
+                                                                                  choiceValues = list("same_vals", "all_diff", "dates", "url"))
+                                              ),
+                                              conditionalPanel(condition = "input.radio_buttons == 'column_filters'",
+                                                               div(tags$b("Choose columns to keep:"),
+                                                                   help_button("This will drop unselected columns from the table.")),
+                                                               checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
+                                                                                                                   help_button("Drops the <i>selected</i> columns from the table."))),
+                                                               uiOutput("display_vars_to_keep")
+                                              ),
                                               primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
                                               #hr(), uiOutput("nav_3_ui"),
                                               # br(),
                                                #primary_button(id = "download_data_evaluate", label = "Import"),
-                                               hr(), uiOutput("nav_1_ui")
+                                               hr(), uiOutput("nav_2_ui")
                                       ),
                                       
                                       
@@ -231,7 +247,7 @@ ui <- fluidPage(
                                       
                                       
                                       #specify which columns to split apart, and the delimiter
-                                      tabPanel("2",
+                                      tabPanel("3",
                                                h4("Formatting the data"),
                                                p("Sometimes columns contain multiple values in them. This makes it so that the values
                                                  cannot be analyzed separately. If you see any columns in your data that contain multiple values, 
@@ -280,14 +296,14 @@ ui <- fluidPage(
                                                                 textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                primary_button(id = "reformat_columns", label = "Reformat columns"),
-                                               hr(), uiOutput("nav_2_ui")
+                                               hr(), uiOutput("nav_3_ui")
                                       ),
                                       
                                       # exclude columns ---------------------------------------------------------
                                       
                                       
                                       #specify which vars to keep
-                                      tabPanel("3"#,
+                                      tabPanel("4"#,
                                                #h4("Selecting informative columns"),
                                                #p("It can be helpful to filter out unneeded columns for better storage capacity and improved
                                               #   human readability. Here, you can choose which columns are most important for you to keep
@@ -305,7 +321,7 @@ ui <- fluidPage(
                                       
                                       
                                       #renaming any columns
-                                      tabPanel("4",
+                                      tabPanel("5",
                                                h4("Renaming columns"),
                                                p("In order to integrate the data with other data sources or for humans to be able to understand the data,
                                                  it may be helpful to replace the existing column names with more accurate/descriptive ones.
@@ -314,14 +330,14 @@ ui <- fluidPage(
                                                #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
                                                primary_button(id = "rename", label = "Rename column"),
-                                               hr(), uiOutput("nav_4_ui")
+                                               hr(), uiOutput("nav_5_ui")
                                       ),
                                       
                                       # substitute --------------------------------------------------------------
                                       
                                       
                                       #specify which values to substitute for other values/which values should be treated as NA
-                                      tabPanel("5",
+                                      tabPanel("6",
                                                h4("Substituting values"),
                                                p("In order to achieve the uniformity required to combine datasets, it may be helpful to substitute 
                                                  some of the values in the data for other values. Here, you can identify values you would like to replace
@@ -339,13 +355,13 @@ ui <- fluidPage(
                                                                                                  help_link(id = "regex_help"))))
                                                ,
                                                primary_button("evaluate_subs", "Substitute"),
-                                               hr(), uiOutput("nav_5_ui")
+                                               hr(), uiOutput("nav_6_ui")
                                       ),
                                       
                                       # exclude variables -------------------------------------------------------
                                       
                                       
-                                      tabPanel("6",
+                                      tabPanel("7",
                                                h4("Filtering samples"),
                                                p("You may want to remove some of the values in a column, for example, if you have missing (NA) values.
                                                   Here, you can specify which values you would like to remove.
@@ -359,13 +375,13 @@ ui <- fluidPage(
                                                conditionalPanel(condition = "input.exclude_isrange == false",
                                                                 uiOutput("display_vals_to_exclude")),
                                                primary_button("clinical_evaluate_exclude", "Exclude"),
-                                               hr(), uiOutput("nav_6_ui")
+                                               hr(), uiOutput("nav_7_ui")
                                       ),
 
                                       # save clinical data ------------------------------------------------------
 
                                       
-                                      tabPanel("7",
+                                      tabPanel("8",
                                                h4("Saving the data"),
                                                p("Here is where you can download the clinical data to your computer. 
                                                  You can also download the R script that produced this data. The R script allows you
@@ -381,7 +397,7 @@ ui <- fluidPage(
                                                                                       style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                                                            help_link(id = "clinical_r_help")))
                                                ),
-                                               hr(), uiOutput("nav_7_ui")
+                                               hr(), uiOutput("nav_8_ui")
                                       )
                           )
                         ),
@@ -400,7 +416,8 @@ ui <- fluidPage(
                                        column(6, offset = 2, uiOutput("mergedWarning"))
                                      ), 
                                      br(), br(), 
-                                     bsAlert("alert"), withSpinner(DTOutput("dataset"), type = 5)
+                                     bsAlert("parseError"),
+                                     withSpinner(DTOutput("dataset"), type = 5)
                             ),
                             tabPanel("Graphical Summary",
                                      colorSelectorInput("clinical_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
@@ -415,45 +432,81 @@ ui <- fluidPage(
              # expression data ---------------------------------------------------------
              
              tabPanel(title = "Assay data",
-                      #tabsetPanel(id = "expressionPanel",
-                                  #tabPanel("1",
-                                           sidebarLayout(
-                                             sidebarPanel(
+                      
+                      sidebarLayout(
+                        sidebarPanel(
+                          tabsetPanel(id = "expression_side_panel",
+                                      tabPanel("1",
                                                h4("Formatting the expression data"),
                                                p("This portion of the application can reformat the expression (assay) data
-                                                 associated with the clinical data for the specified GEO ID. If you have already
-                                                 loaded clinical data, please start by clicking the button below."),
+                                           associated with the clinical data for the specified GEO ID. If you have already
+                                           loaded clinical data, please start by clicking the button below."),
                                                primary_button("download_expr", "Load Assay Data", 
                                                               icon = help_button("Please make sure to download some clinical data first.")),
-                                               hr(),
+                                               hr()#,
                                                #uiOutput("exprLabels"),
                                                #uiOutput("summarizeOptions"),
                                                ##uiOutput("transposeCheckbox"),
                                                
                                                #checkboxInput(inputId = "transposeExpr", 
-                                              #               label = div("Transpose the data", 
-                                              #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
-                                              tags$b("Options:"),
-                                              fluidRow(
-                                                column(12, primary_button("expression_replace_id", "Use different column ID"), 
-                                                       help_link(id = "replace_id_help"))
-                                                
-                                              ),
-                                              fluidRow(
-                                                column(12, primary_button(id = "expression_transpose","Transpose"),
-                                                       help_link(id = "transpose_help"))
-                                              ),
-                                              primary_button("expression_evaluate_filters", "Apply filters"),
-                                              help_link(id = "evaluate_filters_help"),
-                                              tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
-                                              tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
-                                              tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
-                                              fluidRow(
+                                               #               label = div("Transpose the data", 
+                                               #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
+                                               #tags$b("Options:"),
+                                               #fluidRow(
+                                              #   column(12, primary_button("expression_replace_id", "Use different column ID"), 
+                                              #          help_link(id = "replace_id_help"))
+                                              #   
+                                              # ),
+                                              # fluidRow(
+                                              #   column(12, primary_button(id = "expression_transpose","Transpose"),
+                                              #          help_link(id = "transpose_help"))
+                                              # ),
+                                              # primary_button("expression_evaluate_filters", "Apply filters"),
+                                              # help_link(id = "evaluate_filters_help"),
+                                              # tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
+                                              # tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
+                                              # tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
+                                              # fluidRow(
+                                              #   #column(2, primary_button(id = "previewExpr", label = "Update")),
+                                              #   column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
+                                              #   column(1, offset = 5, tertiary_button(id = "resetExpr", label = "Reset"))
+                                              # ),
+                                              # hr(),
+                                              # radioButtons("expression_fileType", "File type:", 
+                                              #              choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
+                                              #                          "JSON" = "JSON", "Excel" = "xlsx")),
+                                              # uiOutput("expression_nameFile"),
+                                              # tags$b("Download:"),
+                                              # fluidRow(
+                                              #   column(1, downloadButton("expression_downloadData", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
+                                              #   column(7, offset = 3, div(downloadButton("expression_downloadRscript", "R script", 
+                                              #                                            style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
+                                              #                             help_link(id = "expression_r_help")))
+                                              # )
+                                      ), #tabPanel1
+                                      tabPanel("2",
+                                               tags$b("Options:"),
+                                               fluidRow(
+                                                 column(12, primary_button("expression_replace_id", "Use different column ID"), 
+                                                        help_link(id = "replace_id_help"))
+                                                 
+                                               ),
+                                               fluidRow(
+                                                 column(12, primary_button(id = "expression_transpose","Transpose"),
+                                                        help_link(id = "transpose_help"))
+                                               ),
+                                               primary_button("expression_evaluate_filters", "Apply filters"),
+                                               help_link(id = "evaluate_filters_help"),
+                                               tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
+                                               tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
+                                               tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
+                                               fluidRow(
                                                  #column(2, primary_button(id = "previewExpr", label = "Update")),
                                                  column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
                                                  column(1, offset = 5, tertiary_button(id = "resetExpr", label = "Reset"))
-                                               ),
-                                               hr(),
+                                               )
+                                      ), #tabPanel2
+                                      tabPanel("3",
                                                radioButtons("expression_fileType", "File type:", 
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
@@ -464,42 +517,42 @@ ui <- fluidPage(
                                                  column(7, offset = 3, div(downloadButton("expression_downloadRscript", "R script", 
                                                                                           style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                                                            help_link(id = "expression_r_help")))
-                                                )
-                                             ),
-                                             mainPanel(
-                                               tabsetPanel(
-                                                 tabPanel("Assay data",
-                                                          fluidRow(
-                                                            column(1, secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
-                                                            column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
-                                                          ),
-                                                          bsAlert("alpha_alert"),
-                                                          withSpinner(dataTableOutput("exprPreview"), type = 5)#,
-                                                          #primary_button("expression_evaluate_filters", label = "Evaluate filters")
-                                                          ),
-                                                 #tabPanel("Feature data",
-                                                #          #withSpinner(dataTableOutput("featureData"), type = 5),
-                                                #          primary_button("feature_evaluate_filters", label = "Evaluate filters")
-                                                #          ),
-                                                 tabPanel("Graphical summary",
-                                                          colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
-                                                          uiOutput("expr_select_binwidths"),
-                                                          #checkboxInput("expr_display_labels", "Display labels above columns?"),
-                                                          uiOutput("histograms_expression")
-                                                          )
                                                )
-                                               #fluidRow(
-                                              #   column(5, textInput("searchBox", "Search ID column:")),
-                                              #   column(1, actionButton("searchButton", label = icon("search"))),
-                                                 #bottom-aligns the search button 
-                                                 #https://stackoverflow.com/questions/28960189/bottom-align-a-button-in-r-shiny
-                                               #  tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
-                                               #),
-                                               #withSpinner(DTOutput("expressionData"), type = 5),
-                                             ) #main panel
-                                           ) #sidebar layout
-                                  #)
-                      #)
+                                      ) #tabPanel3
+                              ) #tabsetPanel
+                          ), #sidebarPanel
+                        mainPanel(
+                          tabsetPanel(
+                            tabPanel("Assay data",
+                                     fluidRow(
+                                       column(1, secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
+                                       column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
+                                     ),
+                                     bsAlert("alpha_alert"),
+                                     withSpinner(dataTableOutput("exprPreview"), type = 5)#,
+                                     #primary_button("expression_evaluate_filters", label = "Evaluate filters")
+                            ),
+                            #tabPanel("Feature data",
+                            #          #withSpinner(dataTableOutput("featureData"), type = 5),
+                            #          primary_button("feature_evaluate_filters", label = "Evaluate filters")
+                            #          ),
+                            tabPanel("Graphical summary",
+                                     colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
+                                     uiOutput("expr_select_binwidths"),
+                                     #checkboxInput("expr_display_labels", "Display labels above columns?"),
+                                     uiOutput("histograms_expression")
+                            )
+                          )
+                          #fluidRow(
+                          #   column(5, textInput("searchBox", "Search ID column:")),
+                          #   column(1, actionButton("searchButton", label = icon("search"))),
+                          #bottom-aligns the search button 
+                          #https://stackoverflow.com/questions/28960189/bottom-align-a-button-in-r-shiny
+                          #  tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
+                          #),
+                          #withSpinner(DTOutput("expressionData"), type = 5),
+                        ) #main panel
+                      ) #sidebar layout
              ), # expression data tab panel
              tabPanel(title = "FAQ",
                       includeMarkdown("www/FAQ.md")
@@ -522,15 +575,15 @@ server <- function(input, output, session) {
   values <-
     reactiveValues(
       allData = NULL,
-      default_metaData = data.frame("Please enter a GSE ID"),
+      default_metaData = data.frame("Please load some clinical data"),
       metaData = NULL,
       origData = NULL,
       lastData = NULL,
-      default_expr_data = data.frame("Please download some data"),
+      default_expr_data = data.frame("Please load some assay data"),
       orig_expr = NULL,
       expr_data = NULL,
       expr_to_display = NULL,
-      default_ft_data = data.frame("Please download some data"),
+      default_ft_data = data.frame("Please load some assay data"),
       orig_feature = NULL,
       last_feature = NULL,
       feature_data = NULL,
@@ -639,41 +692,110 @@ server <- function(input, output, session) {
       closeAlert(session, "fileError")
       values$errorState <- FALSE
       
-      values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session), 
-                              message = "Downloading data")
-      if (!is.null(values$allData)) {
-        closeAlert(session, "fileError")
-        values$errorState <- FALSE
-        
-        platforms <- sapply(values$allData, annotation)
+      platforms <- get_platforms(input$geoID, session)
+      if (!is.null(platforms)) {
         platform_links <- list()
-        for (i in 1:length(unname(platforms))) {
-          #platform_description <- if (platforms[[i]] %in% platform_list$Accession)
-          platform_description <- if (any(str_detect(platform_list$Accession, platforms[[i]])))
-            platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
-          platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
-                                       platforms[[i]]), icon("external-link"), 
+        for (i in 1:length(platforms)) {
+          id <- str_remove(platforms[i], "GSE\\d+-")
+          id <- str_remove(id, "_series_matrix.txt.gz")
+          platform_description <- if (any(str_detect(platform_list$Accession, id)))
+            platform_list$description[which(platform_list$Accession == id)] else ""
+          platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", id), 
+                                       id), icon("external-link"), 
                                      em(platform_description))
-        } 
+        }
         
         if (length(platforms) > 0) {
           showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
                                              choiceNames = platform_links, 
-                                             choiceValues = names(platforms)), 
+                                             choiceValues = platforms), 
                                 footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
           if (length(platforms) == 1) {
             click("usePlatform")
           }
         }
-      } else {
-        values$errorState <- TRUE
       }
+      
+      #values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session), 
+      #                               message = "Downloading data")
+      #if (!is.null(values$allData)) {
+      #  closeAlert(session, "fileError")
+      #  values$errorState <- FALSE
+      #  
+      #  platforms <- sapply(values$allData, annotation)
+      #  platform_links <- list()
+      #  for (i in 1:length(unname(platforms))) {
+      #    #platform_description <- if (platforms[[i]] %in% platform_list$Accession)
+      #    platform_description <- if (any(str_detect(platform_list$Accession, platforms[[i]])))
+      #      platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
+      #    platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
+      #                                 platforms[[i]]), icon("external-link"), 
+      #                               em(platform_description))
+      #  } 
+      #  
+      #  if (length(platforms) > 0) {
+      #    showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+      #                                       choiceNames = platform_links, 
+      #                                       choiceValues = names(platforms)), 
+      #                          footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
+      #    if (length(platforms) == 1) {
+      #      click("usePlatform")
+      #    }
+      #  }
+      #} else {
+      #  values$errorState <- TRUE
+      #}
     }
   })
+  
+  #observeEvent(input$download_data_evaluate, {
+  #  if (is.null(input$geoID) || input$geoID == "") {
+  #    values$errorState <- TRUE
+  #    createAlert(session, "alert", "inputError", title = "Error",
+  #                content = "Please specify a GSE ID.", append = FALSE)
+  #  }
+  #  else {
+  #    closeAlert(session, "inputError")
+  #    closeAlert(session, "fileError")
+  #    values$errorState <- FALSE
+  #    
+  #    values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session), 
+  #                            message = "Downloading data")
+  #    if (!is.null(values$allData)) {
+  #      closeAlert(session, "fileError")
+  #      values$errorState <- FALSE
+  #      
+  #      platforms <- sapply(values$allData, annotation)
+  #      platform_links <- list()
+  #      for (i in 1:length(unname(platforms))) {
+  #        #platform_description <- if (platforms[[i]] %in% platform_list$Accession)
+  #        platform_description <- if (any(str_detect(platform_list$Accession, platforms[[i]])))
+  #          platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
+  #        platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
+  #                                     platforms[[i]]), icon("external-link"), 
+  #                                   em(platform_description))
+  #      } 
+  #      
+  #      if (length(platforms) > 0) {
+  #        showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+  #                                           choiceNames = platform_links, 
+  #                                           choiceValues = names(platforms)), 
+  #                              footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
+  #        if (length(platforms) == 1) {
+  #          click("usePlatform")
+  #        }
+  #      }
+  #    } else {
+  #      values$errorState <- TRUE
+  #    }
+  #  }
+  #})
   
   observeEvent(input$usePlatform, {
     
     removeModal()
+    
+    values$allData <- downloadClinical(input$geoID, input$download_data_filter, input$platformIndex, session = session)
     
     #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
     values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
@@ -695,6 +817,31 @@ server <- function(input, output, session) {
     #extracted_data <- NULL
     values$origData <- values$metaData
   })
+  
+  #observeEvent(input$usePlatform, {
+  #  
+  #  removeModal()
+  #  
+  #  #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
+  #  values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
+  #  
+  #  #values$metaData <- extracted_data[["metaData"]]
+  #  
+  #  #WRITING COMMANDS TO R SCRIPT
+  #  values$oFile <- "source('geocurateFunctions_User.R')"
+  #  values$oFile <- saveLines(commentify("download metaData"), values$oFile)
+  #  values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
+  #  values$oFile <- saveLines(paste0("toFilter <- ", format_string(input$download_data_filter)), values$oFile)
+  #  #for (i in 1:length(input$download_data_filter)) {
+  #  #  values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", format_string(input$download_data_filter[i])), values$oFile)
+  #  #}
+  #  values$oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$oFile)
+  #  values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
+  #  downloadChunkLen <- length(values$oFile)
+  #  
+  #  #extracted_data <- NULL
+  #  values$origData <- values$metaData
+  #})
   
   output$dataset <- DT::renderDT({
     if (!is.null(values$metaData)) {
@@ -1351,13 +1498,26 @@ server <- function(input, output, session) {
   output$nav_7_ui <- renderUI({
     fluidRow(
       column(1, tertiary_button('nav_7_to_6_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_7_to_expression_button', 'Next'))
+      column(2, offset = 7, secondary_button('nav_7_to_8_button', 'Next'))
     )
   })
   observeEvent(input$nav_7_to_6_button, {
     updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
   })
-  observeEvent(input$nav_7_to_expression_button, {
+  observeEvent(input$nav_7_to_8_button, {
+    updateTabsetPanel(session, 'clinical_side_panel', selected = '8')
+  })
+  #8
+  output$nav_8_ui <- renderUI({
+    fluidRow(
+      column(1, tertiary_button('nav_8_to_7_button', 'Back')),
+      column(2, offset = 4, secondary_button('nav_8_to_expression_button', 'Next - Process assay data'))
+    )
+  })
+  observeEvent(input$nav_8_to_7_button, {
+    updateTabsetPanel(session, 'clinical_side_panel', selected = '7')
+  })
+  observeEvent(input$nav_8_to_expression_button, {
     updateTabsetPanel(session, 'top_level', selected = 'Assay data')
   })
   
@@ -1538,17 +1698,21 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$feature_next_cols, {
-    values$feature_to_display <- advance_columns_view(values$feature_data, 
-                                      start = colnames(values$feature_to_display)[ncol(values$feature_to_display)], 
-                                      forward_distance = 4, 
-                                      previous_view = values$feature_to_display)
+    if (!is.null(values$feature_data)) {
+      values$feature_to_display <- advance_columns_view(values$feature_data, 
+                                                        start = colnames(values$feature_to_display)[ncol(values$feature_to_display)], 
+                                                        forward_distance = 4, 
+                                                        previous_view = values$feature_to_display)
+    }
   })
   
   observeEvent(input$feature_prev_cols, {
-    values$feature_to_display <- retract_columns_view(values$feature_data, 
-                                                      last_column = colnames(values$feature_to_display)[2], 
-                                                      backward_distance = 4, 
-                                                      previous_view = values$feature_to_display)
+    if (!is.null(values$feature_data)) {
+      values$feature_to_display <- retract_columns_view(values$feature_data, 
+                                                        last_column = colnames(values$feature_to_display)[2], 
+                                                        backward_distance = 4, 
+                                                        previous_view = values$feature_to_display)
+    }
   })
   
   observeEvent(input$expression_evaluate_id, {
@@ -1877,17 +2041,21 @@ server <- function(input, output, session) {
   # main panel expression data ----------------------------------------------
   
   observeEvent(input$expression_next_cols, {
-    values$expr_to_display <- advance_columns_view(values$expr_data, 
-                                      start = colnames(values$expr_to_display)[ncol(values$expr_to_display)], 
-                                      forward_distance = 5, 
-                                      previous_view = values$expr_to_display)
+    if (!is.null(values$expr_data)) {
+      values$expr_to_display <- advance_columns_view(values$expr_data, 
+                                                     start = colnames(values$expr_to_display)[ncol(values$expr_to_display)], 
+                                                     forward_distance = 5, 
+                                                     previous_view = values$expr_to_display)
+    }
   })
   
   observeEvent(input$expression_prev_cols, {
-    values$expr_to_display <- retract_columns_view(values$expr_data, 
-                                                   last_column = colnames(values$expr_to_display)[2], 
-                                                   backward_distance = 5, 
-                                                   previous_view = values$expr_to_display)
+    if (!is.null(values$expr_data)) {
+      values$expr_to_display <- retract_columns_view(values$expr_data, 
+                                                     last_column = colnames(values$expr_to_display)[2], 
+                                                     backward_distance = 5, 
+                                                     previous_view = values$expr_to_display)
+    }
   })
   
   output$exprPreview <- DT::renderDT({

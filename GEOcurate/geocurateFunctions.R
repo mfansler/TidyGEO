@@ -62,9 +62,83 @@ loadRdsFromDropbox <- function(geoID) {
   return(NULL)
 }
 
-downloadClinical <- function(geoID, toFilter, session = NULL) {
+getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(), 
+                    GSElimits = NULL, GSEMatrix = TRUE, AnnotGPL = FALSE, getGPL = TRUE, 
+                    parseCharacteristics = TRUE, platform = NULL) 
+{
+  con <- NULL
+  if (!is.null(GSElimits)) {
+    if (length(GSElimits) != 2) {
+      stop("GSElimits should be an integer vector of length 2, like (1,10) to include GSMs 1 through 10")
+    }
+  }
+  if (is.null(GEO) & is.null(filename)) {
+    stop("You must supply either a filename of a GEO file or a GEO accession")
+  }
+  if (is.null(filename)) {
+    GEO <- toupper(GEO)
+    geotype <- toupper(substr(GEO, 1, 3))
+    if (GSEMatrix & geotype == "GSE") {
+      return(getAndParseGSEMatrices(GEO, destdir, AnnotGPL = AnnotGPL, 
+                                    getGPL = getGPL, parseCharacteristics = parseCharacteristics, platform = platform))
+    }
+    filename <- getGEOfile(GEO, destdir = destdir, AnnotGPL = AnnotGPL)
+  }
+  ret <- parseGEO(filename, GSElimits, destdir, AnnotGPL = AnnotGPL, 
+                  getGPL = getGPL)
+  return(ret)
+}
+getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE, 
+                                    parseCharacteristics = TRUE, platform = NULL) 
+{
+  GEO <- toupper(GEO)
+  stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+  if (is.null(platform)) {
+    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
+    b = getDirListing(sprintf(gdsurl, stub, GEO))
+    platform <- b[1]
+  }
+  destfile = file.path(destdir, platform)
+  if (file.exists(destfile)) {
+    message(sprintf("Using locally cached version: %s", 
+                    destfile))
+  }
+  else {
+    download.file(sprintf("https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/%s", 
+                          stub, GEO, platform), destfile = destfile, mode = "wb", 
+                  method = getOption("download.file.method.GEOquery"))
+  }
+  return(GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
+                        AnnotGPL = AnnotGPL, getGPL = getGPL)$eset)
+}
+
+get_platforms <- function(geoID, session = NULL) {
+  platforms <- NULL
+  status <- tryCatch({
+    GEO <- toupper(geoID)
+    stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
+    #browser()
+    platforms = GEOquery:::getDirListing(sprintf(gdsurl, stub, GEO))
+    "pass"
+  }, error = function(e) {
+    if (str_detect(paste0(e), "open\\.connection.*HTTP error 404.")) {
+      return("File not found. Please enter a valid ID.")
+    } else {
+      return(paste(e))
+    }
+  })
+  if (status != "pass" && !is.null(session)) {
+    createAlert(session, "alert", "fileError", title = "Error",
+                content = unlist(status), append = FALSE)
+  }
+  return(platforms)
+}
+
+downloadClinical <- function(geoID, toFilter, platform, session = NULL) {
   
-  expressionSet <- loadRdsFromDropbox(geoID)
+  #expressionSet <- loadRdsFromDropbox(geoID)
+  expressionSet <- NULL
   
   if (is.null(expressionSet)) {
     status <- tryCatch({
@@ -72,8 +146,9 @@ downloadClinical <- function(geoID, toFilter, session = NULL) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
-      expressionSet <- getGEO(geoID)
-      saveDataRDS(expressionSet, paste0(geoID, ".rds"))
+      #browser()
+      expressionSet <- getGEO(geoID, platform = platform)
+      #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
     }, error = function(e){
         if (grepl("open\\.connection", paste0(e))) {
@@ -88,9 +163,17 @@ downloadClinical <- function(geoID, toFilter, session = NULL) {
       }
     )
     if (status != "pass" && !is.null(session)) {
+      title <- "Error"
+      content <- unlist(status)
       createAlert(session, "alert", "fileError", title = "Error",
                   content = unlist(status), append = FALSE)
+    } else {
+      title <- "Success!"
+      content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
+      to see the data."
     }
+    createAlert(session, "alert", "fileError", title = title,
+                content = content, append = FALSE)
   }
   
   return(expressionSet)
@@ -98,8 +181,32 @@ downloadClinical <- function(geoID, toFilter, session = NULL) {
 
 process_clinical <- function(expressionSet, index, toFilter, session = NULL) {
   
-  expressionSet <- expressionSet[[index]]
+  incProgress(message = "Extracting data")
+  metaData <- pData(expressionSet)
+  if (nrow(metaData) == 1) {
+    metaData <- as.data.frame(t(as.matrix(apply(metaData, 2, replace_blank_cells))), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  } else {
     
+    metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  }
+  incProgress(message = "Filtering data")
+  filtered_data <- filterUninformativeCols(metaData, toFilter)
+  if (is.null(filtered_data)) {
+    if (!is.null(session)) {
+      createAlert(session, "alert", "parseError", title = "No columns removed",
+                  content = "The specified column filters would have removed all the columns.")
+    }
+  } else {
+    metaData <- filtered_data
+  }
+  
+  return(metaData)
+}
+
+process_clinical2 <- function(expressionSet, index, toFilter, session = NULL) {
+  
+  expressionSet <- expressionSet[[index]]
+  
   incProgress(message = "Extracting data")
   metaData <- pData(expressionSet)
   if (nrow(metaData) == 1) {
@@ -123,8 +230,6 @@ process_clinical <- function(expressionSet, index, toFilter, session = NULL) {
 }
 
 process_expression <- function(expressionSet, index, session = NULL) {
-  
-  expressionSet <- expressionSet[[index]]
     
   incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
