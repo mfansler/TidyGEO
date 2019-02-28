@@ -216,7 +216,7 @@ ui <- fluidPage(
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest. You may either use preset filters that will detect commonly-dropped
                                                 columns, or select specific columns to keep."),
-                                              radioButtons(inputId = "radio_buttons", label = div("Name", help_button("Help")),
+                                              radioButtons(inputId = "radio_buttons", label = div("Please select an option:", help_button("Help")),
                                                            choices = c("Use preset filters" = "preset_filters",
                                                                        "Select columns by column name" = "column_filters")),
                                               conditionalPanel(condition = "input.radio_buttons == 'preset_filters'",
@@ -421,6 +421,7 @@ ui <- fluidPage(
                             ),
                             tabPanel("Graphical Summary",
                                      colorSelectorInput("clinical_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
+                                     uiOutput("choose_variable_to_view"),
                                      sliderInput("clinical_binwidths", "Width of bars (for numeric):", min = 0, max = 60, value = 30),
                                      uiOutput("plots")
                             )
@@ -618,7 +619,8 @@ server <- function(input, output, session) {
       clinical_plot_to_save = NULL,
       expr_plot_to_save = NULL,
       expression_disable_btns = FALSE,
-      expression_warning_state = FALSE
+      expression_warning_state = FALSE,
+      display_barwidth_option = FALSE
     )
   
   get_series_information <- function() {
@@ -795,10 +797,12 @@ server <- function(input, output, session) {
     
     removeModal()
     
-    values$allData <- downloadClinical(input$geoID, input$download_data_filter, input$platformIndex, session = session)
+    values$allData <- withProgress(
+      downloadClinical(input$geoID, input$download_data_filter, input$platformIndex, session = session), 
+      message = "Downloading series data from GEO")
     
     #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
-    values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
+    #values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
     
     #values$metaData <- extracted_data[["metaData"]]
     
@@ -816,6 +820,10 @@ server <- function(input, output, session) {
     
     #extracted_data <- NULL
     values$origData <- values$metaData
+  })
+  
+  observeEvent(input$load_clinical, {
+    values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
   })
   
   #observeEvent(input$usePlatform, {
@@ -846,7 +854,17 @@ server <- function(input, output, session) {
   output$dataset <- DT::renderDT({
     if (!is.null(values$metaData)) {
       closeAlert(session, "fileError")
-      datatable(values$metaData, rownames = TRUE)
+      datatable(values$metaData, rownames = TRUE, options = list(
+        columnDefs = list(list(
+        targets = "_all",
+        ##Makes it so that the table will only display the first 50 chars.
+        ##See https://rstudio.github.io/DT/options.html
+        render = JS(
+          "function(data, type, row, meta) {",
+          "return type === 'display' && typeof data === 'string' && data.length > 50 ?",
+          "'<span title=\"' + data + '\">' + data.substr(0, 50) + '...</span>' : data;",
+          "}")
+      ))))
     }
     else {
       datatable(values$default_metaData, rownames = FALSE, colnames = "NO DATA")
@@ -857,6 +875,12 @@ server <- function(input, output, session) {
   
   
   #output$metaSummary <- renderText({printVarsSummary(values$metaData)})
+  
+  output$choose_variable_to_view <- renderUI({
+    choices <- c(0, 1:length(colnames(values$metaData)))
+    names(choices) <- c("(view all)", colnames(values$metaData))
+    selectInput("variable_to_view", label = "Choose a variable to view:", choices = choices)
+  })
   
   if (FALSE) {
   # Create the list of plot names
@@ -875,20 +899,43 @@ server <- function(input, output, session) {
     if (!is.null(values$metaData)) {
       plot_output_list <- lapply(1:ncol(values$metaData), function(i) {
         #if (!grepl("evalSame", colnames(values$metaData)[i])) {
-        plotname <- make.names(colnames(values$metaData)[i])
-        div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "clinical_plot"))
+        if (is_all_unique(values$metaData[,i])) {
+          div(hr(), HTML(
+            paste0("<b>", colnames(values$metaData)[i], "</b> consists of all unique values.")
+          ), hr())
+        } else if (is_all_identical(values$metaData[,i])) {
+          div(hr(), HTML(
+            paste0("<b>", colnames(values$metaData)[i], "</b> consists of all the same value.")
+          ), hr())
+        } else {
+          plotname <- make.names(colnames(values$metaData)[i])
+          div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "clinical_plot"))
+        }
         #}
-      })   
-      do.call(tagList, plot_output_list)
+      })
+      if (!is.null(input$variable_to_view)) {
+        if (as.numeric(input$variable_to_view) == 0) {
+          do.call(tagList, plot_output_list)
+        } else {
+          #print(plot_output_list[5][[1]])
+          plot_output_list[as.numeric(input$variable_to_view)][[1]]
+        }
+      }
     }
   })
   # Create the actual plots associated with the plot names
   observe({
     if (!is.null(values$metaData)) {
       lapply(1:ncol(values$metaData), function(i){
-        output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlotly({
-          suppressWarnings(create_plot(as.character(values$metaData[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(values$metaData)[i], isAllNum(values$metaData[i])))
-        })
+        if (!is_all_unique(values$metaData[,i]) && !is_all_identical(values$metaData[,i])) {
+          is_all_numeric <- isAllNum(values$metaData[i])
+          if (is_all_numeric) {
+            values$display_barwidth_option <- TRUE
+          }
+          output[[ make.names(colnames(values$metaData)[i]) ]] <- renderPlotly({
+            suppressWarnings(create_plot(as.character(values$metaData[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(values$metaData)[i], isAllNum(values$metaData[i])))
+          })
+        }
       })
       #browser()
     }

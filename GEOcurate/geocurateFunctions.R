@@ -75,6 +75,7 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
   if (is.null(GEO) & is.null(filename)) {
     stop("You must supply either a filename of a GEO file or a GEO accession")
   }
+  incProgress()
   if (is.null(filename)) {
     GEO <- toupper(GEO)
     geotype <- toupper(substr(GEO, 1, 3))
@@ -98,6 +99,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
     b = getDirListing(sprintf(gdsurl, stub, GEO))
     platform <- b[1]
   }
+  incProgress()
   destfile = file.path(destdir, platform)
   if (file.exists(destfile)) {
     message(sprintf("Using locally cached version: %s", 
@@ -108,6 +110,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
                           stub, GEO, platform), destfile = destfile, mode = "wb", 
                   method = getOption("download.file.method.GEOquery"))
   }
+  incProgress()
   return(GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
                         AnnotGPL = AnnotGPL, getGPL = getGPL)$eset)
 }
@@ -147,6 +150,7 @@ downloadClinical <- function(geoID, toFilter, platform, session = NULL) {
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
       #browser()
+      incProgress()
       expressionSet <- getGEO(geoID, platform = platform)
       #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
@@ -162,6 +166,7 @@ downloadClinical <- function(geoID, toFilter, platform, session = NULL) {
         }
       }
     )
+    incProgress()
     if (status != "pass" && !is.null(session)) {
       title <- "Error"
       content <- unlist(status)
@@ -327,6 +332,11 @@ isAllNum <- function(metaData) {
 is_all_unique <- function(my_list) {
   vals <- unique(my_list[which(!is.na(my_list))])
   return(length(vals) == length(my_list))
+}
+
+is_all_identical <- function(my_list) {
+  vals <- unique(my_list[which(!is.na(my_list))])
+  return(length(vals) == 1)
 }
 
 printVarsSummary <- function(metaData) {

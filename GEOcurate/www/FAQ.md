@@ -32,3 +32,7 @@ FAQ
 #### Substituting values
 #### Excluding variables
 
+#### Bugs and suggestions
+* If you find an error or would like to make a suggestion, please [open an issue on the GitHub page.](https://github.com/bell-avery/geocurate/issues)
+* TODO: enable issues on TidyGEO page from srp33
+
