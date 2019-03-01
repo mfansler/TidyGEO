@@ -168,13 +168,14 @@ ui <- fluidPage(
                           ),
                           selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                                         help_link(id = "download_help")), choices = NULL),
-                          uiOutput("gse_link"),
+                          #uiOutput("gse_link"),
                           primary_button(id = "download_data_evaluate", label = "Import"),
                           hr(), uiOutput("start_clinical_nav_ui")
                         ),
                         mainPanel(
                           h4("Series information"),
                           bsAlert("alert"),
+                          uiOutput("series_information_description"),
                           htmlOutput("series_information")
                         )
                       )),
@@ -189,15 +190,19 @@ ui <- fluidPage(
                                       
                                       # download data -----------------------------------------------------------
                                       
-                                      tabPanel("1",
-                                               h4("Formatting the clinical data"),
-                                               p("Some information about clinical data and its uses.
-                                                 Direct user to load clinical data and preview it with the
-                                                 two tabs on the right."),
-                                               primary_button("load_clinical", "Load Clinical Data", 
-                                                              icon = help_button("Please make sure to load the series first.")),
-                                               hr(), uiOutput("nav_1_ui")
-                                      ),
+                                      #tabPanel("1",
+                                      #         h4("Formatting the clinical data"),
+                                      #         p("Some information about clinical data and its uses.
+                                      #           Direct user to load clinical data and preview it with the
+                                      #           two tabs on the right."),
+                                      #         primary_button("load_clinical", "Load Clinical Data", 
+                                      #                        icon = help_button("Please make sure to load the series first.")),
+                                      #         hr(), uiOutput("nav_1_ui")
+                                      #),
+
+                                      # exclude vars ------------------------------------------------------------
+
+                                      
                                       tabPanel("2",
                                                #h4("Importing the data"),
                                                #div("Welcome to TidyGEO! This application allows you to reformat data
@@ -297,24 +302,6 @@ ui <- fluidPage(
                                                ),
                                                primary_button(id = "reformat_columns", label = "Reformat columns"),
                                                hr(), uiOutput("nav_3_ui")
-                                      ),
-                                      
-                                      # exclude columns ---------------------------------------------------------
-                                      
-                                      
-                                      #specify which vars to keep
-                                      tabPanel("4"#,
-                                               #h4("Selecting informative columns"),
-                                               #p("It can be helpful to filter out unneeded columns for better storage capacity and improved
-                                              #   human readability. Here, you can choose which columns are most important for you to keep
-                                              #   and drop the rest."),
-                                              # div(tags$b("Which columns would you like to keep?"),
-                                              #            help_button("This will drop unselected columns from the table.")),
-                                              # checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
-                                              #                                                     help_button("Drops the <i>selected</i> columns from the table."))),
-                                              # uiOutput("display_vars_to_keep"),
-                                              # primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
-                                              # hr(), uiOutput("nav_3_ui")
                                       ),
                                       
                                       # rename columns ----------------------------------------------------------
@@ -438,8 +425,8 @@ ui <- fluidPage(
                         sidebarPanel(
                           tabsetPanel(id = "expression_side_panel",
                                       tabPanel("1",
-                                               h4("Formatting the expression data"),
-                                               p("This portion of the application can reformat the expression (assay) data
+                                               h4("Formatting the assay data"),
+                                               p("This portion of the application can reformat the assay data
                                            associated with the clinical data for the specified GEO ID. If you have already
                                            loaded clinical data, please start by clicking the button below."),
                                                primary_button("download_expr", "Load Assay Data", 
@@ -624,7 +611,11 @@ server <- function(input, output, session) {
     )
   
   get_series_information <- function() {
-    geo_url <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID)
+    if (!is.null(input$geoID) && input$geoID != "") {
+      geo_url <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID)
+    } else {
+      geo_url <- "https://www.ncbi.nlm.nih.gov/gds/"
+    }
     return(tags$iframe(src = geo_url, style = "width:100%;",
                        frameborder = "0",
                        id = "iframe", 
@@ -632,7 +623,6 @@ server <- function(input, output, session) {
   }
   
   output$series_information <- renderUI({
-    if (!is.null(input$geoID) && input$geoID != "")
     get_series_information()
   })
   
@@ -676,10 +666,23 @@ server <- function(input, output, session) {
     print(paste("Populating dropdown", end_time - start_time))
   })
   
-  output$gse_link <- renderUI({
-    if (!is.null(input$geoID) && !is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
-      div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
-               paste("View", input$geoID, "dataset on GEO")), icon("external-link"))
+  #output$gse_link <- renderUI({
+  #  if (!is.null(input$geoID) && !is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
+  #    div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
+  #             paste("View", input$geoID, "dataset on GEO")), icon("external-link"))
+  #  }
+  #})
+  
+  output$series_information_description <- renderUI({
+    if (!is.null(input$geoID)) {
+      div(
+        p(
+          paste0("Here is the webpage for ", input$geoID, ", where you can preview some information about the
+          dataset.")), "To view this webpage in a separate browser, click ",
+        a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
+          " here."), icon("external-link"))
+    } else {
+      p("Please enter a GEO ID to preview some information about the dataset here.")
     }
   })
   
@@ -800,6 +803,8 @@ server <- function(input, output, session) {
     values$allData <- withProgress(
       downloadClinical(input$geoID, input$download_data_filter, input$platformIndex, session = session), 
       message = "Downloading series data from GEO")
+    values$metaData <- NULL
+    values$exprData <- NULL
     
     #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
     #values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
@@ -822,8 +827,14 @@ server <- function(input, output, session) {
     values$origData <- values$metaData
   })
   
-  observeEvent(input$load_clinical, {
-    values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
+  #observeEvent(input$load_clinical, {
+  #  values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
+  #})
+  observe({
+    input$top_level
+    if (input$top_level == "Clinical data" && is.null(values$metaData)) {
+      values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
+    }
   })
   
   #observeEvent(input$usePlatform, {
@@ -1660,15 +1671,13 @@ server <- function(input, output, session) {
 
   # expression data sidebar -------------------------------------------------
    
-  observeEvent(input$download_expr, {
-    
-    if (!is.null(values$allData)) {
-      
-      #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
+  observeEvent(input$top_level, {
+    input$top_level
+    if (!is.null(values$allData) && input$top_level == "Assay data" && is.null(values$exprData)) {
       extracted_data <- withProgress(process_expression(values$allData, input$platformIndex, session))
       
       values$expression_warning_state <- extracted_data[["status"]]
-    
+      
       values$orig_expr <- extracted_data[["expressionData"]]
       values$last_expr <- values$orig_expr
       values$expr_data <- values$orig_expr
@@ -1677,9 +1686,9 @@ server <- function(input, output, session) {
         values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
       } else {
         values$expr_to_display <- advance_columns_view(values$expr_data, 
-                                               start = 1, 
-                                               forward_distance = 5, 
-                                               previous_view = values$expr_data)
+                                                       start = 1, 
+                                                       forward_distance = 5, 
+                                                       previous_view = values$expr_data)
         values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
         values$last_feature <- values$orig_feature
         values$feature_data <- values$orig_feature
@@ -1701,6 +1710,48 @@ server <- function(input, output, session) {
       rm(extracted_data)
     }
   })
+  
+  #observeEvent(input$download_expr, {
+  #  
+  #  if (!is.null(values$allData)) {
+  #    
+  #    #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
+  #    extracted_data <- withProgress(process_expression(values$allData, input$platformIndex, session))
+  #    
+  #    values$expression_warning_state <- extracted_data[["status"]]
+  #  
+  #    values$orig_expr <- extracted_data[["expressionData"]]
+  #    values$last_expr <- values$orig_expr
+  #    values$expr_data <- values$orig_expr
+  #    if (is.null(values$expr_data)) {
+  #      values$default_expr_data <- data.frame(paste0("No assay data available for ", input$geoID))
+  #      values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
+  #    } else {
+  #      values$expr_to_display <- advance_columns_view(values$expr_data, 
+  #                                             start = 1, 
+  #                                             forward_distance = 5, 
+  #                                             previous_view = values$expr_data)
+  #      values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
+  #      values$last_feature <- values$orig_feature
+  #      values$feature_data <- values$orig_feature
+  #      values$feature_to_display <- advance_columns_view(values$feature_data, 
+  #                                                        start = 1, 
+  #                                                        forward_distance = 4, 
+  #                                                        previous_view = values$feature_data)
+  #      
+  #      values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
+  #      values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
+  #      values$expression_oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)),
+  #                                             "allData <- downloadExpression(geoID, dataSetIndex)",
+  #                                             "expressionData <- allData[['expressionData']]",
+  #                                             "featureData <- allData[['featureData']]"), 
+  #                                           values$expression_oFile)
+  #      
+  #      values$expression_downloadChunkLen <- length(values$expression_oFile)
+  #    }
+  #    rm(extracted_data)
+  #  }
+  #})
   
   # feature data modal -------------------------------------------------
   
