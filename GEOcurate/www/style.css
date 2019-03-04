@@ -1,0 +1,19 @@
+.right_align{
+  display: block;
+  float:right;
+  margin-right: 9px;
+}
+.center_align{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 3px;
+  margin-bottom: 9px;
+}
+.shiny-notification {
+           height: 50px;
+           width: 800px;
+           position:fixed;
+           top: calc(50% - 50px);;
+           left: calc(50% - 400px);;
+           }

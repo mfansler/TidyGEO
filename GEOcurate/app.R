@@ -70,18 +70,18 @@ create_image_grid <- function(images, image_names) {
 # colored buttons of different types --------------------------------------
 
 
-primary_button <- function(id, label, icon = NULL) {
-  shiny::actionButton(id, div(label, icon), 
-               style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")
+primary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) {
+  shiny::actionButton(id, div(label, icon), width = width, 
+               style = "color: #fff; background-color: #337ab7; border-color: #2e6da4", class = class)
 }
 
-secondary_button <- function(id, label, icon = NULL) {
-  shiny::actionButton(id, div(label, icon), 
-               style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f")
+secondary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) {
+  shiny::actionButton(id, div(label, icon), width = width, 
+               style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f", class = class)
 }
 
-tertiary_button <- function(id, label, icon = NULL, class = NULL) {
-  shiny::actionButton(id, div(label, icon), 
+tertiary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) {
+  shiny::actionButton(id, div(label, icon), width = width, 
                style = "color: #fff; background-color: #6baed6; border-color: #6baed6", class = class)
 }
 
@@ -130,16 +130,17 @@ options(shiny.autoreload = F)
 ui <- fluidPage(
   #centers loading bars in the middle of the page
   tags$head(
-    tags$style(
-      HTML(".shiny-notification {
-           height: 50px;
-           width: 800px;
-           position:fixed;
-           top: calc(50% - 50px);;
-           left: calc(50% - 400px);;
-           }
-           ")
-      )#,
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css")#,
+    #tags$style(
+    #  HTML(".shiny-notification {
+    #       height: 50px;
+    #       width: 800px;
+    #       position:fixed;
+    #       top: calc(50% - 50px);;
+    #       left: calc(50% - 400px);;
+    #       }
+    #       ")
+    #  )#,
     #For finding which plot the user wants to save
     #https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
     #tags$script(HTML("$(document).on('click', '.clinical_plot', function () {
@@ -475,27 +476,38 @@ ui <- fluidPage(
                                       tabPanel("2",
                                                tags$b("Options:"),
                                                fluidRow(
-                                                 column(12, primary_button("expression_replace_id", "Use different column ID"), 
+                                                 column(12, 
+                                                        primary_button("expression_replace_id", 
+                                                                       label = div(icon("exchange-alt"),
+                                                                                   "Use different column ID"),
+                                                                       width = '200px', class = "center_align"), 
                                                         help_link(id = "replace_id_help"))
                                                  
                                                ),
                                                fluidRow(
-                                                 column(12, primary_button(id = "expression_transpose","Transpose"),
+                                                 column(12, 
+                                                        primary_button(id = "expression_transpose",
+                                                                       label = div(icon("retweet"),
+                                                                                   "Transpose"),
+                                                                       width = '200px', class = "center_align"),
                                                         help_link(id = "transpose_help"))
                                                ),
-                                               primary_button("expression_evaluate_filters", "Apply filters"),
+                                               primary_button("expression_evaluate_filters", 
+                                                              label = div(icon("filter"),
+                                                                          "Apply filters"),
+                                                              width = '200px', class = "center_align"),
                                                help_link(id = "evaluate_filters_help"),
-                                               tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
-                                               tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
-                                               tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
+                                               #tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
+                                               #tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
+                                               #tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
                                                fluidRow(
                                                  #column(2, primary_button(id = "previewExpr", label = "Update")),
                                                  column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
-                                                 column(1, offset = 5, tertiary_button(id = "resetExpr", label = "Reset"))
+                                                 column(1, offset = 8, tertiary_button(id = "resetExpr", label = "Reset"))
                                                )
                                       ), #tabPanel2
                                       tabPanel("3",
-                                               radioButtons("expression_fileType", "File type:", 
+                                               radioButtons("expression_fileType", div("File type:", help_link("expression_files_help")), 
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
                                                uiOutput("expression_nameFile"),
@@ -512,9 +524,9 @@ ui <- fluidPage(
                         mainPanel(
                           tabsetPanel(
                             tabPanel("Assay data",
-                                     fluidRow(
-                                       column(1, secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
-                                       column(1, offset = 8, secondary_button(id = "expression_next_cols", label = div("Next columns", icon("arrow-right"))))
+                                     div(
+                                       secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns")),
+                                       secondary_button(id = "expression_next_cols", label = "Next columns", icon = icon("arrow-right"), class = "right_align")
                                      ),
                                      bsAlert("alpha_alert"),
                                      withSpinner(dataTableOutput("exprPreview"), type = 5)#,
@@ -832,7 +844,7 @@ server <- function(input, output, session) {
   #})
   observe({
     input$top_level
-    if (input$top_level == "Clinical data" && is.null(values$metaData)) {
+    if (input$top_level == "Clinical data" && is.null(values$metaData) && !is.null(values$allData)) {
       values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
     }
   })
@@ -1466,8 +1478,8 @@ server <- function(input, output, session) {
   # navigation --------------------------------------------------------------
   
   output$start_clinical_nav_ui <- renderUI({
-    fluidRow(
-      column(2, offset = 5, secondary_button('nav_choose_to_clinical_button', 'Next - Process clinical data'))
+    div(
+      secondary_button('nav_choose_to_clinical_button', 'Next - Process clinical data', class = "right_align")
     )
   })
   observeEvent(input$nav_choose_to_clinical_button, {
@@ -1475,9 +1487,9 @@ server <- function(input, output, session) {
   })
   #1  
   output$nav_1_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_clinical_to_choose_button', 'Back')),
-      column(2, offset = 8, secondary_button('nav_1_to_2_button', 'Next'))
+    div(
+      tertiary_button('nav_clinical_to_choose_button', 'Back'),
+      secondary_button('nav_1_to_2_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_clinical_to_choose_button, {
@@ -1488,9 +1500,9 @@ server <- function(input, output, session) {
   })
   #2  
   output$nav_2_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_2_to_1_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_2_to_3_button', 'Next'))
+    div(
+      tertiary_button('nav_2_to_1_button', 'Back'),
+      secondary_button('nav_2_to_3_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_2_to_1_button, {
@@ -1501,9 +1513,9 @@ server <- function(input, output, session) {
   }) 
   #3  
   output$nav_3_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_3_to_2_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_3_to_4_button', 'Next'))
+    div(
+      tertiary_button('nav_3_to_2_button', 'Back'),
+      secondary_button('nav_3_to_4_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_3_to_2_button, {
@@ -1514,9 +1526,9 @@ server <- function(input, output, session) {
   })
   #4  
   output$nav_4_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_4_to_3_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_4_to_5_button', 'Next'))
+    div(
+      tertiary_button('nav_4_to_3_button', 'Back'),
+      secondary_button('nav_4_to_5_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_4_to_3_button, {
@@ -1528,9 +1540,9 @@ server <- function(input, output, session) {
   })
   #5
   output$nav_5_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_5_to_4_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_5_to_6_button', 'Next'))
+    div(
+      tertiary_button('nav_5_to_4_button', 'Back'),
+      secondary_button('nav_5_to_6_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_5_to_4_button, {
@@ -1541,9 +1553,9 @@ server <- function(input, output, session) {
   })
   #6
   output$nav_6_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_6_to_5_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_6_to_7_button', 'Next'))
+    div(
+      tertiary_button('nav_6_to_5_button', 'Back'),
+      offset = 7, secondary_button('nav_6_to_7_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_6_to_5_button, {
@@ -1554,9 +1566,9 @@ server <- function(input, output, session) {
   })
   #7
   output$nav_7_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_7_to_6_button', 'Back')),
-      column(2, offset = 7, secondary_button('nav_7_to_8_button', 'Next'))
+    div(
+      tertiary_button('nav_7_to_6_button', 'Back'),
+      secondary_button('nav_7_to_8_button', 'Next', class = "right_align")
     )
   })
   observeEvent(input$nav_7_to_6_button, {
@@ -1567,9 +1579,9 @@ server <- function(input, output, session) {
   })
   #8
   output$nav_8_ui <- renderUI({
-    fluidRow(
-      column(1, tertiary_button('nav_8_to_7_button', 'Back')),
-      column(2, offset = 4, secondary_button('nav_8_to_expression_button', 'Next - Process assay data'))
+    div(
+      tertiary_button('nav_8_to_7_button', 'Back'),
+      secondary_button('nav_8_to_expression_button', 'Next - Process assay data', class = "right_align")
     )
   })
   observeEvent(input$nav_8_to_7_button, {
@@ -1657,6 +1669,10 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$clinical_files_help, {
+    help_modal("www/File_Types_Documentation.md")
+  })
+  
+  observeEvent(input$expression_files_help, {
     help_modal("www/File_Types_Documentation.md")
   })
   
