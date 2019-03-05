@@ -1,3 +1,5 @@
+//https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
+
 $(document).ready(function() {
   $(document).on('click', '.clinical_plot', function () {
     Shiny.onInputChange('last_btn_clinical',this.id);

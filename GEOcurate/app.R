@@ -187,53 +187,28 @@ ui <- fluidPage(
                         sidebarPanel(
                           useShinyjs(),
                           tabsetPanel(id = "clinical_side_panel",
-                                      
-                                      
-                                      # download data -----------------------------------------------------------
-                                      
-                                      #tabPanel("1",
-                                      #         h4("Formatting the clinical data"),
-                                      #         p("Some information about clinical data and its uses.
-                                      #           Direct user to load clinical data and preview it with the
-                                      #           two tabs on the right."),
-                                      #         primary_button("load_clinical", "Load Clinical Data", 
-                                      #                        icon = help_button("Please make sure to load the series first.")),
-                                      #         hr(), uiOutput("nav_1_ui")
-                                      #),
 
                                       # exclude vars ------------------------------------------------------------
 
                                       
-                                      tabPanel("2",
-                                               #h4("Importing the data"),
-                                               #div("Welcome to TidyGEO! This application allows you to reformat data
-                                              #     from ",
-                                              #   a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/", "Gene Expression Omnibus,"),
-                                              #   " which can then be used to answer research questions. Once you have found a",
-                                              #   a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "series of interest,"),
-                                              #     "complete the instructions below."
-                                              #   ),
-                                              # selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                              #                                          help_link(id = "download_help")), choices = NULL),
-                                              # uiOutput("gse_link"),
-                                              # 
-                                              h4("Selecting informative columns"),
-                                              p("It can be helpful to filter out unneeded columns for better storage capacity and improved
+                                      tabPanel("1",
+                                               h4("Selecting informative columns"),
+                                               p("It can be helpful to filter out unneeded columns for better storage capacity and improved
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest. You may either use preset filters that will detect commonly-dropped
                                                 columns, or select specific columns to keep."),
-                                              radioButtons(inputId = "radio_buttons", label = div("Please select an option:", help_button("Help")),
-                                                           choices = c("Use preset filters" = "preset_filters",
-                                                                       "Select columns by column name" = "column_filters")),
-                                              conditionalPanel(condition = "input.radio_buttons == 'preset_filters'",
-                                                               checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
-                                                                                                                                help_button("Removes columns right after downloading, according to the following specifications.")),
-                                                                                  choiceNames = list("Is the same", 
-                                                                                                     "Is unique",
-                                                                                                     "Contains a date", 
-                                                                                                     "Is a web address"),
-                                                                                  choiceValues = list("same_vals", "all_diff", "dates", "url"))
-                                              ),
+                                               radioButtons(inputId = "radio_buttons", label = div("Please select an option:", help_button("Help")),
+                                                            choices = c("Use preset filters" = "preset_filters",
+                                                                        "Select columns by column name" = "column_filters")),
+                                               conditionalPanel(condition = "input.radio_buttons == 'preset_filters'",
+                                                                checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
+                                                                                                                                 help_button("Removes columns right after downloading, according to the following specifications.")),
+                                                                                   choiceNames = list("Is the same", 
+                                                                                                      "Is unique",
+                                                                                                      "Contains a date", 
+                                                                                                      "Is a web address"),
+                                                                                   choiceValues = list("same_vals", "all_diff", "dates", "url"))
+                                               ),
                                               conditionalPanel(condition = "input.radio_buttons == 'column_filters'",
                                                                div(tags$b("Choose columns to keep:"),
                                                                    help_button("This will drop unselected columns from the table.")),
@@ -242,10 +217,7 @@ ui <- fluidPage(
                                                                uiOutput("display_vars_to_keep")
                                               ),
                                               primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
-                                              #hr(), uiOutput("nav_3_ui"),
-                                              # br(),
-                                               #primary_button(id = "download_data_evaluate", label = "Import"),
-                                               hr(), uiOutput("nav_2_ui")
+                                              hr(), uiOutput("nav_1_ui")
                                       ),
                                       
                                       
@@ -253,7 +225,7 @@ ui <- fluidPage(
                                       
                                       
                                       #specify which columns to split apart, and the delimiter
-                                      tabPanel("3",
+                                      tabPanel("2",
                                                h4("Formatting the data"),
                                                p("Sometimes columns contain multiple values in them. This makes it so that the values
                                                  cannot be analyzed separately. If you see any columns in your data that contain multiple values, 
@@ -261,19 +233,6 @@ ui <- fluidPage(
                                                checkboxInput(inputId = "to_split", label = div("Choose columns with key-value pairs separated by a delimiter",
                                                                                                help_link(id = "split_help")
                                                                                                )),
-                                               #div(actionLink(inputId = "to_split", label = icon("caret-square-o-down")), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help")),                                                
-                                               #uiOutput("to_split_toggle"),
-                                               #prettyToggle(inputId = "to_split", 
-                                              #              label_on = div("Columns contain key-value pairs",
-                                              #                             help_link(id = "split_help")),
-                                              #              label_off = div("Columns contain key-value pairs",
-                                              #                              help_link(id = "split_help")),
-                                              #              icon_on = icon("caret-up"),
-                                              #              icon_off = icon("caret-down"),
-                                              #              status_on = "info",
-                                              #              status_off = "primary",
-                                              #              shape = "curve",
-                                              #              animation = "rotate"),
                                                conditionalPanel(condition = "input.to_split == true",
                                                                 uiOutput("choose_cols_to_split"),
                                                                 checkboxInput(inputId = "split_all_but", 
@@ -283,17 +242,6 @@ ui <- fluidPage(
                                                ),
                                                checkboxInput(inputId = "to_divide", label = div("Choose columns with multiple values in one column",
                                                                                                 help_link(id = "divide_help"))),
-                                              #prettyToggle(inputId = "to_divide", 
-                                              #             label_on = div("Columns contain multiple values",
-                                              #                            help_link(id = "divide_help")),
-                                              #             label_off = div("Columns contain multiple values",
-                                              #                             help_link(id = "divide_help")),
-                                              #             icon_on = icon("caret-up"),
-                                              #             icon_off = icon("caret-down"),
-                                              #v            status_on = "info",
-                                              #             status_off = "primary",
-                                              #             shape = "curve",
-                                              #             animation = "rotate"),
                                                conditionalPanel(condition = "input.to_divide == true",
                                                                 uiOutput("choose_cols_to_divide"),
                                                                 checkboxInput(inputId = "divide_all_but", 
@@ -302,30 +250,29 @@ ui <- fluidPage(
                                                                 textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                primary_button(id = "reformat_columns", label = "Reformat columns"),
-                                               hr(), uiOutput("nav_3_ui")
+                                               hr(), uiOutput("nav_2_ui")
                                       ),
                                       
                                       # rename columns ----------------------------------------------------------
                                       
                                       
                                       #renaming any columns
-                                      tabPanel("5",
+                                      tabPanel("3",
                                                h4("Renaming columns"),
                                                p("In order to integrate the data with other data sources or for humans to be able to understand the data,
                                                  it may be helpful to replace the existing column names with more accurate/descriptive ones.
                                                  Here, you can give any column a new name."),
                                                uiOutput("display_cols_to_rename"),
-                                               #rHandsontableOutput("newName"),
                                                textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
                                                primary_button(id = "rename", label = "Rename column"),
-                                               hr(), uiOutput("nav_5_ui")
+                                               hr(), uiOutput("nav_3_ui")
                                       ),
                                       
                                       # substitute --------------------------------------------------------------
                                       
                                       
                                       #specify which values to substitute for other values/which values should be treated as NA
-                                      tabPanel("6",
+                                      tabPanel("4",
                                                h4("Substituting values"),
                                                p("In order to achieve the uniformity required to combine datasets, it may be helpful to substitute 
                                                  some of the values in the data for other values. Here, you can identify values you would like to replace
@@ -343,13 +290,13 @@ ui <- fluidPage(
                                                                                                  help_link(id = "regex_help"))))
                                                ,
                                                primary_button("evaluate_subs", "Substitute"),
-                                               hr(), uiOutput("nav_6_ui")
+                                               hr(), uiOutput("nav_4_ui")
                                       ),
                                       
                                       # exclude variables -------------------------------------------------------
                                       
                                       
-                                      tabPanel("7",
+                                      tabPanel("5",
                                                h4("Filtering samples"),
                                                p("You may want to remove some of the values in a column, for example, if you have missing (NA) values.
                                                   Here, you can specify which values you would like to remove.
@@ -363,13 +310,13 @@ ui <- fluidPage(
                                                conditionalPanel(condition = "input.exclude_isrange == false",
                                                                 uiOutput("display_vals_to_exclude")),
                                                primary_button("clinical_evaluate_exclude", "Exclude"),
-                                               hr(), uiOutput("nav_7_ui")
+                                               hr(), uiOutput("nav_5_ui")
                                       ),
 
                                       # save clinical data ------------------------------------------------------
 
                                       
-                                      tabPanel("8",
+                                      tabPanel("6",
                                                h4("Saving the data"),
                                                p("Here is where you can download the clinical data to your computer. 
                                                  You can also download the R script that produced this data. The R script allows you
@@ -385,7 +332,7 @@ ui <- fluidPage(
                                                                                       style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                                                            help_link(id = "clinical_r_help")))
                                                ),
-                                               hr(), uiOutput("nav_8_ui")
+                                               hr(), uiOutput("nav_6_ui")
                                       )
                           )
                         ),
@@ -900,9 +847,11 @@ server <- function(input, output, session) {
   #output$metaSummary <- renderText({printVarsSummary(values$metaData)})
   
   output$choose_variable_to_view <- renderUI({
-    choices <- c(0, 1:length(colnames(values$metaData)))
-    names(choices) <- c("(view all)", colnames(values$metaData))
-    selectInput("variable_to_view", label = "Choose a variable to view:", choices = choices)
+    if (!is.null(values$metaData)) {
+      choices <- c(0, 1:length(colnames(values$metaData)))
+      names(choices) <- c("(view all)", colnames(values$metaData))
+      selectInput("variable_to_view", label = "Choose a variable to view:", choices = choices)
+    }
   })
   
   if (FALSE) {
@@ -1555,39 +1504,13 @@ server <- function(input, output, session) {
   output$nav_6_ui <- renderUI({
     div(
       tertiary_button('nav_6_to_5_button', 'Back'),
-      offset = 7, secondary_button('nav_6_to_7_button', 'Next', class = "right_align")
+      secondary_button('nav_6_to_expression_button', 'Next - Process assay data', class = "right_align")
     )
   })
   observeEvent(input$nav_6_to_5_button, {
     updateTabsetPanel(session, 'clinical_side_panel', selected = '5')
   })
-  observeEvent(input$nav_6_to_7_button, {
-    updateTabsetPanel(session, 'clinical_side_panel', selected = '7')
-  })
-  #7
-  output$nav_7_ui <- renderUI({
-    div(
-      tertiary_button('nav_7_to_6_button', 'Back'),
-      secondary_button('nav_7_to_8_button', 'Next', class = "right_align")
-    )
-  })
-  observeEvent(input$nav_7_to_6_button, {
-    updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
-  })
-  observeEvent(input$nav_7_to_8_button, {
-    updateTabsetPanel(session, 'clinical_side_panel', selected = '8')
-  })
-  #8
-  output$nav_8_ui <- renderUI({
-    div(
-      tertiary_button('nav_8_to_7_button', 'Back'),
-      secondary_button('nav_8_to_expression_button', 'Next - Process assay data', class = "right_align")
-    )
-  })
-  observeEvent(input$nav_8_to_7_button, {
-    updateTabsetPanel(session, 'clinical_side_panel', selected = '7')
-  })
-  observeEvent(input$nav_8_to_expression_button, {
+  observeEvent(input$nav_6_to_expression_button, {
     updateTabsetPanel(session, 'top_level', selected = 'Assay data')
   })
   
