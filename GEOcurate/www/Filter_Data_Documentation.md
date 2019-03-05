@@ -13,4 +13,4 @@ Upon loading the clinical data, you may notice some columns that are not useful 
     
 You may also choose to select columns by name that are useful to you.
 
-**Click on the animations below to see an example of dropping columns from GSE68849:**
+

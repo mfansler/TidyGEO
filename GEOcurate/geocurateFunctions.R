@@ -138,7 +138,7 @@ get_platforms <- function(geoID, session = NULL) {
   return(platforms)
 }
 
-downloadClinical <- function(geoID, toFilter, platform, session = NULL) {
+downloadClinical <- function(geoID, platform, session = NULL) {
   
   #expressionSet <- loadRdsFromDropbox(geoID)
   expressionSet <- NULL
@@ -184,44 +184,17 @@ downloadClinical <- function(geoID, toFilter, platform, session = NULL) {
   return(expressionSet)
 }
 
-process_clinical <- function(expressionSet, index, toFilter, session = NULL) {
+process_clinical <- function(expressionSet, index, session = NULL) {
   
   incProgress(message = "Extracting data")
   metaData <- pData(expressionSet)
   if (nrow(metaData) == 1) {
     metaData <- as.data.frame(t(as.matrix(apply(metaData, 2, replace_blank_cells))), row.names = rownames(metaData), stringsAsFactors = FALSE)
   } else {
-    
     metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
   }
   incProgress(message = "Filtering data")
-  filtered_data <- filterUninformativeCols(metaData, toFilter)
-  if (is.null(filtered_data)) {
-    if (!is.null(session)) {
-      createAlert(session, "alert", "parseError", title = "No columns removed",
-                  content = "The specified column filters would have removed all the columns.")
-    }
-  } else {
-    metaData <- filtered_data
-  }
-  
-  return(metaData)
-}
-
-process_clinical2 <- function(expressionSet, index, toFilter, session = NULL) {
-  
-  expressionSet <- expressionSet[[index]]
-  
-  incProgress(message = "Extracting data")
-  metaData <- pData(expressionSet)
-  if (nrow(metaData) == 1) {
-    metaData <- as.data.frame(t(as.matrix(apply(metaData, 2, replace_blank_cells))), row.names = rownames(metaData), stringsAsFactors = FALSE)
-  } else {
-    
-    metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
-  }
-  incProgress(message = "Filtering data")
-  filtered_data <- filterUninformativeCols(metaData, toFilter)
+  filtered_data <- filterUninformativeCols(metaData)
   if (is.null(filtered_data)) {
     if (!is.null(session)) {
       createAlert(session, "alert", "parseError", title = "No columns removed",
@@ -718,7 +691,7 @@ findExprLabelColumns <- function(ftData) {
 }
 
 filterExpressionData <- function(data, shinyFilterSpecs) {
-  
+  browser()
   for (i in 1:length(shinyFilterSpecs)) {
     if (shinyFilterSpecs[[i]] != "") {
       col_index <- which(colnames(data) == names(shinyFilterSpecs)[i])
@@ -734,7 +707,7 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
         searchStrs <- as.numeric(str_split(shinyFilterSpecs[[i]], " ... ")[[1]])
         data <- data[data[,col_index] >= searchStrs[1] & data[,col_index] <= searchStrs[2],]
       } else {
-        data <- data[grepl(shinyFilterSpecs[[i]], data[,col_index], ignore.case = TRUE),]
+        data <- data[grepl(shinyFilterSpecs[[i]], unlist(data[,col_index]), ignore.case = TRUE),]
       }
     }
   }

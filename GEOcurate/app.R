@@ -27,11 +27,6 @@ help_button <- function(message = "content", placement = "right") {
 
 help_link <- function(id) {
   actionLink(inputId = id, label = icon("question-circle"))
-  #clickable icon that can be added to any text
-  #upon click, the icon shows a modal specific to that icon
-  #the modal contains any instructions and images associated with that icon
-  #showModal(modalDialog(includeMarkdown(help_file), 
-  #                      footer = modalButton()))
 }
 
 help_modal <- function(help_file, images_id = NULL) {
@@ -42,11 +37,6 @@ help_modal <- function(help_file, images_id = NULL) {
         condition = !is.null(images_id),
         uiOutput(images_id)
       ),
-      #tags$script(HTML(
-      #  "$(document).on('click', '.clickimg', function() {",
-      #  "  Shiny.onInputChange('clickimg', $(this).data('value'));",
-      #  "});"
-      #)),
       footer = modalButton("Close"),
       size = "l"
       )
@@ -130,28 +120,7 @@ options(shiny.autoreload = F)
 ui <- fluidPage(
   #centers loading bars in the middle of the page
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css")#,
-    #tags$style(
-    #  HTML(".shiny-notification {
-    #       height: 50px;
-    #       width: 800px;
-    #       position:fixed;
-    #       top: calc(50% - 50px);;
-    #       left: calc(50% - 400px);;
-    #       }
-    #       ")
-    #  )#,
-    #For finding which plot the user wants to save
-    #https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
-    #tags$script(HTML("$(document).on('click', '.clinical_plot', function () {
-    #                            Shiny.onInputChange('last_btn_clinical',this.id);
-    #                         });"),
-    #            HTML("$(document).on('click', '.expression_plot', function () {
-    #                            Shiny.onInputChange('last_btn_expression',this.id);
-    #                         });"),
-    #            HTML("$(document).addCustomMessageHandler('resetValue', function(variableName) {
-    #                            Shiny.onInputChange(variableName, null);
-    #                        });"))
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
     ),
     includeScript("reactive_preferences.js"),
   navbarPage(title = "TidyGEO", id = "top_level",
@@ -197,12 +166,12 @@ ui <- fluidPage(
                                                  human readability. Here, you can choose which columns are most important for you to keep
                                                  and drop the rest. You may either use preset filters that will detect commonly-dropped
                                                 columns, or select specific columns to keep."),
-                                               radioButtons(inputId = "radio_buttons", label = div("Please select an option:", help_button("Help")),
+                                               radioButtons(inputId = "filter_option", label = div("Please select an option:", help_link("filter_help")),
                                                             choices = c("Use preset filters" = "preset_filters",
                                                                         "Select columns by column name" = "column_filters")),
-                                               conditionalPanel(condition = "input.radio_buttons == 'preset_filters'",
-                                                                checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...", 
-                                                                                                                                 help_button("Removes columns right after downloading, according to the following specifications.")),
+                                               conditionalPanel(condition = "input.filter_option == 'preset_filters'",
+                                                                checkboxGroupInput(inputId = "download_data_filter", label = div("Remove columns in which every value...",
+                                                                                                                                 help_button("Drops columns that match the selected criteria from the table.")),
                                                                                    choiceNames = list("Is the same", 
                                                                                                       "Is unique",
                                                                                                       "Contains a date", 
@@ -342,7 +311,9 @@ ui <- fluidPage(
                         
                         mainPanel(
                           tabsetPanel(
-                            tabPanel(title = "Clinical Data", 
+                            tabPanel(title = "Clinical Data",
+                                     h4("Clinical Data"),
+                                     p("A description of the biological samples and protocols to which they were subjected."),
                                      br(), 
                                      fluidRow(
                                        column(2, tertiary_button("reset", div("Reset", help_button("Reset the dataset to its original downloaded state.", placement = "bottom")))),
@@ -375,59 +346,15 @@ ui <- fluidPage(
                                       tabPanel("1",
                                                h4("Formatting the assay data"),
                                                p("This portion of the application can reformat the assay data
-                                           associated with the clinical data for the specified GEO ID. If you have already
-                                           loaded clinical data, please start by clicking the button below."),
-                                               primary_button("download_expr", "Load Assay Data", 
-                                                              icon = help_button("Please make sure to download some clinical data first.")),
-                                               hr()#,
-                                               #uiOutput("exprLabels"),
-                                               #uiOutput("summarizeOptions"),
-                                               ##uiOutput("transposeCheckbox"),
-                                               
-                                               #checkboxInput(inputId = "transposeExpr", 
-                                               #               label = div("Transpose the data", 
-                                               #                           help_button("Values in the ID column become the column names and column names become the ID column."))),
-                                               #tags$b("Options:"),
-                                               #fluidRow(
-                                              #   column(12, primary_button("expression_replace_id", "Use different column ID"), 
-                                              #          help_link(id = "replace_id_help"))
-                                              #   
-                                              # ),
-                                              # fluidRow(
-                                              #   column(12, primary_button(id = "expression_transpose","Transpose"),
-                                              #          help_link(id = "transpose_help"))
-                                              # ),
-                                              # primary_button("expression_evaluate_filters", "Apply filters"),
-                                              # help_link(id = "evaluate_filters_help"),
-                                              # tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
-                                              # tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
-                                              # tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
-                                              # fluidRow(
-                                              #   #column(2, primary_button(id = "previewExpr", label = "Update")),
-                                              #   column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
-                                              #   column(1, offset = 5, tertiary_button(id = "resetExpr", label = "Reset"))
-                                              # ),
-                                              # hr(),
-                                              # radioButtons("expression_fileType", "File type:", 
-                                              #              choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                                              #                          "JSON" = "JSON", "Excel" = "xlsx")),
-                                              # uiOutput("expression_nameFile"),
-                                              # tags$b("Download:"),
-                                              # fluidRow(
-                                              #   column(1, downloadButton("expression_downloadData", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
-                                              #   column(7, offset = 3, div(downloadButton("expression_downloadRscript", "R script", 
-                                              #                                            style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
-                                              #                             help_link(id = "expression_r_help")))
-                                              # )
-                                      ), #tabPanel1
-                                      tabPanel("2",
+                                           associated with the specified GEO ID. If you have already
+                                           loaded the series data, please start by clicking the buttons below."),
                                                tags$b("Options:"),
                                                fluidRow(
                                                  column(12, 
                                                         primary_button("expression_replace_id", 
                                                                        label = div(icon("exchange-alt"),
                                                                                    "Use different column ID"),
-                                                                       width = '200px', class = "center_align"), 
+                                                                       width = '200px', class = "indent"), 
                                                         help_link(id = "replace_id_help"))
                                                  
                                                ),
@@ -436,24 +363,26 @@ ui <- fluidPage(
                                                         primary_button(id = "expression_transpose",
                                                                        label = div(icon("retweet"),
                                                                                    "Transpose"),
-                                                                       width = '200px', class = "center_align"),
+                                                                       width = '200px', class = "indent"),
                                                         help_link(id = "transpose_help"))
                                                ),
                                                primary_button("expression_evaluate_filters", 
                                                               label = div(icon("filter"),
                                                                           "Apply filters"),
-                                                              width = '200px', class = "center_align"),
+                                                              width = '200px', class = "indent"),
                                                help_link(id = "evaluate_filters_help"),
-                                               #tags$style(type = 'text/css', '#expression_replace_id { margin-top: 3px; }'),
-                                               #tags$style(type = 'text/css', '#expression_transpose { margin-top: 3px; }'),
-                                               #tags$style(type = 'text/css', '#expression_evaluate_filters { margin-top: 3px; margin-bottom: 9px; }'),
-                                               fluidRow(
+                                               div(
                                                  #column(2, primary_button(id = "previewExpr", label = "Update")),
-                                                 column(1, tertiary_button(id = "undoEvalExpr", label = "Undo")),
-                                                 column(1, offset = 8, tertiary_button(id = "resetExpr", label = "Reset"))
-                                               )
-                                      ), #tabPanel2
-                                      tabPanel("3",
+                                                 tertiary_button(id = "undoEvalExpr", label = "Undo"),
+                                                 tertiary_button(id = "resetExpr", label = "Reset", class = "right_align")
+                                               ),
+                                               hr(), uiOutput("expression_nav_1_ui")
+                                      ), #tabPanel1
+                                      tabPanel("2",
+                                               h4("Saving the data"),
+                                               p("Here is where you can download the clinical data to your computer. 
+                                                 You can also download the R script that produced this data. The R script allows you
+                                                 to replicate the steps you took so you can see how the data was obtained."),
                                                radioButtons("expression_fileType", div("File type:", help_link("expression_files_help")), 
                                                             choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
                                                                         "JSON" = "JSON", "Excel" = "xlsx")),
@@ -464,13 +393,17 @@ ui <- fluidPage(
                                                  column(7, offset = 3, div(downloadButton("expression_downloadRscript", "R script", 
                                                                                           style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                                                            help_link(id = "expression_r_help")))
-                                               )
-                                      ) #tabPanel3
+                                               ),
+                                               hr(), uiOutput("expression_nav_2_ui")
+                                      ) #tabPanel2
                               ) #tabsetPanel
                           ), #sidebarPanel
                         mainPanel(
                           tabsetPanel(
                             tabPanel("Assay data",
+                                     h4("Assay Data"),
+                                     p("The abundance measurement of each element derived from each sample."),
+                                     br(),
                                      div(
                                        secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns")),
                                        secondary_button(id = "expression_next_cols", label = "Next columns", icon = icon("arrow-right"), class = "right_align")
@@ -479,10 +412,6 @@ ui <- fluidPage(
                                      withSpinner(dataTableOutput("exprPreview"), type = 5)#,
                                      #primary_button("expression_evaluate_filters", label = "Evaluate filters")
                             ),
-                            #tabPanel("Feature data",
-                            #          #withSpinner(dataTableOutput("featureData"), type = 5),
-                            #          primary_button("feature_evaluate_filters", label = "Evaluate filters")
-                            #          ),
                             tabPanel("Graphical summary",
                                      colorSelectorInput("expr_plot_color", "Color of bars:", choices = c(brewer.pal(11, "RdYlBu"), "#808080", "#000000"), ncol = 13),
                                      uiOutput("expr_select_binwidths"),
@@ -490,14 +419,6 @@ ui <- fluidPage(
                                      uiOutput("histograms_expression")
                             )
                           )
-                          #fluidRow(
-                          #   column(5, textInput("searchBox", "Search ID column:")),
-                          #   column(1, actionButton("searchButton", label = icon("search"))),
-                          #bottom-aligns the search button 
-                          #https://stackoverflow.com/questions/28960189/bottom-align-a-button-in-r-shiny
-                          #  tags$style(type='text/css', "#searchButton { margin-top: 25px;}")
-                          #),
-                          #withSpinner(DTOutput("expressionData"), type = 5),
                         ) #main panel
                       ) #sidebar layout
              ), # expression data tab panel
@@ -625,13 +546,6 @@ server <- function(input, output, session) {
     print(paste("Populating dropdown", end_time - start_time))
   })
   
-  #output$gse_link <- renderUI({
-  #  if (!is.null(input$geoID) && !is.na(input$geoID) && !identical(input$geoID, character(0)) && input$geoID != "") { 
-  #    div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
-  #             paste("View", input$geoID, "dataset on GEO")), icon("external-link"))
-  #  }
-  #})
-  
   output$series_information_description <- renderUI({
     if (!is.null(input$geoID)) {
       div(
@@ -679,96 +593,18 @@ server <- function(input, output, session) {
           }
         }
       }
-      
-      #values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session), 
-      #                               message = "Downloading data")
-      #if (!is.null(values$allData)) {
-      #  closeAlert(session, "fileError")
-      #  values$errorState <- FALSE
-      #  
-      #  platforms <- sapply(values$allData, annotation)
-      #  platform_links <- list()
-      #  for (i in 1:length(unname(platforms))) {
-      #    #platform_description <- if (platforms[[i]] %in% platform_list$Accession)
-      #    platform_description <- if (any(str_detect(platform_list$Accession, platforms[[i]])))
-      #      platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
-      #    platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
-      #                                 platforms[[i]]), icon("external-link"), 
-      #                               em(platform_description))
-      #  } 
-      #  
-      #  if (length(platforms) > 0) {
-      #    showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-      #                                       choiceNames = platform_links, 
-      #                                       choiceValues = names(platforms)), 
-      #                          footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
-      #    if (length(platforms) == 1) {
-      #      click("usePlatform")
-      #    }
-      #  }
-      #} else {
-      #  values$errorState <- TRUE
-      #}
     }
   })
-  
-  #observeEvent(input$download_data_evaluate, {
-  #  if (is.null(input$geoID) || input$geoID == "") {
-  #    values$errorState <- TRUE
-  #    createAlert(session, "alert", "inputError", title = "Error",
-  #                content = "Please specify a GSE ID.", append = FALSE)
-  #  }
-  #  else {
-  #    closeAlert(session, "inputError")
-  #    closeAlert(session, "fileError")
-  #    values$errorState <- FALSE
-  #    
-  #    values$allData <- withProgress(downloadClinical(input$geoID, input$download_data_filter, session = session), 
-  #                            message = "Downloading data")
-  #    if (!is.null(values$allData)) {
-  #      closeAlert(session, "fileError")
-  #      values$errorState <- FALSE
-  #      
-  #      platforms <- sapply(values$allData, annotation)
-  #      platform_links <- list()
-  #      for (i in 1:length(unname(platforms))) {
-  #        #platform_description <- if (platforms[[i]] %in% platform_list$Accession)
-  #        platform_description <- if (any(str_detect(platform_list$Accession, platforms[[i]])))
-  #          platform_list$description[which(platform_list$Accession == platforms[[i]])] else ""
-  #        platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", platforms[[i]]), 
-  #                                     platforms[[i]]), icon("external-link"), 
-  #                                   em(platform_description))
-  #      } 
-  #      
-  #      if (length(platforms) > 0) {
-  #        showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-  #                                           choiceNames = platform_links, 
-  #                                           choiceValues = names(platforms)), 
-  #                              footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
-  #        if (length(platforms) == 1) {
-  #          click("usePlatform")
-  #        }
-  #      }
-  #    } else {
-  #      values$errorState <- TRUE
-  #    }
-  #  }
-  #})
   
   observeEvent(input$usePlatform, {
     
     removeModal()
     
     values$allData <- withProgress(
-      downloadClinical(input$geoID, input$download_data_filter, input$platformIndex, session = session), 
+      downloadClinical(input$geoID, input$platformIndex, session = session), 
       message = "Downloading series data from GEO")
     values$metaData <- NULL
     values$exprData <- NULL
-    
-    #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
-    #values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
-    
-    #values$metaData <- extracted_data[["metaData"]]
     
     #WRITING COMMANDS TO R SCRIPT
     values$oFile <- "source('geocurateFunctions_User.R')"
@@ -792,34 +628,9 @@ server <- function(input, output, session) {
   observe({
     input$top_level
     if (input$top_level == "Clinical data" && is.null(values$metaData) && !is.null(values$allData)) {
-      values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
+      values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, session))
     }
   })
-  
-  #observeEvent(input$usePlatform, {
-  #  
-  #  removeModal()
-  #  
-  #  #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, FALSE))
-  #  values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, input$download_data_filter, session))
-  #  
-  #  #values$metaData <- extracted_data[["metaData"]]
-  #  
-  #  #WRITING COMMANDS TO R SCRIPT
-  #  values$oFile <- "source('geocurateFunctions_User.R')"
-  #  values$oFile <- saveLines(commentify("download metaData"), values$oFile)
-  #  values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
-  #  values$oFile <- saveLines(paste0("toFilter <- ", format_string(input$download_data_filter)), values$oFile)
-  #  #for (i in 1:length(input$download_data_filter)) {
-  #  #  values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", format_string(input$download_data_filter[i])), values$oFile)
-  #  #}
-  #  values$oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$oFile)
-  #  values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
-  #  downloadChunkLen <- length(values$oFile)
-  #  
-  #  #extracted_data <- NULL
-  #  values$origData <- values$metaData
-  #})
   
   output$dataset <- DT::renderDT({
     if (!is.null(values$metaData)) {
@@ -939,68 +750,13 @@ server <- function(input, output, session) {
                                           input$clinical_binwidths, 
                                           colnames(values$metaData)[values$clinical_plot_to_save], 
                                           isAllNum(values$metaData[values$clinical_plot_to_save]))
-      if (FALSE) {
-      if (isAllNum(values$metaData[values$clinical_plot_to_save])) {
-        plot_to_save <- ggplot(data = data.frame(measured = as.numeric(as.character(plotInput()$total_data[[values$clinical_plot_to_save]]))), aes(x = measured)) +
-          geom_histogram(binwidth = input$clinical_binwidths, fill = input$clinical_plot_color) +
-          labs(x = "Values",
-               y = "Frequency") +
-          ggtitle(colnames(values$metaData)[values$clinical_plot_to_save]) +
-          theme_bw(base_size = 18) +
-          theme(plot.title = element_text(hjust = 0.5))
-      }
-      else {
-        plot_to_save <- ggplot(data = as.data.frame(table(plotInput()$total_data[[values$clinical_plot_to_save]], useNA = "ifany")), aes(x = Var1, y = Freq)) +
-          geom_bar(stat = "identity", fill = input$clinical_plot_color) +
-          geom_text(aes(label = Freq), vjust = -0.3, size = 3.5) +
-          labs(x = "Values",
-               y = "Count") +
-          ggtitle(colnames(values$metaData)[values$clinical_plot_to_save]) +
-          theme_bw(base_size = 18) +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = .5),
-                plot.title = element_text(hjust = 0.5))
-      }
-      }
       
       ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, device = input$clinical_plot_filetype)
       
     }
   )
   
-  
-  # merged warning ----------------------------------------------------------
-  
-  #output$mergedWarning <- renderUI({
-  #  #if any of the values$metaData last column are false, then color yellow and print the warning message
-  #  #else, just put a grey box there or nothing at all
-  #  if (!is.null(values$metaData) && any(values$metaData[,"evalSame"] == 1)) {
-  #   wellPanel(id = "well",
-  #              tags$head(tags$style(
-  #                HTML('
-  #                     #well {
-  #                     background-color: #FFFF00;
-  #  }'))),
-  #              HTML("<p>There is more than one date in this dataset. This could indicate that this is two merged datasets.</p>"))
-  #  }
-  #})
-  
   # extract columns ---------------------------------------------------------
-  
-  
-  #observeEvent(input$to_split, {
-  #  updateCheckboxInput(session, inputId = "to_split", label = div("Contains key-value pairs separated by a delimiter",
-  #                                                                 icon("caret-up"),
-  #                                                                 help_link(id = "split_help")
-    #))
-    #
-    #updateActionButton(session, "to_split", label = icon("caret-square-o-up"))
-  #  values$to_split_selected <- if (values$to_split_selected) FALSE else TRUE
-  #})
-  
-  #output$to_split_toggle <- renderUI({
-  #  icon_type <- if (values$to_split_selected) "caret-square-o-down" else "caret-square-o-up"
-  #  div(actionLink(inputId = "to_split", label = icon(icon_type)), "Contains key-value pairs separated by a delimiter", help_link(id = "split_help"))
-  #})
   
   output$choose_cols_to_split <- renderUI({
     #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
@@ -1032,15 +788,7 @@ server <- function(input, output, session) {
     before <- length(values$oFile)
     values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
     values$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), values$oFile)
-    #values$oFile <- saveLines(paste0("cols_to_split <- NULL"), values$oFile)
-    #for (i in 1:length(input$cols_to_split)) {
-    #  values$oFile <- saveLines(paste0("cols_to_split[", i, "] <- ", format_string(input$cols_to_split[i])), values$oFile)
-    #}
     values$oFile <- saveLines(paste0("colsToDivide <- ", format_string(input$cols_to_split)), values$oFile)
-    #values$oFile <- saveLines(paste0("colsToDivide <- NULL"), values$oFile)
-    #for (i in 1:length(input$colsToDivide)) {
-    #  values$oFile <- saveLines(paste0("colsToDivide[", i, "] <- ", format_string(input$colsToDivide[i])), values$oFile)
-    #}
     values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
                                 paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
                                 paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
@@ -1068,16 +816,16 @@ server <- function(input, output, session) {
   observeEvent(input$clinical_evaluate_filters, ({
     if (!is.null(values$metaData)) {
       values$lastData <- values$metaData
-      values$metaData <- filterCols(values$metaData, input$varsToKeep, input$keep_all_but)
+      if (input$filter_option == "preset_filters") {
+        values$metaData <- filterUninformativeCols(values$metaData, input$download_data_filter)
+      } else {
+        values$metaData <- filterCols(values$metaData, input$varsToKeep, input$keep_all_but)
+      }
       
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("exclude undesired columns"), values$oFile)
       values$oFile <- saveLines(paste0("varsToKeep <- ", format_string(input$varsToKeep)), values$oFile)
-      #values$oFile <- saveLines(paste0("varsToKeep <- NULL"), values$oFile)
-      #for (i in 1:length(input$varsToKeep)) {
-      #  values$oFile <- saveLines(paste0("varsToKeep[", i, "] <- ", format_string(input$varsToKeep[i])), values$oFile)
-      #}
       values$oFile <- saveLines(c(paste0("keep_all_but <- ", format_string(input$keep_all_but)),
                                   "metaData <- filterCols(metaData, varsToKeep, keep_all_but)"), 
                                 values$oFile)
@@ -1123,7 +871,13 @@ server <- function(input, output, session) {
     if (isAllNum(values$metaData[input$colsToSub])) {
       output = tagList()
       currCol <- as.numeric(as.character(values$metaData[!is.na(values$metaData[,input$colsToSub]),input$colsToSub]))
-      output[[1]] <- sliderInput(inputId = "slideInSub", label = "Please choose a range of values (inclusive)", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
+      this_min <- min(currCol)
+      this_max <- max(currCol)
+      this_quantiles <- c(quantile(currCol)[2], quantile(currCol)[3])
+      if (this_quantiles[1] == this_quantiles[2]) {
+        this_quantiles <- c(this_min, this_max)
+      }
+      output[[1]] <- sliderInput(inputId = "slideInSub", label = "Please choose a range of values (inclusive)", min = this_min, max = this_max, value = this_quantiles)
       #output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
       output[[3]] <- tertiary_button("add_val_to_sub", "Add range to table")
       #output[[4]] <- tertiary_button("remove_val_to_sub", "Remove")
@@ -1145,11 +899,6 @@ server <- function(input, output, session) {
                 selected = values$last_selected_substitute)
   })
   
-  #observeEvent(input$colsToSub, {
-  #  values$suggestions <- if (input$colsToSub != "" && (input$colsToSub %in% colnames(values$metaData))) 
-  #    unique(as.character(values$metaData[,input$colsToSub]))
-  #})
-  
   
   values$suggestions <- reactive({ unique(as.character(values$metaData[,input$colsToSub])) })
   
@@ -1159,57 +908,9 @@ server <- function(input, output, session) {
       #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
   })
   
-  #output$display_user_subs <- renderDT({
-  #  if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) 
-  #    values$tablesList[[input$colsToSub]] else values$DFOut
-  #}, rownames = FALSE, options = list(dom = "t"))
-  
   observeEvent(input$input_subs_table, {
     values$DFIn <- hot_to_r(input$input_subs_table)
   })
-  
-  #eventReactive(input$colsToSub, {
-  #  currentCol <- input$colsToSub
-  #  if (!("To_Replace" %in% colnames(values$tablesList[[currentCol]]))) {
-  #    values$tablesList[[currentCol]] <- data.frame(To_Replace = "", stringsAsFactors = FALSE)
-  #    values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], New_Val = "")
-  #  }
-  #  values$DFOut <- values$tablesList[[currentCol]]
-  #}) 
-  
-  if (FALSE) {
-  observeEvent(input$add_val_to_sub, {
-    if (!is.null(input$colsToSub) && input$colsToSub != "") {
-      #format the table correctly according to the colsToSub selected
-      currentCol <- input$colsToSub
-      currentDF <- values$tablesList[[currentCol]]
-      if (all(currentDF["To_Replace"] == "")) {
-        values$tablesList[[currentCol]] <- data.frame(
-          To_Replace = if (input$substitute_isrange) paste("RANGE:", paste(input$slideInSub, collapse = " - ")) else values$DFIn["To_Replace"], 
-          stringsAsFactors = FALSE)
-        values$tablesList[[currentCol]] <- cbind(values$tablesList[[currentCol]], 
-                                                 New_Val = if (input$substitute_isrange) input$newRangeVal else values$DFIn["New_Val"], stringsAsFactors = F)
-      }
-      #if the values are not there, add them to the end of the table
-      else if ((values$DFIn[["To_Replace"]] %in% currentDF[["To_Replace"]]) || 
-              (paste("RANGE:", paste(input$slideInSub, collapse = " - ")) %in% currentDF[["To_Replace"]])) {
-        if (input$substitute_isrange) {
-          currentDF[which(paste("RANGE:", paste(input$slideInSub, collapse = " - ")) %in% currentDF[["To_Replace"]]),] <- 
-            c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal)
-        }
-        else {
-          currentDF[which(currentDF[["To_Replace"]] == values$DFIn[["To_Replace"]]),] <- values$DFIn[1,]
-        }
-        values$tablesList[[currentCol]] <- currentDF
-      }
-      else {
-        values$tablesList[[currentCol]] <- rbind(values$tablesList[[currentCol]], 
-                                                 if (input$substitute_isrange) c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), 
-                                                                     input$newRangeVal) else values$DFIn[1,])
-      }
-    }
-  })
-  }
   
   observeEvent(input$add_val_to_sub, {
     if (!is.null(input$colsToSub) && input$colsToSub != "") {
@@ -1221,23 +922,6 @@ server <- function(input, output, session) {
       values$DFOut <- values$DFIn
     }
   })
-  
-  #observeEvent(input$remove_val_to_sub, {
-  #  if (!is.null(input$colsToSub) && !is.null(values$tablesList[[input$colsToSub]])) {
-  #    if (!identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0)) && values$tablesList[[input$colsToSub]][,"To_Replace"] != "") {
-  #      toRemove <- 1
-  #      if (!is.null(input$hotOut_rows_selected)) {
-  #        toRemove <- input$hotOut_rows_selected
-  #      }
-  #      values$tablesList[[input$colsToSub]] <- values$tablesList[[input$colsToSub]][-toRemove,]
-  #      values$DFOut <- values$tablesList[[input$colsToSub]]
-  #    }
-  #    if (identical(values$tablesList[[input$colsToSub]][,"To_Replace"], character(0))) {
-  #      values$tablesList[[input$colsToSub]][1,] <- c("", "")
-  #      values$DFOut <- values$tablesList[[input$colsToSub]]
-  #    }
-  #  }
-  #})
   
   observeEvent(input$evaluate_subs, {
     #if (!identical(values$tablesList, list())) {
@@ -1251,18 +935,6 @@ server <- function(input, output, session) {
       values$lastData <- values$metaData
       values$metaData <- withProgress(substitute_vals(values$metaData, sub_specs, input$sub_w_regex), 
                                       message = "Substituting values")
-      
-      #WRITING COMMANDS TO R SCRIPT
-      #before <- length(values$oFile)
-      #values$oFile <- saveLines(commentify("substitute values"), values$oFile)
-      #values$oFile <- saveLines(paste0("tablesList <- NULL"), values$oFile)
-      #for (i in 1:length(values$tablesList)) {
-      #  values$oFile <- saveLines(paste0("tablesList[[", format_string(names(values$tablesList)[i]), "]] <- ",
-      #                                   "data.frame(", colnames(values$tablesList[[i]])[1], "=c(", 
-      #                                   paste(format_string(as.character(values$tablesList[[i]][,1])), collapse = ", "), "), ",
-      #                                   colnames(values$tablesList[[i]])[2], "=c(", 
-      #                                   paste(format_string(as.character(values$tablesList[[i]][,2])), collapse = ", "), "))"), values$oFile)
-      #}
       
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
@@ -1513,6 +1185,28 @@ server <- function(input, output, session) {
   observeEvent(input$nav_6_to_expression_button, {
     updateTabsetPanel(session, 'top_level', selected = 'Assay data')
   })
+  #expression 1
+  output$expression_nav_1_ui <- renderUI({
+    div(
+      tertiary_button('nav_1_to_clinical_button', 'Back'),
+      secondary_button('expression_nav_1_to_2_button', 'Next', class = 'right_align')
+    )
+  })
+  observeEvent(input$nav_1_to_clinical_button, {
+    udpateTabsetPanel(session, 'clinical_side_panel', selected = '6')
+  })
+  observeEvent(input$expression_nav_1_to_2_button, {
+    updateTabsetPanel(session, 'expression_side_panel', selected = '2')
+  })
+  #expression 2
+  output$expression_nav_2_ui <- renderUI({
+    div(
+      tertiary_button('expression_nav_2_to_1_button', 'Back')
+    )
+  })
+  observeEvent(input$expression_nav_2_to_1_button, {
+    updateTabsetPanel(session, 'expression_side_panel', selected = '1')
+  })
   
   # help modals -------------------------------------------------------------
 
@@ -1565,8 +1259,8 @@ server <- function(input, output, session) {
     help_modal("www/Download_Data_Documentation.md", "download_images")
   })
   output$download_images <- renderUI({
-    images <- c("download_example_no_filter.gif", "download_example_with_filter.gif")
-    image_names <- c("Download Without Filters", "Download With Filters")
+    images <- c("download_example.gif")
+    image_names <- c("Demo - Load Series")
     
     create_image_grid(images, image_names)
   })
@@ -1576,15 +1270,19 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$replace_id_help, {
-    help_modal("www/Different_ID_documentation.md")
+    help_modal("www/Different_ID_Documentation.md")
   })
   
   observeEvent(input$transpose_help, {
     help_modal("www/Transpose_Documentation.md")
   })
   
+  observeEvent(input$filter_help, {
+    help_modal("www/Filter_Data_Documentation.md")
+  })
+  
   observeEvent(input$evaluate_filters_help, {
-    
+    help_modal("www/Apply_Filters_Documentation.md")
   })
   
   observeEvent(input$expression_r_help, {
@@ -1649,48 +1347,6 @@ server <- function(input, output, session) {
       rm(extracted_data)
     }
   })
-  
-  #observeEvent(input$download_expr, {
-  #  
-  #  if (!is.null(values$allData)) {
-  #    
-  #    #extracted_data <- withProgress(processData(values$allData, input$platformIndex, input$download_data_filter, TRUE))
-  #    extracted_data <- withProgress(process_expression(values$allData, input$platformIndex, session))
-  #    
-  #    values$expression_warning_state <- extracted_data[["status"]]
-  #  
-  #    values$orig_expr <- extracted_data[["expressionData"]]
-  #    values$last_expr <- values$orig_expr
-  #    values$expr_data <- values$orig_expr
-  #    if (is.null(values$expr_data)) {
-  #      values$default_expr_data <- data.frame(paste0("No assay data available for ", input$geoID))
-  #      values$default_ft_data <- data.frame(paste0("No feature data available for ", input$geoID))
-  #    } else {
-  #      values$expr_to_display <- advance_columns_view(values$expr_data, 
-  #                                             start = 1, 
-  #                                             forward_distance = 5, 
-  #                                             previous_view = values$expr_data)
-  #      values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
-  #      values$last_feature <- values$orig_feature
-  #      values$feature_data <- values$orig_feature
-  #      values$feature_to_display <- advance_columns_view(values$feature_data, 
-  #                                                        start = 1, 
-  #                                                        forward_distance = 4, 
-  #                                                        previous_view = values$feature_data)
-  #      
-  #      values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
-  #      values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
-  #      values$expression_oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)),
-  #                                             "allData <- downloadExpression(geoID, dataSetIndex)",
-  #                                             "expressionData <- allData[['expressionData']]",
-  #                                             "featureData <- allData[['featureData']]"), 
-  #                                           values$expression_oFile)
-  #      
-  #      values$expression_downloadChunkLen <- length(values$expression_oFile)
-  #    }
-  #    rm(extracted_data)
-  #  }
-  #})
   
   # feature data modal -------------------------------------------------
   
@@ -1814,13 +1470,6 @@ server <- function(input, output, session) {
     }
   })
   
-  #output$transposeCheckbox <- renderUI({
-  #  textColor <- if_else(!is.null(input$colForExprLabels) && input$colForExprLabels != "" &&
-  #                         !input$colForExprLabels %in% findExprLabelColumns(values$feature_to_display) &&
-  #                         input$howToSummarize == "keep all",
-  #                       "color:gray", "color:black")
-  #})
-  
   observe({
     shinyjs::toggleState("expression_replace_id", condition = !values$expression_disable_btns)
   })
@@ -1829,17 +1478,6 @@ server <- function(input, output, session) {
     disable_transpose <- !values$expression_disable_btns & length(unique(values$expr_data$ID)) == nrow(values$expr_data)
     shinyjs::toggleState("expression_transpose", disable_transpose)
   })
-  
-  #observe({
-  #  if (!is.null(input$colForExprLabels) && 
-  #      input$colForExprLabels != "" &&
-  #     !input$colForExprLabels %in% findExprLabelColumns(values$feature_data) &&
-  #     !is.null(input$howToSummarize) &&
-  #     input$howToSummarize == "keep all") {
-  #    print(findExprLabelColumns(values$feature_data))
-  #    shinyjs::disable("transposeExpr")
-  #  }
-  #})
 
   # other expression options ------------------------------------------------
 
@@ -1903,49 +1541,6 @@ server <- function(input, output, session) {
                                          values$expression_oFile)
     values$expression_currChunkLen <- length(values$expression_oFile) - before
   })
-  
-  #observeEvent(input$viewFilters, {
-  #  print(input$exprPreview_search_columns)
-  #})
-  
-  #observeEvent(input$previewExpr, {
-  #  
-  #  if (!is.null(values$expr_data)) {
-  #    values$last_expr <- values$expr_data
-  #    
-  #    values$expr_data <- withProgress(message = "Replacing the ID column", 
-  #                                         replaceID(values$expr_data, values$feature_data, input$colForExprLabels, input$howToSummarize))
-  #    values$feature_id_col <- input$colForExprLabels
-  #    
-  #    before <- length(values$expression_oFile)
-  #    
-  #    #WRITING COMMANDS TO EXPRESSION RSCRIPT
-  #    values$expression_oFile <- saveLines(c(commentify("replace ID column"),
-  #                                           paste0("expressionData <- replaceID(expressionData, featureData, ", 
-  #                                                  format_string(input$colForExprLabels), ", ",
-  #                                                  format_string(input$howToSummarize), ")")), 
-  #                                         values$expression_oFile)
-  #    if (input$transposeExpr) {
-  #      values$expr_data <- withProgress(message = "Transposing the data", 
-  #                                           quickTranspose(values$expr_data))
-  #      
-  #      values$expression_id_col <- "colnames"
-  #      
-  #      #WRITING COMMANDS TO EXPRESSION RSCRIPT
-  #      values$expression_oFile <- saveLines(c(commentify("transpose data"), 
-  #                                             "expressionData <- quickTranspose(expressionData)"), 
-  #                                           values$expression_oFile)
-  #    }
-  #    
-  #    values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
-  #    
-  #    after <- length(values$expression_oFile)
-  #    
-  #    values$expression_currChunkLen <- after - before
-  #  }
-  #  
-  #  #updateTabsetPanel(session, "expressionPanel", selected = "2")
-  #})
   
   observeEvent(input$undoEvalExpr, {
     if (!is.null(values$expr_data)) {
@@ -2102,38 +1697,9 @@ server <- function(input, output, session) {
       datatable(values$default_expr_data, rownames = FALSE, 
                 colnames = "NO DATA", options = list(dom = "tp"))
     }
-  }) 
-  
-  
-  
-
-  
-  #observeEvent(input$feature_evaluate_filters, {
-  #  values$last_feature <- values$feature_to_display
-  #  values$last_expr <- values$expr_data
-  #  values$feature_to_display <- filterExpressionData(values$feature_to_display, input$featureData_search_columns)
-  #  values$expr_data <- find_intersection(values$expr_data, values$feature_to_display, values$expression_id_col, values$feature_id_col)
-  #  values$expr_to_display <- advance_columns_view(values$expr_data, start = 1, forward_distance = 5)
-  #  #WRITING COMMANDS TO EXPRESSION RSCRIPT
-  #  before <- length(values$expression_oFile)
-  #  values$expression_oFile <- saveLines(c(commentify("filter data"),
-  #                                         paste0("filterSpecs <- c(", paste(format_string(input$featureData_search_columns), collapse = ", "), ")"),
-  #                                         "featureData <- filterExpressionData(featureData, filterSpecs)",
-  #                                         paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
-  #                                         paste0("featureIdCol <- ", format_string(values$feature_id_col)),
-  #                                         "expressionData <- find_intersection(expressionData, featureData, expressionIdCol, featureIdCol)"), 
-  #                                       values$expression_oFile)
-  #  values$expression_currChunkLen <- length(values$expression_oFile) - before
-  #})
+  })
 
   # graphical summary -------------------------------------------------------
-  
-  #output$expression_summary_histogram <- renderPlot({
-  #  
-  #})
-  #output$expression_summary_boxplot <- renderPlot({
-  #  
-  #})
   
   output$expr_select_binwidths <- renderUI({
     if (is.null(values$expr_to_display) || !values$expression_warning_state) {
@@ -2143,14 +1709,6 @@ server <- function(input, output, session) {
     }
     sliderInput("expression_binwidths", "Width of bars (for numeric):", min = 0, max = upper_lim, value = ceiling(upper_lim / 2))
   })
-  
-  #histograms_expression_input <- reactive({
-  #  if (!is.null(values$expr_to_display)) {
-  #    n_plot <- ncol(values$expr_to_display)
-  #    total_data <- lapply(2:n_plot, function(i){values$expr_to_display[,i]})
-  #    return(list("n_plot" = n_plot, "total_data" = total_data))
-  #  }
-  #})
   
   # Create divs
   output$histograms_expression <- renderUI({
