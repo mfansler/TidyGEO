@@ -4,7 +4,7 @@ If you have R installed, this R script can act as a set of instructions to make 
 
 **Helpful links to get started:**
 
-* [Install R](https://cran.rstudio.com/) on your computer
-* [Install RStudio](https://www.rstudio.com/products/rstudio/download/#download) (an application for viewing, editing, and running R files)
-* [A beginner's guide to the R language](https://www.computerworld.com/article/2497143/business-intelligence/business-intelligence-beginner-s-guide-to-r-introduction.html)
-* [A beginner's guide to editing and executing code in RStudio](https://support.rstudio.com/hc/en-us/articles/200484448-Editing-and-Executing-Code) 
+* <a href="https://cran.rstudio.com/" target="_blank">Install R</a> on your computer
+* <a href="https://www.rstudio.com/products/rstudio/download/#download" target="_blank">Install RStudio</a> (an application for viewing, editing, and running R files)
+* <a href="https://www.computerworld.com/article/2497143/business-intelligence/business-intelligence-beginner-s-guide-to-r-introduction.html" target="_blank">A beginner's guide to the R language</a>
+* <a href="https://support.rstudio.com/hc/en-us/articles/200484448-Editing-and-Executing-Code" target="_blank">A beginner's guide to editing and executing code in RStudio</a> 

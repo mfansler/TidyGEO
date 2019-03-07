@@ -4,4 +4,4 @@ Regular expressions (regex) are search terms that are useful for matching multip
 
 If you do not know how to use regex, it is best to leave the regex option unchecked. This is especially true if you are trying to search literal characters such as ".", "$", or "[".
 
-To learn more about how to use regex, please see the "Quick Reference" section [here](https://regex101.com/).
+To learn more about how to use regex, please see the "Quick Reference" section <a href="https://regex101.com/" target="_blank">here</a>.

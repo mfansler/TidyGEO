@@ -178,11 +178,10 @@ ui <- fluidPage(
                                                                                                       "Is a web address"),
                                                                                    choiceValues = list("same_vals", "all_diff", "dates", "url"))
                                                ),
-                                              conditionalPanel(condition = "input.radio_buttons == 'column_filters'",
+                                              conditionalPanel(condition = "input.filter_option == 'column_filters'",
                                                                div(tags$b("Choose columns to keep:"),
                                                                    help_button("This will drop unselected columns from the table.")),
-                                                               checkboxInput(inputId = "keep_all_but", label = div(tags$i("Keep all BUT the specified"), 
-                                                                                                                   help_button("Drops the <i>selected</i> columns from the table."))),
+                                                               checkboxInput(inputId = "select_all_columns", label = tags$i("Select all"), value = TRUE),
                                                                uiOutput("display_vars_to_keep")
                                               ),
                                               primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
@@ -199,23 +198,21 @@ ui <- fluidPage(
                                                p("Sometimes columns contain multiple values in them. This makes it so that the values
                                                  cannot be analyzed separately. If you see any columns in your data that contain multiple values, 
                                                  you can indicate that here and separate them."),
-                                               checkboxInput(inputId = "to_split", label = div("Choose columns with key-value pairs separated by a delimiter",
+                                               checkboxInput(inputId = "to_split", label = div(tags$b("Choose columns with key-value pairs separated by a delimiter"),
                                                                                                help_link(id = "split_help")
                                                                                                )),
                                                conditionalPanel(condition = "input.to_split == true",
+                                                                checkboxInput(inputId = "select_all_split", 
+                                                                              label = tags$i("Select all")),
                                                                 uiOutput("choose_cols_to_split"),
-                                                                checkboxInput(inputId = "split_all_but", 
-                                                                              label = div(tags$i("Split all BUT the specified"), 
-                                                                              help_button("Split every column except for those selected."))),
                                                                 textInput(inputId = "split_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
-                                               checkboxInput(inputId = "to_divide", label = div("Choose columns with multiple values in one column",
+                                               checkboxInput(inputId = "to_divide", label = div(tags$b("Choose columns with multiple values in one column"),
                                                                                                 help_link(id = "divide_help"))),
                                                conditionalPanel(condition = "input.to_divide == true",
+                                                                checkboxInput(inputId = "select_all_divide", 
+                                                                              label = tags$i("Select all")),
                                                                 uiOutput("choose_cols_to_divide"),
-                                                                checkboxInput(inputId = "divide_all_but", 
-                                                                              label = div(tags$i("Split all BUT the specified"), 
-                                                                                          help_button("Split every column except for those selected."))),
                                                                 textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
                                                ),
                                                primary_button(id = "reformat_columns", label = "Reformat columns"),
@@ -277,6 +274,8 @@ ui <- fluidPage(
                                                conditionalPanel(condition = "input.exclude_isrange == true",
                                                                 uiOutput("sliderExclude")),
                                                conditionalPanel(condition = "input.exclude_isrange == false",
+                                                                div(tags$b("Which variables would you like to exclude?"), help_button("Excluding a variable will remove the entire row that contains that variable.")),
+                                                                checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all")),
                                                                 uiOutput("display_vals_to_exclude")),
                                                primary_button("clinical_evaluate_exclude", "Exclude"),
                                                hr(), uiOutput("nav_5_ui")
@@ -587,7 +586,8 @@ server <- function(input, output, session) {
           showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
                                              choiceNames = platform_links, 
                                              choiceValues = platforms), 
-                                footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s"))
+                                footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s",
+                                easyClose = TRUE))
           if (length(platforms) == 1) {
             click("usePlatform")
           }
@@ -761,13 +761,27 @@ server <- function(input, output, session) {
   output$choose_cols_to_split <- renderUI({
     #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     colNames <- colnames(values$metaData)
-    checkboxGroupInput(inputId = "cols_to_split", label = "Which columns contain key-value pairs?", colNames)
+    checkboxGroupInput(inputId = "cols_to_split", label = NULL, colNames)
+  })
+  
+  observe({
+    updateCheckboxGroupInput(
+      session, 'cols_to_split', choices = colnames(values$metaData),
+      selected = if (input$select_all_split) colnames(values$metaData)
+    )
   })
   
   output$choose_cols_to_divide <- renderUI({
     #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
     colNames <- colnames(values$metaData)
-    checkboxGroupInput(inputId = "colsToDivide", label = "Which columns contain multiple values?", colNames)
+    checkboxGroupInput(inputId = "colsToDivide", label = NULL, colNames)
+  })
+  
+  observe({
+    updateCheckboxGroupInput(
+      session, 'colsToDivide', choices = colnames(values$metaData),
+      selected = if (input$select_all_divide) colnames(values$metaData)
+    )
   })
   
   
@@ -779,9 +793,7 @@ server <- function(input, output, session) {
                                                      input$to_divide, 
                                                      input$colsToDivide, 
                                                      input$split_delimiter,
-                                                     input$divide_delimiter,
-                                                     input$split_all_but,
-                                                     input$divide_all_but), message = "Extracting columns")
+                                                     input$divide_delimiter), message = "Extracting columns")
     updateCheckboxInput(session, inputId = "to_split", value = FALSE)
     updateCheckboxInput(session, inputId = "to_divide", value = FALSE)
     #WRITING COMMANDS TO R SCRIPT
@@ -792,19 +804,24 @@ server <- function(input, output, session) {
     values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
                                 paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
                                 paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
-                                paste0("split_all_but <- ", format_string(input$split_all_but)), 
-                                paste0("divide_all_but <- ", format_string(input$divide_all_but)),
                                 "metaData <- reformat_columns(metaData, toSplit, cols_to_split, to_divide, colsToDivide, split_delimiter, divide_delimiter, split_all_but, divide_all_but)"), 
                               values$oFile)
     values$currChunkLen <- length(values$oFile) - before
     
-    updatePrettyToggle(session, "to_split", value = FALSE)
-    updatePrettyToggle(session, "to_divide", value = FALSE)
+    #updatePrettyToggle(session, "to_split", value = FALSE)
+    #updatePrettyToggle(session, "to_divide", value = FALSE)
   }))
   
   
   # filter columns ----------------------------------------------------------
   
+  
+  observe({
+    updateCheckboxGroupInput(
+      session, 'varsToKeep', choices = colnames(values$metaData),
+      selected = if (input$select_all_columns) colnames(values$metaData)
+    )
+  })
   
   output$display_vars_to_keep <- renderUI({
     #colNames <- colnames(values$metaData[-which(colnames(values$metaData) == "evalSame")])
@@ -819,15 +836,14 @@ server <- function(input, output, session) {
       if (input$filter_option == "preset_filters") {
         values$metaData <- filterUninformativeCols(values$metaData, input$download_data_filter)
       } else {
-        values$metaData <- filterCols(values$metaData, input$varsToKeep, input$keep_all_but)
+        values$metaData <- filterCols(values$metaData, input$varsToKeep)
       }
       
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("exclude undesired columns"), values$oFile)
       values$oFile <- saveLines(paste0("varsToKeep <- ", format_string(input$varsToKeep)), values$oFile)
-      values$oFile <- saveLines(c(paste0("keep_all_but <- ", format_string(input$keep_all_but)),
-                                  "metaData <- filterCols(metaData, varsToKeep, keep_all_but)"), 
+      values$oFile <- saveLines(c("metaData <- filterCols(metaData, varsToKeep)"), 
                                 values$oFile)
       values$currChunkLen <- length(values$oFile) - before
     }
@@ -987,14 +1003,29 @@ server <- function(input, output, session) {
                 selected = values$last_selected_exclude)
   })
   
+  to_exclude_options <- reactive({
+    if (!is.null(input$col_valsToExclude)) {
+      valNames <- unique(as.character(values$metaData[,input$col_valsToExclude]))
+      valNames[which(is.na(valNames))] <- "NA"
+      valNames
+      
+    }
+  })
+  
+  observe({
+    updateCheckboxGroupInput(
+      session, 'valsToExclude', choices = to_exclude_options(),
+      selected = if (input$select_all_exclude) to_exclude_options()
+    )
+  })
+  
   output$display_vals_to_exclude <- renderUI({
     if (!is.null(input$col_valsToExclude)) {
       valNames <- unique(as.character(values$metaData[,input$col_valsToExclude]))
       valNames[which(is.na(valNames))] <- "NA"
       checkboxGroupInput(inputId = "valsToExclude", 
-                         label = div("Which variables would you like to exclude?", 
-                                     help_button("Excluding a variable will remove the entire row that contains that variable.")),
-                         choices = valNames)
+                         label = NULL,
+                         choices = to_exclude_options())
     }
   })
   

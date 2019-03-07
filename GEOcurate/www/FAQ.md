@@ -5,12 +5,12 @@ FAQ
 #### Downloading data
 * __What does "Trouble establishing connection to GEO. Please try again later" mean?__
     + Your GEO ID is likely in the right format, but it doesn't exist on GEO. 
-    + Try searching for that dataset on [GEO](https://www.ncbi.nlm.nih.gov/gds/) to see if it actually exists. If you're sure it does, try refreshing the app. 
-    + Please make sure to use the identifier that starts with "GSE" (see the Series section on [this page](https://www.ncbi.nlm.nih.gov/books/NBK159736/)).
+    + Try searching for that dataset on <a href="https://www.ncbi.nlm.nih.gov/gds/" target="_blank">GEO</a> to see if it actually exists. If you're sure it does, try refreshing the app. 
+    + Please make sure to use the identifier that starts with "GSE" (see the Series section on <a href="https://www.ncbi.nlm.nih.gov/books/NBK159736/" target="_blank">this page</a>).
 * __What does "File not found. Please enter a valid ID" mean?__
     + Your GEO ID is probably not in the right format. 
-    + Try searching for that dataset on [GEO](https://www.ncbi.nlm.nih.gov/gds/) to see if it actually exists. Then copy and paste the identifier for that dataset into the text field. 
-    + Please make sure to copy the identifier that starts with "GSE" (see the Series section on [this page](https://www.ncbi.nlm.nih.gov/books/NBK159736/)). 
+    + Try searching for that dataset on <a href="https://www.ncbi.nlm.nih.gov/gds/" target="_blank">GEO</a> to see if it actually exists. Then copy and paste the identifier for that dataset into the text field. 
+    + Please make sure to copy the identifier that starts with "GSE" (see the Series section on <a href="https://www.ncbi.nlm.nih.gov/books/NBK159736/" target="_blank">this page</a>). 
     + Please make sure it doesn't have any extra characters (spaces, dashes, etc).
 * __Why isn't the reset button doing anything?__
     + "Reset" restores the data to its original format upon being downloaded. If there haven't been any changes to the data, nothing will happen.
@@ -27,12 +27,11 @@ FAQ
 #### Renaming columns
 * __Why do the column names have periods in them after I have renamed them?__
     + There are certain rules in R (the language the app is built upon) that regulate how columns can be named. 
-    + See the Details section of [this webpage](https://stat.ethz.ch/R-manual/R-devel/library/base/html/make.names.html) for details on what kinds of column names are allowed.
+    + See the Details section of <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/make.names.html" target="_blank">this webpage</a> for details on what kinds of column names are allowed.
 
 #### Substituting values
 #### Excluding variables
 
 #### Bugs and suggestions
-* If you find an error or would like to make a suggestion, please [open an issue on the GitHub page.](https://github.com/bell-avery/geocurate/issues)
-* TODO: enable issues on TidyGEO page from srp33
+* If you find an error or would like to make a suggestion, please <a href="https://github.com/srp33/TidyGEO/issues" target="_blank">open an issue on the GitHub page.</a>
 

@@ -419,26 +419,26 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
   return(metaData)
 }
 
-reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
+reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2) {
   
-  if (toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
+  if (toSplit && (!is.null(colsToSplit)) && delimiter != "" && !is.null(metaData)) {
     #delimiterInfo <- NULL
-    if (allButSplit) {
-      colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
+    #if (allButSplit) {
+    #  colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
       #colsToSplit <- colsToSplit[-which(colsToSplit == "evalSame")]
-    }
+    #}
     
     metaData <- extractColNames(metaData, delimiter, colsToSplit)
     
   }
   
-  if (toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
+  if (toDivide && (!is.null(colsToDivide)) && delimiter2 != "" && !is.null(metaData)) {
     #numElements <- NULL
     
-    if (allButDivide) {
-      colsToDivide <- if (is.null(colsToDivide)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToDivide)])
+    #if (allButDivide) {
+    #  colsToDivide <- if (is.null(colsToDivide)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToDivide)])
       #colsToDivide <- colsToDivide[-which(colsToDivide == "evalSame")]
-    }
+    #}
     
     #for (col in colsToDivide) {
     #  numElements[[col]] <- length(str_split(metaData[1, col], delimiter2)[[1]])
@@ -466,17 +466,12 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
 }
 
 filterCols <- function(metaData, varsToKeep, allButKeep) {
-  
-  if (allButKeep) {
-    
-    metaData <- if (!is.null(varsToKeep)) metaData[-which(colnames(metaData) %in% varsToKeep)] else metaData
-
-  }
-  else {
-    #varsToKeep <- c(varsToKeep, "evalSame")
+  if (length(varsToKeep) == 0) {
+    return(NULL)
+  } else {
     metaData <- metaData[which(colnames(metaData) %in% varsToKeep)]
+    return(metaData)
   }
-  return(metaData)
 }
 
 findOffendingChars <- function(x){
