@@ -26,7 +26,8 @@ saveLines <- function(strings, oFile) {
 }
 
 saveToRscript <- function(oFile, filePath = file.path(tempdir(), "script_Temp.R")) {
-  sink(filePath, append = FALSE, split = FALSE)
+  file.copy('User/geocurateFunctions_User.R', filePath, overwrite = TRUE)
+  sink(filePath, append = TRUE)
   for (i in 1:length(oFile)) cat(oFile[i], fill = T)
   sink()
 }
@@ -138,7 +139,7 @@ get_platforms <- function(geoID, session = NULL) {
   return(platforms)
 }
 
-downloadClinical <- function(geoID, platform, session = NULL) {
+load_series <- function(geoID, platform, session = NULL) {
   
   #expressionSet <- loadRdsFromDropbox(geoID)
   expressionSet <- NULL
@@ -184,7 +185,7 @@ downloadClinical <- function(geoID, platform, session = NULL) {
   return(expressionSet)
 }
 
-process_clinical <- function(expressionSet, index, session = NULL) {
+process_clinical <- function(expressionSet, session = NULL) {
   
   incProgress(message = "Extracting data")
   metaData <- pData(expressionSet)
@@ -356,6 +357,10 @@ printVarsSummary <- function(metaData) {
 
 extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
+  if (is.null(colsToSplit) || delimiter == "") {
+    return(inputDataFrame) 
+  }
+  
   errorMessage <- NULL
   
   inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
@@ -399,10 +404,21 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
       )
   }
   
-  return(data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE))
+  metaData <- data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE)
+  
+  metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    gsub(x, pattern = "NA", replacement = NA)
+  }))
+  
+  metaData <- filterUninformativeCols(metaData)
+  
+  return(metaData)
 }
 
 splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
+  if (is.null(colsToDivide) || delimiter == "") {
+    return(metaData)
+  }
   for (colName in colsToDivide) {
     numElements <- max(sapply(metaData[,colName], function(x) {
       length(str_extract_all(x, delimiter)[[1]]) + 1
@@ -416,6 +432,13 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
       metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
     }
   }
+  
+  metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    gsub(x, pattern = "NA", replacement = NA)
+  }))
+  
+  metaData <- filterUninformativeCols(metaData)
+  
   return(metaData)
 }
 
@@ -465,7 +488,7 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
   return(metaData)
 }
 
-filterCols <- function(metaData, varsToKeep, allButKeep) {
+filterCols <- function(metaData, varsToKeep) {
   if (length(varsToKeep) == 0) {
     return(NULL)
   } else {
@@ -686,7 +709,6 @@ findExprLabelColumns <- function(ftData) {
 }
 
 filterExpressionData <- function(data, shinyFilterSpecs) {
-  browser()
   for (i in 1:length(shinyFilterSpecs)) {
     if (shinyFilterSpecs[[i]] != "") {
       col_index <- which(colnames(data) == names(shinyFilterSpecs)[i])

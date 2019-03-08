@@ -1,8 +1,15 @@
+
+# libraries ---------------------------------------------------------------
+
+
 library(GEOquery)
 library(stringr)
 library(glue)
 library(dplyr)
 library(tidyr)
+
+# helper functions --------------------------------------------------------
+
 
 saveData <- function(metaData, outputRawFilePath) {
   if (!dir.exists(dirname(outputRawFilePath)))
@@ -23,42 +30,76 @@ loadData <- function(fileName) {
   }
 }
 
-downloadClinical <- function(geoID, toFilter, dataSetIndex, fileName = NA)
+getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(), 
+                   GSElimits = NULL, GSEMatrix = TRUE, AnnotGPL = FALSE, getGPL = TRUE, 
+                   parseCharacteristics = TRUE, platform = NULL) 
 {
-  
-  #Download data
-  status <- tryCatch({
-    fileName <- paste0(geoID, "_Clinical_Raw.txt")
-    metaData <- loadData(geoID)
-    if (is.null(metaData)) {
-      metaData <- downloadData(geoID, dataSetIndex)
+  con <- NULL
+  if (!is.null(GSElimits)) {
+    if (length(GSElimits) != 2) {
+      stop("GSElimits should be an integer vector of length 2, like (1,10) to include GSMs 1 through 10")
     }
-    "pass"
-  }, error = function(e) {
-    if (grepl("open\\.connection", paste0(e))) {
-      print(paste0("Trouble establishing connection to GEO. Please try again later."))
-      }
-    else if (grepl("file\\.exists", paste0(e))) {
-      print(paste0("File not found. Please enter a valid ID."))
+  }
+  if (is.null(GEO) & is.null(filename)) {
+    stop("You must supply either a filename of a GEO file or a GEO accession")
+  }
+  if (is.null(filename)) {
+    GEO <- toupper(GEO)
+    geotype <- toupper(substr(GEO, 1, 3))
+    if (GSEMatrix & geotype == "GSE") {
+      return(getAndParseGSEMatrices(GEO, destdir, AnnotGPL = AnnotGPL, 
+                                    getGPL = getGPL, parseCharacteristics = parseCharacteristics, platform = platform))
     }
-    else {
-      print(paste(e))
-    }
-    }
-  )
-  
- metaData <- filterUninformativeCols(metaData, toFilter)
- return(metaData)
+    filename <- getGEOfile(GEO, destdir = destdir, AnnotGPL = AnnotGPL)
+  }
+  ret <- parseGEO(filename, GSElimits, destdir, AnnotGPL = AnnotGPL, 
+                  getGPL = getGPL)
+  return(ret)
+}
+getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE, 
+                                   parseCharacteristics = TRUE, platform = NULL) 
+{
+  GEO <- toupper(GEO)
+  stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+  if (is.null(platform)) {
+    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
+    b = getDirListing(sprintf(gdsurl, stub, GEO))
+    platform <- b[1]
+  }
+  destfile = file.path(destdir, platform)
+  if (file.exists(destfile)) {
+    message(sprintf("Using locally cached version: %s", 
+                    destfile))
+  }
+  else {
+    download.file(sprintf("https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/%s", 
+                          stub, GEO, platform), destfile = destfile, mode = "wb", 
+                  method = getOption("download.file.method.GEOquery"))
+  }
+  return(GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
+                                   AnnotGPL = AnnotGPL, getGPL = getGPL)$eset)
 }
 
-downloadData <- function(geoID, dataSetIndex) {
-  expressionSet <- getGEO(geoID, getGPL = "FALSE")
+load_series <- function(geoID, platform, session = NULL) {
   
-  expressionSet <- expressionSet[[dataSetIndex]]
+  expressionSet <- getGEO(geoID, platform = platform)
   
-  # Extract meta data frame
+  return(expressionSet)
+}
+
+process_clinical <- function(expressionSet, session = NULL) {
+  
   metaData <- pData(expressionSet)
-                     
+  if (nrow(metaData) == 1) {
+    metaData <- as.data.frame(t(as.matrix(apply(metaData, 2, replace_blank_cells))), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  } else {
+    metaData <- as.data.frame(apply(metaData, 2, replace_blank_cells), row.names = rownames(metaData), stringsAsFactors = FALSE)
+  }
+  filtered_data <- filterUninformativeCols(metaData)
+  if (!is.null(filtered_data)) {
+    metaData <- filtered_data
+  }
+  
   return(metaData)
 }
 
@@ -180,15 +221,21 @@ saveFileDescription <- function(geoID, filePathToSave) {
 
 extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   
+  if (is.null(colsToSplit) || delimiter == "") {
+    return(inputDataFrame) 
+  }
+  
+  errorMessage <- NULL
+  
   inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
   
   for (col in colsToSplit) {
     
-    hasDelim <- as.logical(sapply(inputDataFrame[which(!is.na(inputDataFrame[,col])), col], function(x){
-      str_detect(x, delimiter)
-    }))
+    hasDelim <- is.na(inputDataFrame[, col]) | str_detect(inputDataFrame[, col], delimiter)
+    
     if (all(hasDelim)) {
-      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value"))
+      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value")) %>%
+        mutate(key = str_trim(key), value = str_trim(value))
       
       col_names <- colnames(inputDataFrame)
       col_names <- append(col_names, unique(inputDataFrame$key)[which(!is.na(unique(inputDataFrame$key)))], which(col_names == "key"))
@@ -204,54 +251,45 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
       offendingVals <- paste(inputDataFrame[!hasDelim, col], collapse = ", ")
       offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
       
-      print(paste0(col, " could not be split."))
-      print(paste0("Rows: ", offendingRows))
-      print(paste0("Values: ", offendingVals))
+      errorMessage <- c(errorMessage, paste0(col, " could not be split."),
+                        paste0("Rows: ", offendingRows),
+                        paste0("Values: ", offendingVals))
     }
   }
   
-  return(data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE))
+  if (!is.null(errorMessage)) {
+    errorMessage <- c(paste0('Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".'),
+                      errorMessage)
+    print(errorMessage)
+  }
+  
+  metaData <- data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE)
+  
+  metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    gsub(x, pattern = "NA", replacement = NA)
+  }))
+  
+  metaData <- filterUninformativeCols(metaData)
+  
+  return(metaData)
 }
 
-splitCombinedVars <- function(metaData, colsToDivide, delimiter, numElements) {
-  targetCols <- colsToDivide
-  for (colName in targetCols) {
+splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
+  if (is.null(colsToDivide) || delimiter == "") {
+    return(metaData)
+  }
+  for (colName in colsToDivide) {
+    numElements <- max(sapply(metaData[,colName], function(x) {
+      length(str_extract_all(x, delimiter)[[1]]) + 1
+    }), na.rm = TRUE)
     #targetCol <- metaData[,colName]
-    if (numElements[[colName]] > 1) {
+    if (numElements > 1) {
       colNames <- NULL
-      for (i in 1:numElements[[colName]]) {
+      for (i in 1:numElements) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
       }
       metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
     }
-  }
-  return(metaData)
-}
-
-reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDivide, delimiter, delimiter2, allButSplit, allButDivide) {
-  
-  if (toSplit && (!is.null(colsToSplit) || allButSplit) && delimiter != "" && !is.null(metaData)) {
-    #delimiterInfo <- NULL
-    if (allButSplit) {
-      colsToSplit <- if (is.null(colsToSplit)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToSplit)])
-    }
-    
-    metaData <- extractColNames(metaData, delimiter, colsToSplit)
-    
-  }
-  
-  if (toDivide && (!is.null(colsToDivide) || allButDivide) && delimiter2 != "" && !is.null(metaData)) {
-    numElements <- NULL
-    
-    if (allButDivide) {
-      colsToDivide <- if (is.null(colsToDivide)) colnames(metaData) else colnames(metaData[-which(colnames(metaData) %in% colsToDivide)])
-    }
-    
-    for (col in colsToDivide) {
-      numElements[[col]] <- length(str_split(metaData[1, col], delimiter2)[[1]])
-    }
-    
-    metaData <- splitCombinedVars(metaData, colsToDivide, delimiter2, numElements)
   }
   
   metaData <- as.data.frame(apply(metaData, 2, function(x) {
@@ -263,14 +301,8 @@ reformat_columns <- function(metaData, toSplit, colsToSplit, toDivide, colsToDiv
   return(metaData)
 }
 
-filterCols <- function(metaData, varsToKeep, allButKeep) {
-  
-  if (allButKeep) {
-    
-    metaData <- if (!is.null(varsToKeep)) metaData[-which(colnames(metaData) %in% varsToKeep)] else metaData
-
-  }
-  else {
+filterCols <- function(metaData, varsToKeep) {
+  if (length(varsToKeep) > 0) {
     metaData <- metaData[which(colnames(metaData) %in% varsToKeep)]
   }
   return(metaData)
@@ -283,6 +315,13 @@ findOffendingChars <- function(x){
     myChars[[char]] <- (grepl(paste0("\\", char), x))
   }
   return(myChars)
+}
+
+replace_blank_cells <- function(values) {
+  for (pattern in c("^ $", "^$")) {
+    values <- str_replace(values, pattern, NA_character_)
+  }
+  values
 }
 
 renameCols <- function(metaData, old_name, new_name) {
@@ -497,3 +536,4 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
     data1[which(data1[,id_col1] %in% search_terms),]
   }
 }
+

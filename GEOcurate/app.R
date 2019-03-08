@@ -26,7 +26,7 @@ help_button <- function(message = "content", placement = "right") {
 }
 
 help_link <- function(id) {
-  actionLink(inputId = id, label = icon("question-circle"))
+  tipify(actionLink(inputId = id, label = icon("question-circle")), title = "Click for help", placement = "right", trigger = "hover")
 }
 
 help_modal <- function(help_file, images_id = NULL) {
@@ -473,7 +473,7 @@ server <- function(input, output, session) {
       thes_suggest_vals = c("no suggestions"),
       suggestions = c("no suggestions"),
       excludesList = list(),
-      oFile = "source('geocurateFunctions_User.R')",
+      oFile = commentify(" "),
       expression_oFile = "source('geocurateFunctions_User.R')",
       downloadChunkLen = 0,
       currChunkLen = 0,
@@ -597,26 +597,24 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$usePlatform, {
+    print(input$platformIndex)
     
     removeModal()
     
     values$allData <- withProgress(
-      downloadClinical(input$geoID, input$platformIndex, session = session), 
+      load_series(input$geoID, input$platformIndex, session = session), 
       message = "Downloading series data from GEO")
     values$metaData <- NULL
     values$exprData <- NULL
     
     #WRITING COMMANDS TO R SCRIPT
-    values$oFile <- "source('geocurateFunctions_User.R')"
-    values$oFile <- saveLines(commentify("download metaData"), values$oFile)
-    values$oFile <- saveLines(paste0("toFilter <- NULL"), values$oFile)
-    values$oFile <- saveLines(paste0("toFilter <- ", format_string(input$download_data_filter)), values$oFile)
-    #for (i in 1:length(input$download_data_filter)) {
-    #  values$oFile <- saveLines(paste0("toFilter[", i, "] <- ", format_string(input$download_data_filter[i])), values$oFile)
-    #}
+    values$oFile <- saveLines(commentify("load series"), values$oFile)
     values$oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$oFile)
-    values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "metaData <- downloadClinical(geoID, toFilter, dataSetIndex)"), values$oFile)
-    downloadChunkLen <- length(values$oFile)
+    values$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "series_data <- load_series(geoID, dataSetIndex)"), values$oFile)
+    values$downloadChunkLen <- length(values$oFile)
+    
+    values$expression_oFile <- values$oFile
+    values$expression_downloadChunkLen <- values$downloadChunkLen
     
     #extracted_data <- NULL
     values$origData <- values$metaData
@@ -628,7 +626,12 @@ server <- function(input, output, session) {
   observe({
     input$top_level
     if (input$top_level == "Clinical data" && is.null(values$metaData) && !is.null(values$allData)) {
-      values$metaData <- withProgress(process_clinical(values$allData, input$platformIndex, session))
+      values$metaData <- withProgress(process_clinical(values$allData, session))
+      
+      #WRITING COMMANDS TO R SCRIPT
+      values$oFile <- saveLines(commentify("extract clinical data"), values$oFile)
+      values$oFile <- saveLines("clinical_data <- process_clinical(series_data)", values$oFile)
+      values$downloadChunkLen <- length(values$oFile)
     }
   })
   
@@ -786,30 +789,36 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$reformat_columns, ({
-    values$lastData <- values$metaData
-    values$metaData <- withProgress(reformat_columns(values$metaData, 
-                                                     input$to_split, 
-                                                     input$cols_to_split, 
-                                                     input$to_divide, 
-                                                     input$colsToDivide, 
-                                                     input$split_delimiter,
-                                                     input$divide_delimiter), message = "Extracting columns")
-    updateCheckboxInput(session, inputId = "to_split", value = FALSE)
-    updateCheckboxInput(session, inputId = "to_divide", value = FALSE)
-    #WRITING COMMANDS TO R SCRIPT
-    before <- length(values$oFile)
-    values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
-    values$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), values$oFile)
-    values$oFile <- saveLines(paste0("colsToDivide <- ", format_string(input$cols_to_split)), values$oFile)
-    values$oFile <- saveLines(c(paste0("toSplit <- ", format_string(input$to_split)), paste0("to_divide <- ", format_string(input$to_divide)),
-                                paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
-                                paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
-                                "metaData <- reformat_columns(metaData, toSplit, cols_to_split, to_divide, colsToDivide, split_delimiter, divide_delimiter, split_all_but, divide_all_but)"), 
-                              values$oFile)
-    values$currChunkLen <- length(values$oFile) - before
-    
-    #updatePrettyToggle(session, "to_split", value = FALSE)
-    #updatePrettyToggle(session, "to_divide", value = FALSE)
+    if (!is.null(values$metaData)) {
+      values$lastData <- values$metaData
+      before <- length(values$oFile)
+      values$oFile <- saveLines(commentify("extract values from columns with delimiter"), values$oFile)
+      if (input$to_split) {
+        values$metaData <- withProgress(extractColNames(values$metaData,
+                                                        input$split_delimiter,
+                                                        input$cols_to_split), message = "Extracting column names")
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), values$oFile)
+        values$oFile <- saveLines(c(paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
+                                    "clinical_data <- extractColNames(clinical_data, split_delimiter, cols_to_split)"), 
+                                  values$oFile)
+      } else if (input$to_divide) {
+        values$metaData <- withProgress(splitCombinedVars(values$metaData,
+                                                          input$colsToDivide,
+                                                          input$divide_delimiter), message = "Splitting combined variables")
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(paste0("cols_to_divide <- ", format_string(input$colsToDivide)), values$oFile)
+        values$oFile <- saveLines(c(paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
+                                    "clinical_data <- splitCombinedVars(clinical_data, cols_to_divide, divide_delimiter)"), 
+                                  values$oFile)
+        
+      }
+      updateCheckboxInput(session, inputId = "to_split", value = FALSE)
+      updateCheckboxInput(session, inputId = "to_divide", value = FALSE)
+      
+      values$currChunkLen <- length(values$oFile) - before
+    }
+
   }))
   
   
@@ -833,18 +842,28 @@ server <- function(input, output, session) {
   observeEvent(input$clinical_evaluate_filters, ({
     if (!is.null(values$metaData)) {
       values$lastData <- values$metaData
-      if (input$filter_option == "preset_filters") {
-        values$metaData <- filterUninformativeCols(values$metaData, input$download_data_filter)
-      } else {
-        values$metaData <- filterCols(values$metaData, input$varsToKeep)
-      }
       
-      #WRITING COMMANDS TO R SCRIPT
+      
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("exclude undesired columns"), values$oFile)
-      values$oFile <- saveLines(paste0("varsToKeep <- ", format_string(input$varsToKeep)), values$oFile)
-      values$oFile <- saveLines(c("metaData <- filterCols(metaData, varsToKeep)"), 
-                                values$oFile)
+      
+      if (input$filter_option == "preset_filters") {
+        values$metaData <- filterUninformativeCols(values$metaData, input$download_data_filter)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(paste0("vars_to_exclude <- ", format_string(input$download_data_filter)), values$oFile)
+        values$oFile <- saveLines("clinical_data <- filterUninformativeCols(clinical_data, vars_to_exclude)", 
+                                  values$oFile)
+      } else {
+        values$metaData <- filterCols(values$metaData, input$varsToKeep)
+        
+        #WRITING COMMANDS TO R SCRIPT
+        values$oFile <- saveLines(paste0("vars_to_keep <- ", format_string(input$varsToKeep)), values$oFile)
+        values$oFile <- saveLines(c("clinical_data <- filterCols(clinical_data, vars_to_keep)"), 
+                                  values$oFile)
+      }
+      
+      
       values$currChunkLen <- length(values$oFile) - before
     }
   }))
@@ -869,11 +888,8 @@ server <- function(input, output, session) {
     
     #WRITING COMMANDS TO R SCRIPT
     before <- length(values$oFile)
-    values$oFile <- saveLines(commentify("rename columns"), values$oFile)
-    values$oFile <- saveLines(c(paste0("newNames <- list(", format_string(input$rename_new_name), ")"),
-                                "names(newNames) <- ", format_string(input$colsToRename)), 
-                              values$oFile)
-    values$oFile <- saveLines(paste0("metaData <- renameCols(metaData, ", format_string(input$colsToRename), ", ", format_string(input$rename_new_name), ")"), values$oFile)
+    values$oFile <- saveLines(commentify("rename column"), values$oFile)
+    values$oFile <- saveLines(paste0("clinical_data <- renameCols(clinical_data, ", format_string(input$colsToRename), ", ", format_string(input$rename_new_name), ")"), values$oFile)
     values$currChunkLen <- length(values$oFile) - before
     
     values$newNames <- NULL
@@ -916,7 +932,11 @@ server <- function(input, output, session) {
   })
   
   
-  values$suggestions <- reactive({ unique(as.character(values$metaData[,input$colsToSub])) })
+  values$suggestions <- reactive({ 
+    if (!is.null(values$metaData) && !is.null(input$colsToSub)) {
+      unique(as.character(values$metaData[,input$colsToSub]))
+    }
+  })
   
   output$input_subs_table <- renderRHandsontable({
     rhandsontable(values$DFOut, width = 350, height = 100, rowHeaders = FALSE) %>% 
@@ -963,7 +983,7 @@ server <- function(input, output, session) {
                                          colnames(values$DFIn)[2], "=c(", 
                                          paste(format_string(as.character(values$DFIn[,2])), collapse = ", "), "))"), values$oFile)
       #}
-      values$oFile <- saveLines("metaData <- substitute_vals(metaData, sub_specs)", 
+      values$oFile <- saveLines("clinical_data <- substitute_vals(clinical_data, sub_specs)", 
                                 values$oFile)
       values$currChunkLen <- length(values$oFile) - before
       
@@ -1048,7 +1068,7 @@ server <- function(input, output, session) {
       values$oFile <- saveLines(commentify("exclude undesired samples"), values$oFile)
       values$oFile <- saveLines(c(paste0("variable <- ", format_string(input$col_valsToExclude)),
                                   paste0("values <- ", format_string(to_exclude))), values$oFile)
-      values$oFile <- saveLines("metaData <- excludeVars(metaData, variable, values)", 
+      values$oFile <- saveLines("clinical_data <- excludeVars(clinical_data, variable, values)", 
                                 values$oFile)
       values$currChunkLen <- length(values$oFile) - before
     }
@@ -1101,23 +1121,24 @@ server <- function(input, output, session) {
       #WRITING COMMANDS TO R SCRIPT
       before <- length(values$oFile)
       values$oFile <- saveLines(commentify("save data"), values$oFile)
-      values$oFile <- saveLines(c("metaData <- cbind(rownames(metaData), metaData)", "colnames(metaData)[1] <- ''", 
+      values$oFile <- saveLines(c("clinical_data <- cbind(rownames(clinical_data), clinical_data)", 
+                                  "colnames(clinical_data)[1] <- ''", 
                                   paste0("file <- ", format_string(input$clinical_user_filename))), values$oFile)
       
       if (input$clinical_file_type == "csv") {
-        values$oFile <- saveLines(paste0("write.csv(metaData, file, row.names = FALSE)"), values$oFile)
+        values$oFile <- saveLines(paste0("write.csv(clinical_data, file, row.names = FALSE)"), values$oFile)
       }
       else if (input$clinical_file_type == "tsv") {
-        values$oFile <- saveLines("write.table(metaData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+        values$oFile <- saveLines("write.table(clinical_data, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
                                   values$oFile)
       }
       else if (input$clinical_file_type == "JSON") {
         values$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
-                                    "metaData %>% toJSON() %>% write_lines(file)"), 
+                                    "clinical_data %>% toJSON() %>% write_lines(file)"), 
                                   values$oFile)
       }
       else if (input$clinical_file_type == "xlsx") {
-        values$oFile <- saveLines(c("library(xlsx)", "write.xlsx(metaData, file, row.names = FALSE, showNA = FALSE)"), 
+        values$oFile <- saveLines(c("library(xlsx)", "write.xlsx(clinical_data, file, row.names = FALSE, showNA = FALSE)"), 
                                   values$oFile)
       }
       
