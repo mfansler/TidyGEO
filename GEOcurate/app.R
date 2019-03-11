@@ -481,7 +481,9 @@ server <- function(input, output, session) {
       expression_currChunkLen = 0,
       subAllNums = F,
       expression_id_col = "ID",
+      expression_prev_id = "ID",
       feature_id_col = "ID",
+      feature_prev_id = "ID",
       clinical_plot_to_save = NULL,
       expr_plot_to_save = NULL,
       expression_disable_btns = FALSE,
@@ -605,7 +607,7 @@ server <- function(input, output, session) {
       load_series(input$geoID, input$platformIndex, session = session), 
       message = "Downloading series data from GEO")
     values$metaData <- NULL
-    values$exprData <- NULL
+    values$expr_data <- NULL
     
     #WRITING COMMANDS TO R SCRIPT
     values$oFile <- saveLines(commentify("load series"), values$oFile)
@@ -934,6 +936,7 @@ server <- function(input, output, session) {
   
   values$suggestions <- reactive({ 
     if (!is.null(values$metaData) && !is.null(input$colsToSub)) {
+      print(input$colsToSub)
       unique(as.character(values$metaData[,input$colsToSub]))
     }
   })
@@ -1362,8 +1365,8 @@ server <- function(input, output, session) {
    
   observeEvent(input$top_level, {
     input$top_level
-    if (!is.null(values$allData) && input$top_level == "Assay data" && is.null(values$exprData)) {
-      extracted_data <- withProgress(process_expression(values$allData, input$platformIndex, session))
+    if (!is.null(values$allData) && input$top_level == "Assay data" && is.null(values$expr_data)) {
+      extracted_data <- withProgress(process_expression(values$allData, session))
       
       values$expression_warning_state <- extracted_data[["status"]]
       
@@ -1378,6 +1381,8 @@ server <- function(input, output, session) {
                                                        start = 1, 
                                                        forward_distance = 5, 
                                                        previous_view = values$expr_data)
+        values$expression_id_col <- "ID"
+        values$expression_prev_id <- values$expression_id_col
         values$orig_feature <- find_intersection(extracted_data[["featureData"]], values$expr_to_display)
         values$last_feature <- values$orig_feature
         values$feature_data <- values$orig_feature
@@ -1385,13 +1390,13 @@ server <- function(input, output, session) {
                                                           start = 1, 
                                                           forward_distance = 4, 
                                                           previous_view = values$feature_data)
-        
-        values$expression_oFile <- saveLines(commentify("download expression data"), values$expression_oFile)
-        values$expression_oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), values$expression_oFile)
-        values$expression_oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)),
-                                               "allData <- downloadExpression(geoID, dataSetIndex)",
-                                               "expressionData <- allData[['expressionData']]",
-                                               "featureData <- allData[['featureData']]"), 
+        values$feature_id_col <- "ID"
+        values$feature_prev_id <- values$feature_id_col
+        #WRITING COMMANDS TO R SCRIPT
+        values$expression_oFile <- saveLines(commentify("extract expression data"), values$expression_oFile)
+        values$expression_oFile <- saveLines(c("extracted_data <- process_expression(series_data)",
+                                               "expressionData <- extracted_data[['expressionData']]",
+                                               "featureData <- extracted_data[['featureData']]"), 
                                              values$expression_oFile)
         
         values$expression_downloadChunkLen <- length(values$expression_oFile)
@@ -1433,6 +1438,12 @@ server <- function(input, output, session) {
         withSpinner(dataTableOutput("featureData"), type = 5),
         uiOutput("exprLabels"),
         uiOutput("summarizeOptions"),
+        checkboxInput(inputId = "feature_dropNA", label = div("Drop NA values", 
+                                                              help_button(paste("This drops the NA values from the",
+                                                                                 "column you choose before replacing",
+                                                                                 "the assay data ID column. This ensures",
+                                                                                 "that there are no blank entries in",
+                                                                                 "the ID column.")))),
         
         footer = primary_button(id = "expression_evaluate_id", label = "Replace ID column"), 
         title = "Feature data",
@@ -1464,7 +1475,7 @@ server <- function(input, output, session) {
     
     removeModal()
     
-    if (!is.null(values$expr_data)) {
+    if (!is.null(values$expr_data) && values$feature_id_col != input$colForExprLabels) {
       values$last_expr <- values$expr_data
       
       feature_data <- values$feature_data
@@ -1473,13 +1484,23 @@ server <- function(input, output, session) {
         colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
           colnames(values$orig_feature[which(colnames(feature_data) == "ID")])
         colnames(feature_data)[which(colnames(feature_data) == values$feature_id_col)] <- "ID"
+        
+        values$expression_oFile <- saveLines(
+          c(paste0("colnames(featureData)[which(colnames(featureData) == 'ID')] <- ", 
+                 format_string(colnames(values$orig_feature[which(colnames(feature_data) == "ID")]))),
+            paste0("colnames(featureData[which(colnames(feature_data) == ", 
+                   format_string(values$feature_id_col), ")] <- 'ID'")), 
+          values$expression_oFile)
+        
         if (length(which(colnames(feature_data) == "ID")) > 1) {
           feature_data <- feature_data[,-1]
+          values$expression_oFile <- saveLines("featureData <- featureData[,-1]", values$expression_oFile)
         }
       }
       
       values$expr_data <- withProgress(message = "Replacing the ID column", 
-                                       replaceID(values$expr_data, feature_data, input$colForExprLabels, input$howToSummarize))
+                                       replaceID(values$expr_data, feature_data, input$colForExprLabels, input$howToSummarize, input$feature_dropNA))
+      values$feature_prev_id <- values$feature_id_col
       values$feature_id_col <- input$colForExprLabels
       
       before <- length(values$expression_oFile)
@@ -1488,7 +1509,8 @@ server <- function(input, output, session) {
       values$expression_oFile <- saveLines(c(commentify("replace ID column"),
                                              paste0("expressionData <- replaceID(expressionData, featureData, ", 
                                                     format_string(input$colForExprLabels), ", ",
-                                                    format_string(input$howToSummarize), ")")), 
+                                                    format_string(input$howToSummarize), ", ", 
+                                                    format_string(input$feature_dropNA), ")")), 
                                            values$expression_oFile)
       
       values$expr_to_display <- advance_columns_view(values$expr_data, 
@@ -1513,12 +1535,18 @@ server <- function(input, output, session) {
   })
   
   output$summarizeOptions <- renderUI({
-    can_summarize <- !is.null(input$colForExprLabels) && input$colForExprLabels != "" && !is_all_unique(values$feature_data[, input$colForExprLabels]) #!input$colForExprLabels %in% findExprLabelColumns(values$feature_data)
-    if (can_summarize) {
-      choices <- if (values$expression_warning_state) c("mean", "median", "max", "min", "keep all") else c("keep all")
-      selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
-                How would you like to summarize the data?", help_button("Groups the data by ID and takes the specified measurement for the group.")), 
-                  choices = choices)
+    if (!is.null(input$colForExprLabels) && input$colForExprLabels != "") {
+      new_expression_labels <- if (input$feature_dropNA) 
+        values$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else values$feature_data[, input$colForExprLabels]
+      can_summarize <- !is_all_unique(new_expression_labels)
+      if (can_summarize) {
+        choices <- if (values$expression_warning_state) c("mean", "median", "max", "min", "keep all") else c("keep all")
+        selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
+                                                  How would you like to summarize the data?", 
+                                                  help_button("Groups the data by ID and takes the specified measurement for the group.")), 
+                    choices = choices)
+      }
+      
     }
   })
   
@@ -1542,6 +1570,7 @@ server <- function(input, output, session) {
       values$expr_data <- withProgress(message = "Transposing the data", 
                                        quickTranspose(values$expr_data))
       
+      values$expression_prev_id <- values$expression_id_col
       values$expression_id_col <- "colnames"
       
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
@@ -1585,7 +1614,8 @@ server <- function(input, output, session) {
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
     before <- length(values$expression_oFile)
     values$expression_oFile <- saveLines(c(commentify("filter data"),
-                                           paste0("filterSpecs <- ", format_string(input$exprPreview_search_columns)),
+                                           paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
+                                           paste0("names(to_filter) <- ", format_string(colnames(values$expr_to_display))),
                                            "expressionData <- filterExpressionData(expressionData, filterSpecs)",
                                            paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
                                            paste0("featureIdCol <- ", format_string(values$feature_id_col)),
@@ -1603,11 +1633,13 @@ server <- function(input, output, session) {
         values$expression_disable_btns <- FALSE
       }
       
+      values$feature_id_col <- values$feature_prev_id
       values$feature_data <- values$last_feature
       values$feature_to_display <- advance_columns_view(values$feature_data, 
                                                         start = 1, 
                                                         forward_distance = 4, 
                                                         previous_view = values$feature_data)
+      values$expression_id_col <- values$expression_prev_id
       values$expr_data <- values$last_expr
       values$expr_to_display <- advance_columns_view(values$expr_data, 
                                                      start = 1, 
@@ -1716,7 +1748,7 @@ server <- function(input, output, session) {
                                              values$expression_oFile)
       }
       
-      saveToRscript(values$expression_oFile, file)
+      saveToRscript(values$expression_oFile, file, 'User/assay_helper_functions.R')
       
       values$expression_currChunkLen <- values$expression_currChunkLen + (length(values$expression_oFile) - before)
     }

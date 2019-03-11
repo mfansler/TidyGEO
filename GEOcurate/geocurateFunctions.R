@@ -25,8 +25,9 @@ saveLines <- function(strings, oFile) {
   return(oFile)
 }
 
-saveToRscript <- function(oFile, filePath = file.path(tempdir(), "script_Temp.R")) {
-  file.copy('User/geocurateFunctions_User.R', filePath, overwrite = TRUE)
+saveToRscript <- function(oFile, filePath = file.path(tempdir(), "script_Temp.R"), 
+                          functions_path = 'User/geocurateFunctions_User.R') {
+  file.copy(functions_path, filePath, overwrite = TRUE)
   sink(filePath, append = TRUE)
   for (i in 1:length(oFile)) cat(oFile[i], fill = T)
   sink()
@@ -208,7 +209,7 @@ process_clinical <- function(expressionSet, session = NULL) {
   return(metaData)
 }
 
-process_expression <- function(expressionSet, index, session = NULL) {
+process_expression <- function(expressionSet, session = NULL) {
     
   incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
@@ -656,15 +657,19 @@ quickTranspose <- function(dataToTranspose) {
   return(transposed)
 }
 
-replaceID <- function(data, replacement, replaceCol, summaryOption) {
+replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   
   #if (replaceCol == "ID") {
   #  return(data)
   #}
   
   #dataWRowNames <- data
-  
-  replacementWRowNames <- replacement[, c("ID", replaceCol)]
+  browser()
+  if (dropNA) {
+    replacementWRowNames <- replacement[!is.na(replacement[,replaceCol]), c("ID", replaceCol)]
+  } else {
+    replacementWRowNames <- replacement[, c("ID", replaceCol)]
+  }
   replacementWRowNames$ID <- as.character(replacementWRowNames$ID)
   
   incProgress()

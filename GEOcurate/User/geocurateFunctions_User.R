@@ -4,7 +4,6 @@
 
 library(GEOquery)
 library(stringr)
-library(glue)
 library(dplyr)
 library(tidyr)
 
@@ -101,25 +100,6 @@ process_clinical <- function(expressionSet, session = NULL) {
   }
   
   return(metaData)
-}
-
-downloadExpression <- function(geoID, dataSetIndex) {
-  expressionSet <- getGEO(geoID, getGPL = FALSE)
-  
-  expressionSet <- expressionSet[[dataSetIndex]]
-  
-  
-  expressionData <- assayData(expressionSet)$exprs
-  expressionData <- data.frame("ID" = rownames(expressionData), apply(expressionData, 2, as.numeric))
-  
-  
-  featureData <- as.data.frame(fData(expressionSet), stringsAsFactors = FALSE)
-  #hasNA <- as.logical(apply(featureData, 2, function(x) any(is.na(x))))
-  #if (all(hasNA) != FALSE) {
-  #  featureData <- featureData[, -which(hasNA)]
-  #}
-  
-  return(list("expressionData" = expressionData, "featureData" = featureData))
 }
 
 #filter columns with all different entries or all the same entry
@@ -423,117 +403,5 @@ fixSpecialCharacters <- function(x, offendingChars)
   }
   
   return(x)
-}
-
-saveClinicalData <- function(geoID, metaData, outputRawFilePath, saveDescription = FALSE)
-{
-
-  print(paste("Saving clinical data to ", outputRawFilePath, sep = ""))
-    
-  if (!dir.exists(dirname(outputRawFilePath)))
-    dir.create(dirname(outputRawFilePath), recursive = TRUE, showWarnings = FALSE)
-    
-  write.table(metaData, outputRawFilePath, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
-    
-  if (saveDescription) 
-    saveFileDescription(geoID, str_split(outputRawFilePath, "\\.")[[1]][1])
-
-
-}
-
-quickTranspose <- function(dataToTranspose) {
-  
-  if (any(duplicated(dataToTranspose$ID))) {
-    transposed <- dataToTranspose
-    
-    print("Data cannot be transposed because the ID column is not all unique. Please specify a summarize option.")
-    
-  } else {
-    
-    transposed <- dataToTranspose %>%
-      gather(newrows, valname, -ID) %>%
-      spread(ID, valname) %>%
-      dplyr::rename(ID = "newrows")
-  }
-  
-  return(transposed)
-}
-
-replaceID <- function(data, replacement, replaceCol, summaryOption) {
-  
-  if (replaceCol == "ID") {
-    return(data)
-  }
-  
-  dataWRowNames <- data
-  
-  replacementWRowNames <- replacement %>%
-    dplyr::rename(replace = replaceCol) %>%
-    select(ID, replace) %>%
-    filter(!is.na(replace) & replace != "")
-  
-  mergedData <- inner_join(dataWRowNames, replacementWRowNames, by = "ID") %>%
-    select(-ID) %>%
-    dplyr::rename(ID = "replace") %>%
-    select(ID, everything())
-  
-  if (!is.null(summaryOption)) {
-    if (summaryOption == "mean") {
-      mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(mean) %>%
-        ungroup()
-    } else if (summaryOption == "median") {
-      mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(median) %>%
-        ungroup()
-    } else if (summaryOption == "max") {
-      mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(max) %>%
-        ungroup()
-    } else if (summaryOption == "min") {
-      mergedData <- mergedData %>% group_by(ID) %>%
-        summarize_all(min) %>%
-        ungroup()
-    }
-  }
-  
-  return(mergedData)
-}
-
-filterExpressionData <- function(data, shinyFilterSpecs) {
-  
-  for (i in 1:length(shinyFilterSpecs)) {
-    if (shinyFilterSpecs[i] != "") {
-      if (grepl("\"", shinyFilterSpecs[i])) {
-        searchStrs <- shinyFilterSpecs[i] %>%
-          str_remove_all("\"") %>%
-          str_remove_all("\\[") %>%
-          str_remove_all("\\]") %>%
-          str_split(",")
-        searchStrs <- searchStrs[[1]]
-        data <- data %>% filter_at(i, any_vars(. %in% searchStrs))
-      } else if (grepl(" ... ", shinyFilterSpecs[i])) {
-        searchStrs <- as.numeric(str_split(shinyFilterSpecs[i], " ... ")[[1]])
-        data <- data %>% filter_at(i, any_vars(. > searchStrs[1] && . < searchStrs[2]))
-      } else {
-        matches <- sapply(data[,i], function(x) {
-          grepl(shinyFilterSpecs[i], x)
-        })
-        data <- data[matches,]
-      }
-    }
-  }
-  return(data)
-}
-
-find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
-  
-  search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else data2[,id_col2]
-  
-  if (id_col1 == "colnames") {
-    data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
-  } else {
-    data1[which(data1[,id_col1] %in% search_terms),]
-  }
 }
 
