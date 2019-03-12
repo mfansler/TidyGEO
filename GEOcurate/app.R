@@ -1480,14 +1480,15 @@ server <- function(input, output, session) {
       
       feature_data <- values$feature_data
       
-      values$expression_oFile <- saveLines(commentify("replace ID column"), values$expression_oFile)
+      values$expression_oFile <- saveLines(c(commentify("replace ID column"),
+                                             "featureData2 <- featureData"), values$expression_oFile)
       
       if (values$feature_id_col != "ID") {
         
         values$expression_oFile <- saveLines(
-          c(paste0("colnames(featureData)[which(colnames(featureData) == 'ID')] <- ", 
+          c(paste0("colnames(featureData2)[which(colnames(featureData2) == 'ID')] <- ", 
                    format_string(colnames(values$orig_feature[which(colnames(feature_data) == "ID")]))),
-            paste0("colnames(featureData)[which(colnames(featureData) == ", 
+            paste0("colnames(featureData2)[which(colnames(featureData2) == ", 
                    format_string(values$feature_id_col), ")] <- 'ID'")), 
           values$expression_oFile)
         
@@ -1496,8 +1497,9 @@ server <- function(input, output, session) {
         colnames(feature_data)[which(colnames(feature_data) == values$feature_id_col)] <- "ID"
         
         if (length(which(colnames(feature_data) == "ID")) > 1) {
-          values$expression_oFile <- saveLines("featureData <- featureData[,-1]", values$expression_oFile)
+          values$expression_oFile <- saveLines("featureData2 <- featureData2[,-1]", values$expression_oFile)
           
+          #You probably shouldn't be doing this every time
           feature_data <- feature_data[,-1]
         }
       }
@@ -1510,7 +1512,7 @@ server <- function(input, output, session) {
       before <- length(values$expression_oFile)
       
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
-      values$expression_oFile <- saveLines(c(paste0("expressionData <- replaceID(expressionData, featureData, ", 
+      values$expression_oFile <- saveLines(c(paste0("expressionData <- replaceID(expressionData, featureData2, ", 
                                                     format_string(input$colForExprLabels), ", ",
                                                     format_string(input$howToSummarize), ", ", 
                                                     format_string(input$feature_dropNA), ")")), 
@@ -1626,7 +1628,7 @@ server <- function(input, output, session) {
                                            "expressionData <- filterExpressionData(expressionData, to_filter)",
                                            paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
                                            paste0("featureIdCol <- ", format_string(values$feature_id_col)),
-                                           "expressionData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"), 
+                                           "featureData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"), 
                                          values$expression_oFile)
     values$expression_currChunkLen <- length(values$expression_oFile) - before
   })
