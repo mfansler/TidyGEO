@@ -664,7 +664,6 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   #}
   
   #dataWRowNames <- data
-  browser()
   if (dropNA) {
     replacementWRowNames <- replacement[!is.na(replacement[,replaceCol]), c("ID", replaceCol)]
   } else {

@@ -1480,21 +1480,25 @@ server <- function(input, output, session) {
       
       feature_data <- values$feature_data
       
+      values$expression_oFile <- saveLines(commentify("replace ID column"), values$expression_oFile)
+      
       if (values$feature_id_col != "ID") {
+        
+        values$expression_oFile <- saveLines(
+          c(paste0("colnames(featureData)[which(colnames(featureData) == 'ID')] <- ", 
+                   format_string(colnames(values$orig_feature[which(colnames(feature_data) == "ID")]))),
+            paste0("colnames(featureData)[which(colnames(featureData) == ", 
+                   format_string(values$feature_id_col), ")] <- 'ID'")), 
+          values$expression_oFile)
+        
         colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
           colnames(values$orig_feature[which(colnames(feature_data) == "ID")])
         colnames(feature_data)[which(colnames(feature_data) == values$feature_id_col)] <- "ID"
         
-        values$expression_oFile <- saveLines(
-          c(paste0("colnames(featureData)[which(colnames(featureData) == 'ID')] <- ", 
-                 format_string(colnames(values$orig_feature[which(colnames(feature_data) == "ID")]))),
-            paste0("colnames(featureData[which(colnames(feature_data) == ", 
-                   format_string(values$feature_id_col), ")] <- 'ID'")), 
-          values$expression_oFile)
-        
         if (length(which(colnames(feature_data) == "ID")) > 1) {
-          feature_data <- feature_data[,-1]
           values$expression_oFile <- saveLines("featureData <- featureData[,-1]", values$expression_oFile)
+          
+          feature_data <- feature_data[,-1]
         }
       }
       
@@ -1506,8 +1510,7 @@ server <- function(input, output, session) {
       before <- length(values$expression_oFile)
       
       #WRITING COMMANDS TO EXPRESSION RSCRIPT
-      values$expression_oFile <- saveLines(c(commentify("replace ID column"),
-                                             paste0("expressionData <- replaceID(expressionData, featureData, ", 
+      values$expression_oFile <- saveLines(c(paste0("expressionData <- replaceID(expressionData, featureData, ", 
                                                     format_string(input$colForExprLabels), ", ",
                                                     format_string(input$howToSummarize), ", ", 
                                                     format_string(input$feature_dropNA), ")")), 
@@ -1522,6 +1525,8 @@ server <- function(input, output, session) {
       
       values$expression_currChunkLen <- after - before
     }
+    
+    #updateSelectInput(session, "howToSummarize", selected = "keep all")
     
     #shinyjs::disable("expression_replace_id")
     
@@ -1540,10 +1545,12 @@ server <- function(input, output, session) {
         values$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else values$feature_data[, input$colForExprLabels]
       can_summarize <- !is_all_unique(new_expression_labels)
       if (can_summarize) {
-        choices <- if (values$expression_warning_state) c("mean", "median", "max", "min", "keep all") else c("keep all")
+        choices <- if (values$expression_warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
         selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                                                   How would you like to summarize the data?", 
-                                                  help_button("Groups the data by ID and takes the specified measurement for the group.")), 
+                                                  help_button("Groups the data by ID and takes the specified measurement for the group.
+                                                              Please note that if you choose 'keep all' you will not be able to transpose
+                                                              the data.")), 
                     choices = choices)
       }
       
@@ -1616,7 +1623,7 @@ server <- function(input, output, session) {
     values$expression_oFile <- saveLines(c(commentify("filter data"),
                                            paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
                                            paste0("names(to_filter) <- ", format_string(colnames(values$expr_to_display))),
-                                           "expressionData <- filterExpressionData(expressionData, filterSpecs)",
+                                           "expressionData <- filterExpressionData(expressionData, to_filter)",
                                            paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
                                            paste0("featureIdCol <- ", format_string(values$feature_id_col)),
                                            "expressionData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"), 
