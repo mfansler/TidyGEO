@@ -26,7 +26,7 @@ saveLines <- function(strings, oFile) {
 }
 
 saveToRscript <- function(oFile, filePath = file.path(tempdir(), "script_Temp.R"), 
-                          functions_path = 'User/geocurateFunctions_User.R') {
+                          functions_path = 'User/clinical_helper_functions.R') {
   file.copy(functions_path, filePath, overwrite = TRUE)
   sink(filePath, append = TRUE)
   for (i in 1:length(oFile)) cat(oFile[i], fill = T)

@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   library(rhandsontable)
   library(shinyWidgets)
   library(RColorBrewer)
-  source("geocurateFunctions.R")
+  source("tidygeo_functions.R")
 })
 
 start_time <- Sys.time()
@@ -474,7 +474,7 @@ server <- function(input, output, session) {
       suggestions = c("no suggestions"),
       excludesList = list(),
       oFile = commentify(" "),
-      expression_oFile = "source('geocurateFunctions_User.R')",
+      expression_oFile = commentify(" "),
       downloadChunkLen = 0,
       currChunkLen = 0,
       expression_downloadChunkLen = 0,
