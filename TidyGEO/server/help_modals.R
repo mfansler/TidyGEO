@@ -1,0 +1,93 @@
+observeEvent(input$split_help, {
+  help_modal("www/Split_Vars_Documentation.md", "split_images")
+})
+output$split_images <- renderUI({
+  images <- c("separate_example.gif")
+  image_names <- c("Separate Columns Demo")
+  
+  create_image_grid(images, image_names)
+})
+
+observeEvent(input$divide_help, {
+  help_modal("www/Divide_Vars_Documentation.md", "divide_images")
+})
+output$divide_images <- renderUI({
+  images <- c("divide_example.gif")
+  image_names <- c("Divide Columns Demo")
+  
+  create_image_grid(images, image_names)
+})
+
+observeEvent(input$substitute_help, {
+  help_modal("www/Substitute_Vals_Documentation.md", "substitute_images")
+})
+output$substitute_images <- renderUI({
+  images <- c("substitute_example.gif")
+  image_names <- c("Substitute Values Demo")
+  
+  create_image_grid(images, image_names)
+})
+
+observeEvent(input$regex_help, {
+  help_modal("www/Regular_Expressions_Documentation.md")
+})
+
+observeEvent(input$exclude_help, {
+  help_modal("www/Exclude_Vals_Documentation.md", "exclude_images")
+})
+output$exclude_images <- renderUI({
+  images <- c("exclude_example.gif")
+  image_names <- c("Exclude Values Demo")
+  
+  create_image_grid(images, image_names)
+})
+
+observeEvent(input$download_help, {
+  help_modal("www/Download_Data_Documentation.md", "download_images")
+})
+output$download_images <- renderUI({
+  images <- c("download_example.gif")
+  image_names <- c("Demo - Load Series")
+  
+  create_image_grid(images, image_names)
+})
+
+observeEvent(input$clinical_r_help, {
+  help_modal("www/R_Help_Documentation.md")
+})
+
+observeEvent(input$replace_id_help, {
+  help_modal("www/Different_ID_Documentation.md")
+})
+
+observeEvent(input$transpose_help, {
+  help_modal("www/Transpose_Documentation.md")
+})
+
+observeEvent(input$filter_help, {
+  help_modal("www/Filter_Data_Documentation.md")
+})
+
+observeEvent(input$evaluate_filters_help, {
+  help_modal("www/Apply_Filters_Documentation.md")
+})
+
+observeEvent(input$expression_r_help, {
+  help_modal("www/R_Help_Documentation.md")
+})
+
+observeEvent(input$clinical_files_help, {
+  help_modal("www/File_Types_Documentation.md")
+})
+
+observeEvent(input$expression_files_help, {
+  help_modal("www/File_Types_Documentation.md")
+})
+
+observeEvent(input$clickimg, {
+  showModal(modalDialog({
+    tags$img(src = input$clickimg, width = "100%", height = "100%")
+  },
+  size = "l"
+  ))
+}, ignoreInit = TRUE)
