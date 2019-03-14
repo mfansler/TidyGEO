@@ -12,105 +12,23 @@ suppressPackageStartupMessages({
   source("tidygeo_functions.R")
 })
 
+source(file.path("server", "clinical", "helper_functions.R"), local = TRUE)$value
+source(file.path("server", "assay", "helper_functions.R"), local = TRUE)$value
+
 start_time <- Sys.time()
 series_list <- read_feather("www/series_list.feather")
 platform_list <- read_feather("www/platform_list.feather")
 end_time <- Sys.time()
 print(paste("Reading files", end_time - start_time))
 
-# help icon to add as tag to buttons, etc ---------------------------------
+# help icons to add as tag to buttons, etc --------------------------------
 
+source(file.path("ui", "help_ui.R"), local = TRUE)$value
 
-help_button <- function(message = "content", placement = "right") {
-  tipify(icon("question-circle"), title = message, placement = placement, trigger = "hover")
-}
-
-help_link <- function(id) {
-  tipify(actionLink(inputId = id, label = icon("question-circle")), title = "Click for help", placement = "right", trigger = "hover")
-}
-
-help_modal <- function(help_file, images_id = NULL) {
-  showModal(
-    modalDialog(
-      includeMarkdown(help_file),
-      conditionalPanel(
-        condition = !is.null(images_id),
-        uiOutput(images_id)
-      ),
-      footer = modalButton("Close"),
-      size = "l"
-      )
-    )
-}
-
-
-# creating an image grid for help modals ----------------------------------
-
-
-create_image_grid <- function(images, image_names) {
-  fluidRow(
-    mapply(function(my_image, img_name) {
-      column(3, 
-             div(tags$img(src = my_image, width = "200px", class = "clickimg", "data-value" = my_image), img_name)
-      )
-    }, images, image_names, SIMPLIFY = FALSE, USE.NAMES = FALSE)
-  )
-}
 
 # colored buttons of different types --------------------------------------
 
-
-primary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) {
-  shiny::actionButton(id, div(label, icon), width = width, 
-               style = "color: #fff; background-color: #337ab7; border-color: #2e6da4", class = class)
-}
-
-secondary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) {
-  shiny::actionButton(id, div(label, icon), width = width, 
-               style = "color: #fff; background-color: #2ca25f; border-color: #2ca25f", class = class)
-}
-
-tertiary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) {
-  shiny::actionButton(id, div(label, icon), width = width, 
-               style = "color: #fff; background-color: #6baed6; border-color: #6baed6", class = class)
-}
-
-# detects variable type & formats string to be written to R script --------
-
-
-format_string <- function(element) {
-  suppressWarnings(if (is.null(element)) {
-    return("NULL")
-  }
-  else if (is.na(element)) {
-    return("NA")
-  }
-  else if (mode(element) == "numeric" ||
-           mode(element) == "logical") {
-    element <- as.character(element)
-  }
-  else if (mode(element) == "character") {
-    element <-
-      sapply(element, function(x) {
-        paste0("'", x, "'")
-      }, USE.NAMES = FALSE)
-  })
-  if (length(element) > 1) {
-    element <- paste0("c(", paste(element, collapse = ", "), ")")
-  }
-  return(element)
-}
-
-# creates section headings for R script -----------------------------------
-
-
-commentify <- function(message) {
-  
-  num_chars <- 75
-  comment <- paste0("# ", message, " ")
-  comment <- paste0(comment, paste(rep("-", num_chars - nchar(comment)), collapse = ""))
-  c("", "", comment, "")
-}
+source(file.path("ui", "button_types.R"), local = TRUE)$value
 
 options(shiny.autoreload = F)
 
