@@ -1,0 +1,59 @@
+output$choose_cols_to_split <- renderUI({
+  #colNames <- colnames(clinical_vals$clinical_data[-which(colnames(clinical_vals$clinical_data) == "evalSame")])
+  colNames <- colnames(clinical_vals$clinical_data)
+  checkboxGroupInput(inputId = "cols_to_split", label = NULL, colNames)
+})
+
+observe({
+  updateCheckboxGroupInput(
+    session, 'cols_to_split', choices = colnames(clinical_vals$clinical_data),
+    selected = if (input$select_all_split) colnames(clinical_vals$clinical_data)
+  )
+})
+
+output$choose_cols_to_divide <- renderUI({
+  #colNames <- colnames(clinical_vals$clinical_data[-which(colnames(clinical_vals$clinical_data) == "evalSame")])
+  colNames <- colnames(clinical_vals$clinical_data)
+  checkboxGroupInput(inputId = "colsToDivide", label = NULL, colNames)
+})
+
+observe({
+  updateCheckboxGroupInput(
+    session, 'colsToDivide', choices = colnames(clinical_vals$clinical_data),
+    selected = if (input$select_all_divide) colnames(clinical_vals$clinical_data)
+  )
+})
+
+
+observeEvent(input$reformat_columns, ({
+  if (!is.null(clinical_vals$clinical_data)) {
+    clinical_vals$last_data <- clinical_vals$clinical_data
+    before <- length(clinical_vals$oFile)
+    clinical_vals$oFile <- saveLines(commentify("extract values from columns with delimiter"), clinical_vals$oFile)
+    if (input$to_split) {
+      clinical_vals$clinical_data <- withProgress(extractColNames(clinical_vals$clinical_data,
+                                                      input$split_delimiter,
+                                                      input$cols_to_split), message = "Extracting column names")
+      #WRITING COMMANDS TO R SCRIPT
+      clinical_vals$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), clinical_vals$oFile)
+      clinical_vals$oFile <- saveLines(c(paste0("split_delimiter <- ", format_string(input$split_delimiter)), 
+                                  "clinical_data <- extractColNames(clinical_data, split_delimiter, cols_to_split)"), 
+                                clinical_vals$oFile)
+    } else if (input$to_divide) {
+      clinical_vals$clinical_data <- withProgress(splitCombinedVars(clinical_vals$clinical_data,
+                                                        input$colsToDivide,
+                                                        input$divide_delimiter), message = "Splitting combined variables")
+      #WRITING COMMANDS TO R SCRIPT
+      clinical_vals$oFile <- saveLines(paste0("cols_to_divide <- ", format_string(input$colsToDivide)), clinical_vals$oFile)
+      clinical_vals$oFile <- saveLines(c(paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
+                                  "clinical_data <- splitCombinedVars(clinical_data, cols_to_divide, divide_delimiter)"), 
+                                clinical_vals$oFile)
+      
+    }
+    updateCheckboxInput(session, inputId = "to_split", value = FALSE)
+    updateCheckboxInput(session, inputId = "to_divide", value = FALSE)
+    
+    clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+  }
+  
+}))
