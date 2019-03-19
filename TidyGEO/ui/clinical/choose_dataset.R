@@ -10,7 +10,7 @@ sidebarLayout(
     ),
     selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                   help_link(id = "download_help")), choices = NULL),
-    #uiOutput("gse_link"),
+    uiOutput("platform_options"),
     primary_button(id = "download_data_evaluate", label = "Import"),
     hr(), uiOutput("start_clinical_nav_ui")
   ),

@@ -32,17 +32,8 @@ output$series_information_description <- renderUI({
   }
 })
 
-observeEvent(input$download_data_evaluate, {
-  if (is.null(input$geoID) || input$geoID == "") {
-    values$errorState <- TRUE
-    createAlert(session, "alert", "inputError", title = "Error",
-                content = "Please specify a GSE ID.", append = FALSE)
-  }
-  else {
-    closeAlert(session, "inputError")
-    closeAlert(session, "fileError")
-    values$errorState <- FALSE
-    
+output$platform_options <- renderUI({
+  if (!is.null(input$geoID) && input$geoID != "") {
     platforms <- get_platforms(input$geoID, session)
     if (!is.null(platforms)) {
       platform_links <- list()
@@ -57,16 +48,49 @@ observeEvent(input$download_data_evaluate, {
       }
       
       if (length(platforms) > 0) {
-        showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-                                           choiceNames = platform_links, 
-                                           choiceValues = platforms), 
-                              footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s",
-                              easyClose = TRUE))
-        if (length(platforms) == 1) {
-          click("usePlatform")
-        }
+        radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+                     choiceNames = platform_links, 
+                     choiceValues = platforms)
       }
     }
+  }
+})
+
+observeEvent(input$download_data_evaluate, {
+  if (is.null(input$geoID) || input$geoID == "") {
+    values$errorState <- TRUE
+    createAlert(session, "alert", "inputError", title = "Error",
+                content = "Please specify a GSE ID.", append = FALSE)
+  }
+  else {
+    closeAlert(session, "inputError")
+    closeAlert(session, "fileError")
+    values$errorState <- FALSE
+    
+    #platforms <- get_platforms(input$geoID, session)
+    #if (!is.null(platforms)) {
+    #  platform_links <- list()
+    #  for (i in 1:length(platforms)) {
+    #    id <- str_remove(platforms[i], "GSE\\d+-")
+    #    id <- str_remove(id, "_series_matrix.txt.gz")
+    #    platform_description <- if (any(str_detect(platform_list$Accession, id)))
+    #      platform_list$description[which(platform_list$Accession == id)] else ""
+    #    platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", id), 
+    #                                 id), icon("external-link"), 
+    #                               em(platform_description))
+    #  }
+    #  
+    #  if (length(platforms) > 0) {
+    #    showModal(modalDialog(radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+    #                                       choiceNames = platform_links, 
+    #                                       choiceValues = platforms), 
+    #                          footer = primary_button(id = "usePlatform", label = "Use platform"), size = "s",
+    #                          easyClose = TRUE))
+    #    if (length(platforms) == 1) {
+    #      click("usePlatform")
+    #    }
+    #  }
+    #}
   }
 })
 

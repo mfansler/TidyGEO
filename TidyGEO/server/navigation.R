@@ -1,6 +1,7 @@
 output$start_clinical_nav_ui <- renderUI({
   div(
-    secondary_button('nav_choose_to_clinical_button', 'Next - Process clinical data', class = "right_align")
+    tertiary_button('nav_choose_to_assay_button', 'Process assay data'),
+    secondary_button('nav_choose_to_clinical_button', 'Process clinical data', class = "right_align")
   )
 })
 observeEvent(input$nav_choose_to_clinical_button, {
