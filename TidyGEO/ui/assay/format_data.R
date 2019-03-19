@@ -1,8 +1,8 @@
 tabPanel("1",
          h4("Formatting the assay data"),
          p("This portion of the application can reformat the assay data
-           associated with the specified GEO ID. If you have already
-           loaded the series data, please start by clicking the buttons below."),
+           associated with the specified GEO ID."), 
+         p("Please start by clicking the help icons or the option buttons below."),
          tags$b("Options:"),
          fluidRow(
            column(12, 

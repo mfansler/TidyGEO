@@ -19,7 +19,7 @@ output$display_cols_for_exclude <- renderUI({
   #colNames <- colnames(clinical_vals$clinical_data[-which(colnames(clinical_vals$clinical_data) == "evalSame")])
   colNames <- colnames(clinical_vals$clinical_data)
   setNames(colNames, colNames)
-  selectInput(inputId = "col_valsToExclude", label = div("Please select a column with values to exclude: ", 
+  selectInput(inputId = "col_valsToExclude", label = div("Column to use as filtering criteria: ", 
                                                          help_link(id = "exclude_help")), 
               choices = colNames,
               selected = clinical_vals$last_selected_exclude)

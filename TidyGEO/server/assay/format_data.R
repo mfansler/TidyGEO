@@ -1,6 +1,6 @@
 output$featureData <- DT::renderDT({
-  if (!is.null(values$feature_to_display)) {
-    datatable(values$feature_to_display, filter = "top", rownames = FALSE, options = list(dom = "tp", 
+  if (!is.null(assay_vals$feature_display)) {
+    datatable(assay_vals$feature_display, filter = "top", rownames = FALSE, options = list(dom = "tp", 
                                                                                           pageLength = 5,
                                                                                           columnDefs = list(list(
                                                                                             targets = "_all",
@@ -14,7 +14,7 @@ output$featureData <- DT::renderDT({
                                                                                           ))))
   }
   else {
-    datatable(values$default_ft_data, rownames = FALSE, 
+    datatable(assay_vals$ft_default, rownames = FALSE, 
               colnames = "NO DATA", options = list(dom = "tp"))
   }
 }) 
@@ -45,20 +45,20 @@ observeEvent(input$expression_replace_id, {
 })
 
 observeEvent(input$feature_next_cols, {
-  if (!is.null(values$feature_data)) {
-    values$feature_to_display <- advance_columns_view(values$feature_data, 
-                                                      start = colnames(values$feature_to_display)[ncol(values$feature_to_display)], 
+  if (!is.null(assay_vals$feature_data)) {
+    assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
+                                                      start = colnames(assay_vals$feature_display)[ncol(assay_vals$feature_display)], 
                                                       forward_distance = 4, 
-                                                      previous_view = values$feature_to_display)
+                                                      previous_view = assay_vals$feature_display)
   }
 })
 
 observeEvent(input$feature_prev_cols, {
-  if (!is.null(values$feature_data)) {
-    values$feature_to_display <- retract_columns_view(values$feature_data, 
-                                                      last_column = colnames(values$feature_to_display)[2], 
+  if (!is.null(assay_vals$feature_data)) {
+    assay_vals$feature_display <- retract_columns_view(assay_vals$feature_data, 
+                                                      last_column = colnames(assay_vals$feature_display)[2], 
                                                       backward_distance = 4, 
-                                                      previous_view = values$feature_to_display)
+                                                      previous_view = assay_vals$feature_display)
   }
 })
 
@@ -66,29 +66,29 @@ observeEvent(input$expression_evaluate_id, {
   
   removeModal()
   
-  if (!is.null(assay_vals$assay_data) && values$feature_id_col != input$colForExprLabels) {
-    values$last_expr <- assay_vals$assay_data
+  if (!is.null(assay_vals$assay_data) && assay_vals$ft_id_col != input$colForExprLabels) {
+    assay_vals$last_data <- assay_vals$assay_data
     
-    feature_data <- values$feature_data
+    feature_data <- assay_vals$feature_data
     
-    values$expression_oFile <- saveLines(c(commentify("replace ID column"),
-                                           "featureData2 <- featureData"), values$expression_oFile)
+    assay_vals$oFile <- saveLines(c(commentify("replace ID column"),
+                                           "featureData2 <- featureData"), assay_vals$oFile)
     
-    if (values$feature_id_col != "ID") {
+    if (assay_vals$ft_id_col != "ID") {
       
-      values$expression_oFile <- saveLines(
+      assay_vals$oFile <- saveLines(
         c(paste0("colnames(featureData2)[which(colnames(featureData2) == 'ID')] <- ", 
-                 format_string(colnames(values$orig_feature[which(colnames(feature_data) == "ID")]))),
+                 format_string(colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")]))),
           paste0("colnames(featureData2)[which(colnames(featureData2) == ", 
-                 format_string(values$feature_id_col), ")] <- 'ID'")), 
-        values$expression_oFile)
+                 format_string(assay_vals$ft_id_col), ")] <- 'ID'")), 
+        assay_vals$oFile)
       
       colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
-        colnames(values$orig_feature[which(colnames(feature_data) == "ID")])
-      colnames(feature_data)[which(colnames(feature_data) == values$feature_id_col)] <- "ID"
+        colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")])
+      colnames(feature_data)[which(colnames(feature_data) == assay_vals$ft_id_col)] <- "ID"
       
       if (length(which(colnames(feature_data) == "ID")) > 1) {
-        values$expression_oFile <- saveLines("featureData2 <- featureData2[,-1]", values$expression_oFile)
+        assay_vals$oFile <- saveLines("featureData2 <- featureData2[,-1]", assay_vals$oFile)
         
         #You probably shouldn't be doing this every time
         feature_data <- feature_data[,-1]
@@ -97,26 +97,26 @@ observeEvent(input$expression_evaluate_id, {
     
     assay_vals$assay_data <- withProgress(message = "Replacing the ID column", 
                                      replaceID(assay_vals$assay_data, feature_data, input$colForExprLabels, input$howToSummarize, input$feature_dropNA))
-    values$feature_prev_id <- values$feature_id_col
-    values$feature_id_col <- input$colForExprLabels
+    assay_vals$ft_prev_id <- assay_vals$ft_id_col
+    assay_vals$ft_id_col <- input$colForExprLabels
     
-    before <- length(values$expression_oFile)
+    before <- length(assay_vals$oFile)
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
-    values$expression_oFile <- saveLines(c(paste0("expressionData <- replaceID(expressionData, featureData2, ", 
+    assay_vals$oFile <- saveLines(c(paste0("expressionData <- replaceID(expressionData, featureData2, ", 
                                                   format_string(input$colForExprLabels), ", ",
                                                   format_string(input$howToSummarize), ", ", 
                                                   format_string(input$feature_dropNA), ")")), 
-                                         values$expression_oFile)
+                                         assay_vals$oFile)
     
-    values$expr_to_display <- advance_columns_view(assay_vals$assay_data, 
+    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
                                                    start = 1, 
                                                    forward_distance = 5, 
                                                    assay_vals$assay_data)
     
-    after <- length(values$expression_oFile)
+    after <- length(assay_vals$oFile)
     
-    values$expression_currChunkLen <- after - before
+    assay_vals$current_chunk_len <- after - before
   }
   
   #updateSelectInput(session, "howToSummarize", selected = "keep all")
@@ -128,17 +128,17 @@ observeEvent(input$expression_evaluate_id, {
 output$exprLabels <- renderUI({
   selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
                                               help_button("To keep the same ID column, please choose ID.")), 
-              choices = colnames(values$feature_data)[which(!colnames(values$feature_data) == "ID")]
+              choices = colnames(assay_vals$feature_data)[which(!colnames(assay_vals$feature_data) == "ID")]
   )
 })
 
 output$summarizeOptions <- renderUI({
   if (!is.null(input$colForExprLabels) && input$colForExprLabels != "") {
     new_expression_labels <- if (input$feature_dropNA) 
-      values$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else values$feature_data[, input$colForExprLabels]
+      assay_vals$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else assay_vals$feature_data[, input$colForExprLabels]
     can_summarize <- !is_all_unique(new_expression_labels)
     if (can_summarize) {
-      choices <- if (values$expression_warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
+      choices <- if (assay_vals$warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                                                 How would you like to summarize the data?", 
                                                 help_button("Groups the data by ID and takes the specified measurement for the group.
@@ -151,11 +151,11 @@ output$summarizeOptions <- renderUI({
 })
 
 observe({
-  shinyjs::toggleState("expression_replace_id", condition = !values$expression_disable_btns)
+  shinyjs::toggleState("expression_replace_id", condition = !assay_vals$disable_btns)
 })
 
 observe({
-  disable_transpose <- !values$expression_disable_btns & length(unique(assay_vals$assay_data$ID)) == nrow(assay_vals$assay_data)
+  disable_transpose <- !assay_vals$disable_btns & length(unique(assay_vals$assay_data$ID)) == nrow(assay_vals$assay_data)
   shinyjs::toggleState("expression_transpose", disable_transpose)
 })
 
@@ -163,30 +163,30 @@ observe({
 
 observeEvent(input$expression_transpose, {
   if (!is.null(assay_vals$assay_data)) {
-    values$last_expr <- assay_vals$assay_data
+    assay_vals$last_data <- assay_vals$assay_data
     
-    before <- length(values$expression_oFile)
+    before <- length(assay_vals$oFile)
     
     assay_vals$assay_data <- withProgress(message = "Transposing the data", 
                                      quickTranspose(assay_vals$assay_data))
     
-    values$expression_prev_id <- values$expression_id_col
-    values$expression_id_col <- "colnames"
+    assay_vals$prev_id <- assay_vals$id_col
+    assay_vals$id_col <- "colnames"
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
-    values$expression_oFile <- saveLines(c(commentify("transpose data"), 
+    assay_vals$oFile <- saveLines(c(commentify("transpose data"), 
                                            "expressionData <- quickTranspose(expressionData)"), 
-                                         values$expression_oFile)
+                                         assay_vals$oFile)
     
-    values$expr_to_display <- advance_columns_view(assay_vals$assay_data, 
+    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
                                                    start = 1, 
                                                    forward_distance = 5, 
                                                    previous_view = assay_vals$assay_data)
     
-    after <- length(values$expression_oFile)
+    after <- length(assay_vals$oFile)
     
-    values$expression_currChunkLen <- after - before
-    values$expression_disable_btns <- TRUE
+    assay_vals$current_chunk_len <- after - before
+    assay_vals$disable_btns <- TRUE
   }
 })
 
@@ -194,76 +194,76 @@ observeEvent(input$expression_transpose, {
 
 observeEvent(input$expression_evaluate_filters, {
   #TODO: debug filtering when the data is transposed
-  values$last_expr <- assay_vals$assay_data
-  values$last_feature <- values$feature_data
+  assay_vals$last_data <- assay_vals$assay_data
+  assay_vals$last_feature <- assay_vals$feature_data
   
   to_filter <- input$exprPreview_search_columns
-  names(to_filter) <- colnames(values$expr_to_display)
+  names(to_filter) <- colnames(assay_vals$assay_display)
   
   assay_vals$assay_data <- filterExpressionData(assay_vals$assay_data, to_filter)
-  values$expr_to_display <- advance_columns_view(assay_vals$assay_data, 
+  assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
                                                  start = 1, 
                                                  forward_distance = 5, 
                                                  previous_view = assay_vals$assay_data)
-  values$feature_data <- find_intersection(values$feature_data, assay_vals$assay_data, values$feature_id_col, values$expression_id_col)
-  values$feature_to_display <- advance_columns_view(values$feature_data, 
+  assay_vals$feature_data <- find_intersection(assay_vals$feature_data, assay_vals$assay_data, assay_vals$ft_id_col, assay_vals$id_col)
+  assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
                                                     start = 1, 
                                                     forward_distance = 4, 
-                                                    previous_view = values$feature_data)
+                                                    previous_view = assay_vals$feature_data)
   
   #WRITING COMMANDS TO EXPRESSION RSCRIPT
-  before <- length(values$expression_oFile)
-  values$expression_oFile <- saveLines(c(commentify("filter data"),
+  before <- length(assay_vals$oFile)
+  assay_vals$oFile <- saveLines(c(commentify("filter data"),
                                          paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
-                                         paste0("names(to_filter) <- ", format_string(colnames(values$expr_to_display))),
+                                         paste0("names(to_filter) <- ", format_string(colnames(assay_vals$assay_display))),
                                          "expressionData <- filterExpressionData(expressionData, to_filter)",
-                                         paste0("expressionIdCol <- ", format_string(values$expression_id_col)),
-                                         paste0("featureIdCol <- ", format_string(values$feature_id_col)),
+                                         paste0("expressionIdCol <- ", format_string(assay_vals$id_col)),
+                                         paste0("featureIdCol <- ", format_string(assay_vals$ft_id_col)),
                                          "featureData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"), 
-                                       values$expression_oFile)
-  values$expression_currChunkLen <- length(values$expression_oFile) - before
+                                       assay_vals$oFile)
+  assay_vals$current_chunk_len <- length(assay_vals$oFile) - before
 })
 
 observeEvent(input$undoEvalExpr, {
   if (!is.null(assay_vals$assay_data)) {
     
     #if replaceID is in the last chunk, then enable the button again
-    file_len <- length(values$expression_oFile)
-    if (any(grepl("quickTranspose", values$expression_oFile[(file_len - (values$expression_currChunkLen - 1)):file_len]))) {
-      values$expression_disable_btns <- FALSE
+    file_len <- length(assay_vals$oFile)
+    if (any(grepl("quickTranspose", assay_vals$oFile[(file_len - (assay_vals$current_chunk_len - 1)):file_len]))) {
+      assay_vals$disable_btns <- FALSE
     }
     
-    values$feature_id_col <- values$feature_prev_id
-    values$feature_data <- values$last_feature
-    values$feature_to_display <- advance_columns_view(values$feature_data, 
+    assay_vals$ft_id_col <- assay_vals$ft_prev_id
+    assay_vals$feature_data <- assay_vals$last_feature
+    assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
                                                       start = 1, 
                                                       forward_distance = 4, 
-                                                      previous_view = values$feature_data)
-    values$expression_id_col <- values$expression_prev_id
-    assay_vals$assay_data <- values$last_expr
-    values$expr_to_display <- advance_columns_view(assay_vals$assay_data, 
+                                                      previous_view = assay_vals$feature_data)
+    assay_vals$id_col <- assay_vals$prev_id
+    assay_vals$assay_data <- assay_vals$last_data
+    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
                                                    start = 1, 
                                                    forward_distance = 5, 
                                                    previous_view = assay_vals$assay_data)
-    values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_currChunkLen)
-    values$expression_currChunkLen <- 0
+    assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$current_chunk_len)
+    assay_vals$current_chunk_len <- 0
   }
 })
 
 observeEvent(input$resetExpr, {
   if (!is.null(assay_vals$assay_data)) {
-    values$expression_disable_btns <- FALSE
-    values$feature_data <- values$orig_feature
-    values$feature_to_display <- advance_columns_view(values$feature_data, 
+    assay_vals$disable_btns <- FALSE
+    assay_vals$feature_data <- assay_vals$orig_feature
+    assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
                                                       start = 1, 
                                                       forward_distance = 4, 
-                                                      previous_view = values$feature_data)
+                                                      previous_view = assay_vals$feature_data)
     assay_vals$assay_data <- assay_vals$orig_data
-    values$expr_to_display <- advance_columns_view(assay_vals$assay_data, 
+    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
                                                    start = 1, 
                                                    forward_distance = 5, 
                                                    previous_view = assay_vals$assay_data)
-    values$expression_oFile <- removeFromScript(values$expression_oFile, len = values$expression_downloadChunkLen, all = T)
-    values$expression_currChunkLen <- 0
+    assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$download_chunk_len, all = T)
+    assay_vals$current_chunk_len <- 0
   }
 })

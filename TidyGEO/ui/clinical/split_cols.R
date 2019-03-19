@@ -1,8 +1,10 @@
 tabPanel("2",
          h4("Formatting the data"),
-         p("Sometimes columns contain multiple values in them. This makes it so that the values
-           cannot be analyzed separately. If you see any columns in your data that contain multiple values, 
-           you can indicate that here and separate them."),
+         p('Sometimes a single column contains multiple values in each cell. This makes it so that the values
+           cannot be analyzed separately. '),
+         p('If you see any columns in your data that contain key-value pairs 
+          (e.g., "treatment:control") or multiple values in a column (e.g., "control;geneA;female"), 
+           you can indicate that here and separate them.'),
          checkboxInput(inputId = "to_split", label = div(tags$b("Choose columns with key-value pairs separated by a delimiter"),
                                                          help_link(id = "split_help")
          )),

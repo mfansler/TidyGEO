@@ -34,7 +34,6 @@ output$display_cols_to_sub <- renderUI({
 
 suggestions <- reactive({ 
   if (!is.null(clinical_vals$clinical_data) && !is.null(input$colsToSub)) {
-    print(input$colsToSub)
     unique(as.character(clinical_vals$clinical_data[,input$colsToSub]))
   }
 })
@@ -51,8 +50,11 @@ observeEvent(input$input_subs_table, {
 
 observeEvent(input$add_val_to_sub, {
   if (!is.null(input$colsToSub) && input$colsToSub != "") {
-    if (all(clinical_vals$subs_input["To_Replace"] == "")) {
-      clinical_vals$subs_input["To_Replace"] <- paste("RANGE:", paste(input$slideInSub, collapse = " - "))
+    if (
+      is.na(clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"]) |
+      clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"] == ""
+      ) {
+      clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"] <- paste("RANGE:", paste(input$slideInSub, collapse = " - "))
     } else {
       clinical_vals$subs_input <- rbind(clinical_vals$subs_input, c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), ""))
     }

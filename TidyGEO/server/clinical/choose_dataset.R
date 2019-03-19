@@ -79,7 +79,7 @@ observeEvent(input$usePlatform, {
     load_series(input$geoID, input$platformIndex, session = session), 
     message = "Downloading series data from GEO")
   clinical_vals$clinical_data <- NULL
-  values$expr_data <- NULL
+  assay_vals$assay_data <- NULL
   
   #WRITING COMMANDS TO R SCRIPT
   clinical_vals$oFile <- saveLines(commentify("load series"), clinical_vals$oFile)
@@ -87,11 +87,11 @@ observeEvent(input$usePlatform, {
   clinical_vals$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "series_data <- load_series(geoID, dataSetIndex)"), clinical_vals$oFile)
   clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
   
-  values$expression_oFile <- clinical_vals$oFile
-  values$expression_downloadChunkLen <- clinical_vals$download_chunk_len
+  assay_vals$oFile <- clinical_vals$oFile
+  assay_vals$download_chunk_len <- clinical_vals$download_chunk_len
   
   #extracted_data <- NULL
-  clinical_values$orig_data <- clinical_vals$clinical_data
+  clinical_vals$orig_data <- clinical_vals$clinical_data
 })
 
 #observeEvent(input$load_clinical, {
