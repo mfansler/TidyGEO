@@ -18,6 +18,7 @@ sidebarLayout(
     h4("Series information"),
     bsAlert("alert"),
     uiOutput("series_information_description"),
-    htmlOutput("series_information")
+    uiOutput("series_information")
+    #htmlOutput("series_information")
   )
 )

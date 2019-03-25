@@ -138,7 +138,8 @@ server <- function(input, output, session) {
     reactiveValues(
       allData = NULL,
       display_barwidth_option = FALSE,
-      errorState = FALSE
+      errorState = FALSE,
+      series_needs_download = FALSE
     )
   
   clinical_vals <- 
@@ -186,21 +187,21 @@ server <- function(input, output, session) {
       expression_warning_state = FALSE #done
     )
   
-  get_series_information <- function() {
-    if (!is.null(input$geoID) && input$geoID != "") {
-      geo_url <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID)
-    } else {
-      geo_url <- "https://www.ncbi.nlm.nih.gov/gds/"
-    }
-    return(tags$iframe(src = geo_url, style = "width:100%;",
-                       frameborder = "0",
-                       id = "iframe", 
-                       height = "500px"))
-  }
-  
-  output$series_information <- renderUI({
-    get_series_information()
-  })
+  #get_series_information <- function() {
+  #  if (!is.null(input$geoID) && input$geoID != "") {
+  #    geo_url <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID)
+  #  } else {
+  #    geo_url <- "https://www.ncbi.nlm.nih.gov/gds/"
+  #  }
+  #  return(tags$iframe(src = geo_url, style = "width:100%;",
+  #                     frameborder = "0",
+  #                     id = "iframe", 
+  #                     height = "500px"))
+  #}
+#  
+  #output$series_information <- renderUI({
+  #  get_series_information()
+  #})
   
   # reset -------------------------------------------------------------------
   

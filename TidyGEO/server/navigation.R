@@ -5,7 +5,12 @@ output$start_clinical_nav_ui <- renderUI({
   )
 })
 observeEvent(input$nav_choose_to_clinical_button, {
+  values$series_needs_download = is.null(values$allData)
   updateTabsetPanel(session, 'top_level', selected = 'Clinical data')
+})
+observeEvent(input$nav_choose_to_assay_button, {
+  values$series_needs_download = is.null(values$allData)
+  updateTabsetPanel(session, 'top_level', selected = 'Assay data')
 })
 #1  
 output$nav_1_ui <- renderUI({
