@@ -26,6 +26,6 @@ tabPanel("1",
                           checkboxInput(inputId = "select_all_columns", label = tags$i("Select all"), value = TRUE),
                           uiOutput("display_vars_to_keep")
          ),
-         primary_button(id = "clinical_evaluate_filters", label = "Filter columns"),
+         primary_button(id = "clinical_evaluate_filters", label = div(icon("filter"), "Filter columns")),
          hr(), uiOutput("nav_1_ui")
 )

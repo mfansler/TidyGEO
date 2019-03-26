@@ -1,3 +1,15 @@
+observe({
+  input$top_level
+  if (input$top_level == "Clinical data" && is.null(clinical_vals$clinical_data) && !is.null(values$allData)) {
+    clinical_vals$clinical_data <- withProgress(process_clinical(values$allData, session))
+    
+    #WRITING COMMANDS TO R SCRIPT
+    clinical_vals$oFile <- saveLines(commentify("extract clinical data"), clinical_vals$oFile)
+    clinical_vals$oFile <- saveLines("clinical_data <- process_clinical(series_data)", clinical_vals$oFile)
+    clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
+  }
+})
+
 output$dataset <- DT::renderDT({
   if (!is.null(clinical_vals$clinical_data)) {
     closeAlert(session, "fileError")

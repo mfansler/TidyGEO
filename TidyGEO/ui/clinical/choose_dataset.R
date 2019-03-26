@@ -11,14 +11,17 @@ sidebarLayout(
     selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                   help_link(id = "download_help")), choices = NULL),
     uiOutput("platform_options"),
-    primary_button(id = "download_data_evaluate", label = "Import"),
-    hr(), uiOutput("start_clinical_nav_ui")
+    primary_button(id = "download_data_evaluate", label = div(icon("sign-in-alt"), "Import")),
+    hr(), 
+    
+    div(
+      tertiary_button('nav_choose_to_assay_button', div(icon("microscope"), 'Process assay data')),
+      secondary_button('nav_choose_to_clinical_button', div(icon("clipboard"), 'Process clinical data'), class = "right_align")
+    )#,
+    #uiOutput("start_clinical_nav_ui")
   ),
   mainPanel(
-    h4("Series information"),
     bsAlert("alert"),
-    uiOutput("series_information_description"),
     uiOutput("series_information")
-    #htmlOutput("series_information")
   )
 )
