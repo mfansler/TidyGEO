@@ -45,7 +45,7 @@ ui <- fluidPage(
              tabPanel(title = "Choose dataset",
                       source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
              ),
-             tabPanel(title = div(icon("clipboard"), "Clinical data"),
+             tabPanel(title = div(icon("clipboard"), "Clinical data"), value = "Clinical data",
                       
                       sidebarLayout(
                         
@@ -99,7 +99,7 @@ ui <- fluidPage(
              
              # expression data ---------------------------------------------------------
              
-             tabPanel(title = div(icon("microscope"), "Assay data"),
+             tabPanel(title = div(icon("microscope"), "Assay data"), value = "Assay data",
                       
                       sidebarLayout(
                         sidebarPanel(

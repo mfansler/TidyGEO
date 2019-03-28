@@ -110,10 +110,17 @@ output$series_information <- renderUI({
   if (is.null(input$geoID) || input$geoID == "") {
     div(
       h4("Series information"),
-      p("Please choose a GSE ID from the select box to view a summary of the series here.")
+      p("Please choose a GSE ID from the select box to view a summary of the series here."),
+      imageOutput("color_logo")
     )
   } else {
     parse_series_summary(input$geoID)
   }
 })
+
+output$color_logo <- renderImage({
+  list(src="www/logo_final.svg",
+       contentType="image/svg+xml",
+       width = "80%")
+}, deleteFile = FALSE)
 
