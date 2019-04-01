@@ -13,8 +13,10 @@ tabPanel("4",
          rHandsontableOutput("input_subs_table"),
          conditionalPanel(condition = "input.substitute_isrange == false",
                           checkboxInput("sub_w_regex", div("Use regex",
-                                                           help_link(id = "regex_help"))))
-         ,
-         primary_button("evaluate_subs", "Substitute"),
+                                                           help_link(id = "regex_help")))),
+         div(
+           primary_button("evaluate_subs", div(icon("exchange-alt"), "Substitute")),
+           tertiary_button(id = "undo_subs", label = div(icon("undo"), "Undo"), class = "right_align")
+         ),
          hr(), uiOutput("nav_4_ui")
 )

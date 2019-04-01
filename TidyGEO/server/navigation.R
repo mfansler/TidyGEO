@@ -85,7 +85,7 @@ output$expression_nav_1_ui <- renderUI({
   )
 })
 observeEvent(input$nav_1_to_clinical_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
+  updateTabsetPanel(session, 'top_level', selected = 'Clinical data')
 })
 observeEvent(input$expression_nav_1_to_2_button, {
   updateTabsetPanel(session, 'expression_side_panel', selected = '2')

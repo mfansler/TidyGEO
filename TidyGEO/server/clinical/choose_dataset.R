@@ -119,8 +119,8 @@ output$series_information <- renderUI({
 })
 
 output$color_logo <- renderImage({
-  list(src="www/logo_final.svg",
-       contentType="image/svg+xml",
+  list(src="www/logo_final.png",
+       contentType="image/png",
        width = "80%")
 }, deleteFile = FALSE)
 

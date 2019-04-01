@@ -27,9 +27,8 @@ tabPanel("1",
                         width = '200px', class = "indent"),
          help_link(id = "evaluate_filters_help"),
          div(
-           #column(2, primary_button(id = "previewExpr", label = "Update")),
-           tertiary_button(id = "undoEvalExpr", label = "Undo"),
-           tertiary_button(id = "resetExpr", label = "Reset", class = "right_align")
+           tertiary_button(id = "undoEvalExpr", label = div(icon("undo"), "Undo")),
+           tertiary_button(id = "resetExpr", label = div(icon("sticky-note"), "Reset"), class = "right_align")
          ),
          hr(), uiOutput("expression_nav_1_ui")
 )

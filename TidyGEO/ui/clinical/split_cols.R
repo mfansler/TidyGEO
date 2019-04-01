@@ -22,6 +22,9 @@ tabPanel("2",
                           uiOutput("choose_cols_to_divide"),
                           textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
          ),
-         primary_button(id = "reformat_columns", label = "Reformat columns"),
+         div(
+           primary_button(id = "reformat_columns", label = div(icon("columns"), "Reformat columns")),
+           tertiary_button(id = "undo_reformat", label = div(icon("undo"), "Undo"), class = "right_align")
+         ),
          hr(), uiOutput("nav_2_ui")
 )

@@ -5,6 +5,9 @@ tabPanel("3",
          p("Here, you can give any column a new name."),
          uiOutput("display_cols_to_rename"),
          textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
-         primary_button(id = "rename", label = "Rename column"),
+         div(
+           primary_button(id = "rename", label = div(icon("pencil-alt"), "Rename column")),
+           tertiary_button(id = "undo_rename", label = div(icon("undo"), "Undo"), class = "right_align")
+         ),
          hr(), uiOutput("nav_3_ui")
 )

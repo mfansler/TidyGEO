@@ -14,6 +14,10 @@ tabPanel("5",
                               help_button("Excluding a value will remove the entire row that contains that value.")),
                           checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all")),
                           uiOutput("display_vals_to_exclude")),
-         primary_button("clinical_evaluate_exclude", "Exclude"),
+         
+         div(
+           primary_button("clinical_evaluate_exclude", div(icon("times"), "Exclude")),
+           tertiary_button(id = "undo_filter", label = div(icon("undo"), "Undo"), class = "right_align")
+         ),
          hr(), uiOutput("nav_5_ui")
 )
