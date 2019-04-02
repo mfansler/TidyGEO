@@ -57,3 +57,7 @@ observeEvent(input$reformat_columns, ({
   }
   
 }))
+
+observeEvent(input$undo_reformat, {
+  undo_last_action()
+})

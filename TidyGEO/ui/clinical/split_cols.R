@@ -24,7 +24,7 @@ tabPanel("2",
          ),
          div(
            primary_button(id = "reformat_columns", label = div(icon("columns"), "Reformat columns")),
-           tertiary_button(id = "undo_reformat", label = div(icon("undo"), "Undo"), class = "right_align")
+           tipify(tertiary_button(id = "undo_reformat", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
          hr(), uiOutput("nav_2_ui")
 )

@@ -15,8 +15,9 @@ sidebarLayout(
     hr(), 
     
     div(
-      tertiary_button('nav_choose_to_assay_button', div(icon("microscope"), 'Process assay data')),
-      secondary_button('nav_choose_to_clinical_button', div(icon("clipboard"), 'Process clinical data'), class = "right_align")
+      secondary_button('nav_choose_to_clinical_button', div(icon("clipboard"), 'Process clinical')),
+      tertiary_button('nav_choose_to_assay_button', div(icon("microscope"), 'Process assay'), class = "right_align"),
+      br()
     )#,
     #uiOutput("start_clinical_nav_ui")
   ),

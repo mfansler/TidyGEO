@@ -17,7 +17,7 @@ tabPanel("5",
          
          div(
            primary_button("clinical_evaluate_exclude", div(icon("times"), "Exclude")),
-           tertiary_button(id = "undo_filter", label = div(icon("undo"), "Undo"), class = "right_align")
+           tipify(tertiary_button(id = "undo_filter", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
          hr(), uiOutput("nav_5_ui")
 )

@@ -19,3 +19,7 @@ observeEvent(input$rename, ({
   clinical_vals$oFile <- saveLines(paste0("clinical_data <- renameCols(clinical_data, ", format_string(input$colsToRename), ", ", format_string(input$rename_new_name), ")"), clinical_vals$oFile)
   clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
 }))
+
+observeEvent(input$undo_rename, {
+  undo_last_action()
+})

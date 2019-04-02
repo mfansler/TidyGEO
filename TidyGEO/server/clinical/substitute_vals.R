@@ -95,3 +95,7 @@ observeEvent(input$evaluate_subs, {
   
   #}
 })
+
+observeEvent(input$undo_subs, {
+  undo_last_action()
+})

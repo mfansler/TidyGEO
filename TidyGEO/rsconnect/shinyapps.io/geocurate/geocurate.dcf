@@ -5,9 +5,9 @@ account: geocurate
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 253097
-bundleId: 1934631
+bundleId: 1981936
 url: https://geocurate.shinyapps.io/geocurate/
-when: 1552422174.07289
+when: 1554223347.18834
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: tidygeo-install.R
+ignoredFiles: tidygeo-install.R|User/GSE1456_Clinical_Raw.txt|User/script_Temp.R

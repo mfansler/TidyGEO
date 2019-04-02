@@ -38,9 +38,14 @@ options(shiny.autoreload = F)
 ui <- fluidPage(
   #centers loading bars in the middle of the page
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
+    tags$link(rel = "icon", type = "image/png", href = "favicon.ico.png")
     ),
     includeScript("reactive_preferences.js"),
+  #titlePanel(#"TidyGEO",
+  #           tags$head(tags$link(rel = "icon", type = "image/png", href = "favicon.ico.png"),
+  #                     tags$title("TidyGEO"))
+  #),
   navbarPage(title = "TidyGEO", id = "top_level",
              tabPanel(title = "Choose dataset",
                       source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
@@ -213,11 +218,11 @@ server <- function(input, output, session) {
   
   # undo --------------------------------------------------------------------
   
-  observeEvent(input$undo, {
+  undo_last_action <- function() {
     clinical_vals$clinical_data <- clinical_vals$last_data
     clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$current_chunk_len)
     clinical_vals$current_chunk_len <- 0
-  })  
+  }
   
   
   # download & display metaData ---------------------------------------------

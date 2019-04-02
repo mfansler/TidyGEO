@@ -17,11 +17,6 @@ help_modal <- function(help_file, images_id = NULL) {
         condition = !is.null(images_id),
         uiOutput(images_id)
       ),
-      #tags$script(HTML(
-      #  "$(document).on('click', '.clickimg', function() {",
-      #  "  Shiny.onInputChange('clickimg', $(this).data('value'));",
-      #  "});"
-      #)),
       footer = modalButton("Close"),
       size = "l"
     )

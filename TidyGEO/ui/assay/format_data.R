@@ -27,8 +27,9 @@ tabPanel("1",
                         width = '200px', class = "indent"),
          help_link(id = "evaluate_filters_help"),
          div(
-           tertiary_button(id = "undoEvalExpr", label = div(icon("undo"), "Undo")),
-           tertiary_button(id = "resetExpr", label = div(icon("sticky-note"), "Reset"), class = "right_align")
+           tipify(tertiary_button(id = "undoEvalExpr", label = div(icon("undo"), "Undo"), class = "right_align"), 
+                  title = "Undo the last action.", placement = "bottom", trigger = "hover"),
+           br()
          ),
          hr(), uiOutput("expression_nav_1_ui")
 )

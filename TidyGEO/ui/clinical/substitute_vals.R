@@ -16,7 +16,7 @@ tabPanel("4",
                                                            help_link(id = "regex_help")))),
          div(
            primary_button("evaluate_subs", div(icon("exchange-alt"), "Substitute")),
-           tertiary_button(id = "undo_subs", label = div(icon("undo"), "Undo"), class = "right_align")
+           tipify(tertiary_button(id = "undo_subs", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
          hr(), uiOutput("nav_4_ui")
 )

@@ -7,7 +7,7 @@ tabPanel("3",
          textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
          div(
            primary_button(id = "rename", label = div(icon("pencil-alt"), "Rename column")),
-           tertiary_button(id = "undo_rename", label = div(icon("undo"), "Undo"), class = "right_align")
+           tipify(tertiary_button(id = "undo_rename", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
          hr(), uiOutput("nav_3_ui")
 )

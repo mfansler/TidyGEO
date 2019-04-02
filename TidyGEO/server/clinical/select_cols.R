@@ -40,3 +40,7 @@ observeEvent(input$clinical_evaluate_filters, ({
     clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
   }
 }))
+
+observeEvent(input$undo_select, {
+  undo_last_action()
+})
