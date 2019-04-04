@@ -122,7 +122,7 @@ ui <- fluidPage(
                       ) #sidebar layout
              ), # expression data tab panel
              tabPanel(title = "FAQ",
-                      includeMarkdown("www/FAQ.md")
+                      includeMarkdown("help_docs/FAQ.md")
              )
   ) #master panel
 ) #fluidPage
