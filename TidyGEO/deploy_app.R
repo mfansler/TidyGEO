@@ -10,4 +10,4 @@ local({
 })
 
 library(rsconnect)
-deployApp(appDir = "~/R_Code/TidyGEO/TidyGEO", appName = "tidygeo", appTitle = "TidyGEO", appFileManifest = "file_manifest.txt", forceUpdate = T, launch.browser = T)
+deployApp(appDir = "~/R_Code/TidyGEO/TidyGEO", appName = "tidygeo", appTitle = "TidyGEO", appFileManifest = "~/R_Code/TidyGEO/TidyGEO/file_manifest.txt", forceUpdate = T, launch.browser = T)

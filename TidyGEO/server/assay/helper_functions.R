@@ -2,28 +2,33 @@ process_expression <- function(expressionSet, session = NULL) {
   
   incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
-  #expressionData <- data.frame("ID" = rownames(expressionData), expressionData)
+  incProgress(message = "Replacing blank values")
+  if (nrow(expression_raw) == 1) {
+    expressionData <- data.frame("ID" = rownames(expression_raw), 
+                                 t(as.matrix(apply(expression_raw, 2, replace_blank_cells))), stringsAsFactors = FALSE)
+  } else {
+    expressionData <- data.frame("ID" = rownames(expression_raw),
+                                 apply(expression_raw, 2, replace_blank_cells), stringsAsFactors = FALSE)
+  }
+  incProgress(message = "Formatting numeric data")
   pass <- tryCatch({
-    expressionData <- data.frame("ID" = rownames(expression_raw), apply(expression_raw, 2, as.numeric))
+    if (nrow(expressionData) == 1) {
+      expressionData <- as.data.frame(t(as.matrix(apply(expressionData, 2, as.numeric))))
+    } else {
+      expressionData <- as.data.frame(apply(expressionData, 2, as.numeric))
+    }
     TRUE
   }, warning = function(w) {
     if (grepl("NAs introduced by coercion", w)) {
       FALSE
     }
   })
-  #browser()
   if (!pass) {
     expressionData <- data.frame("ID" = rownames(expression_raw), expression_raw)
     createAlert(session, "alpha_alert", "parseError", title = "Warning",
                 content = paste("Some of the data is non-numeric.",
                                 "This data is not supported by our some of our functionality.",
                                 "Feel free to download the data to edit with another application."), append = FALSE)
-  }
-  
-  if (nrow(expressionData) == 1) {
-    expressionData <- as.data.frame(t(as.matrix(apply(expressionData, 2, replace_blank_cells))), stringsAsFactors = FALSE)
-  } else {
-    expressionData <- as.data.frame(apply(expressionData, 2, replace_blank_cells), stringsAsFactors = FALSE)
   }
   
   incProgress(message = "Extracting feature data")

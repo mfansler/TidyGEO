@@ -46,7 +46,7 @@ observeEvent(input$download_help, {
   help_modal("help_docs/Download_Data_Documentation.md", "download_images")
 })
 output$download_images <- renderUI({
-  images <- c("help_gifs/download_example.gif")
+  images <- c("download_example.gif")
   image_names <- c("Demo - Load Series")
   
   create_image_grid(images, image_names)
