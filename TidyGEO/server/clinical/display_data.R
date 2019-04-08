@@ -12,7 +12,6 @@ observe({
 
 output$dataset <- DT::renderDT({
   if (!is.null(clinical_vals$clinical_data)) {
-    closeAlert(session, "fileError")
     datatable(clinical_vals$clinical_data, rownames = TRUE, options = list(
       columnDefs = list(list(
         targets = "_all",

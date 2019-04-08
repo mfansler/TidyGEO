@@ -3,7 +3,7 @@ observeEvent(input$split_help, {
 })
 output$split_images <- renderUI({
   images <- c("separate_example.gif")
-  image_names <- c("Separate Columns Demo")
+  image_names <- c("Demo - Separate Columns")
   
   create_image_grid(images, image_names)
 })
@@ -13,7 +13,7 @@ observeEvent(input$divide_help, {
 })
 output$divide_images <- renderUI({
   images <- c("divide_example.gif")
-  image_names <- c("Divide Columns Demo")
+  image_names <- c("Demo - Divide Columns")
   
   create_image_grid(images, image_names)
 })
@@ -22,8 +22,8 @@ observeEvent(input$substitute_help, {
   help_modal("help_docs/Substitute_Vals_Documentation.md", "substitute_images")
 })
 output$substitute_images <- renderUI({
-  images <- c("substitute_example.gif")
-  image_names <- c("Substitute Values Demo")
+  images <- c("substitute_example.gif", "substitute_numeric_example.gif")
+  image_names <- c("Demo - Substitute Values", "Demo - Substitute Range")
   
   create_image_grid(images, image_names)
 })
@@ -36,8 +36,8 @@ observeEvent(input$exclude_help, {
   help_modal("help_docs/Exclude_Vals_Documentation.md", "exclude_images")
 })
 output$exclude_images <- renderUI({
-  images <- c("exclude_example.gif")
-  image_names <- c("Exclude Values Demo")
+  images <- c("exclude_example.gif", "exclude_numeric_example.gif")
+  image_names <- c("Demo - Exclude Values", "Demo - Exclude Range")
   
   create_image_grid(images, image_names)
 })
@@ -57,19 +57,47 @@ observeEvent(input$clinical_r_help, {
 })
 
 observeEvent(input$replace_id_help, {
-  help_modal("help_docs/Different_ID_Documentation.md")
+  help_modal("help_docs/Different_ID_Documentation.md", "different_id_images")
+})
+
+output$different_id_images <- renderUI({
+  images <- c("different_id_example.gif")
+  image_names <- c("Demo - Replacing the ID Column")
+  
+  create_image_grid(images, image_names)
 })
 
 observeEvent(input$transpose_help, {
-  help_modal("help_docs/Transpose_Documentation.md")
+  help_modal("help_docs/Transpose_Documentation.md", "transpose_images")
+})
+
+output$transpose_images <- renderUI({
+  images <- c("transpose_example.gif")
+  image_names <- c("Demo - Transpose Columns and Rows")
+  
+  create_image_grid(images, image_names)
 })
 
 observeEvent(input$filter_help, {
-  help_modal("help_docs/Filter_Data_Documentation.md")
+  help_modal("help_docs/Filter_Data_Documentation.md", "select_cols_images")
+})
+
+output$select_cols_images <- renderUI({
+  images <- c("filter_presets_example.gif", "filter_by_name_example.gif")
+  image_names <- c("Demo - Filter using Presets", "Demo - Filter by Name")
+  
+  create_image_grid(images, image_names)
 })
 
 observeEvent(input$evaluate_filters_help, {
-  help_modal("help_docs/Apply_Filters_Documentation.md")
+  help_modal("help_docs/Apply_Filters_Documentation.md", "apply_filters_images")
+})
+
+output$apply_filters_images <- renderUI({
+  images <- c("apply_filters_example.gif")
+  image_names <- c("Demo - Apply Filters")
+  
+  create_image_grid(images, image_names)
 })
 
 observeEvent(input$expression_r_help, {

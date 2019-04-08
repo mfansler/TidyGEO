@@ -8,4 +8,4 @@ This tool works with **Series** data from the online repository Gene Expression 
 
 Once you have found a series record you would like to work with, you can load it into this tool by inputting the GSE ID in the format GSExxx (e.g., "GSE68849").
     
-**Click on the animation below to see an example of downloading GSE3 from GEO.**
+**Click on the animation below to see an example of downloading GSE41 from GEO.**

@@ -214,7 +214,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
       mySub <- str_remove(subs$To_Replace[i], "RANGE: ")
       mySub <- as.numeric(str_split(mySub, " - ")[[1]])
       
-      new_col <- suppressWarnings(as.numeric(clinical_data[,col_to_sub]))
+      new_col <- suppressWarnings(as.numeric(as.character(clinical_data[,col_to_sub])))
       new_col[
         which(!is.na(new_col) & 
                 mySub[1] <= new_col &
@@ -253,7 +253,7 @@ excludeVars <- function(metaData, variable, to_exclude) {
         bounds <- as.numeric(str_split(el, " - ")[[1]])
         metaData <- metaData %>%
           within({
-            filter_var <- as.numeric(filter_var)
+            filter_var <- as.numeric(as.character(filter_var))
           }) %>%
           dplyr::filter(filter_var < bounds[1] | filter_var > bounds[2])
       }

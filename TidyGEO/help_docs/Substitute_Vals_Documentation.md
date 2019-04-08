@@ -14,5 +14,5 @@ When you have finished specifying all the replacements to make, please click "Su
 
 If there is a mistake with how the substitutions were evaluated, you can click "Undo" to restore the data to its previous state. Please note that "Undo" only goes back one evaluation.
 
-**Here is an example of the substituting variables functionality with GSE68849:**
+**Click on the animations below to see an example of substituting values in GSE41.**
 

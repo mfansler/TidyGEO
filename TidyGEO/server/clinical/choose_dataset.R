@@ -23,6 +23,9 @@ observe({
 })
 
 output$platform_options <- renderUI({
+  
+  closeAlert(session, "fileError")
+  
   if (!is.null(input$geoID) && input$geoID != "") {
     platforms <- get_platforms(input$geoID, session)
     if (!is.null(platforms)) {
@@ -114,7 +117,7 @@ output$series_information <- renderUI({
       imageOutput("color_logo")
     )
   } else {
-    parse_series_summary(input$geoID)
+    withProgress(parse_series_summary(input$geoID), message = "Loading series summary")
   }
 })
 

@@ -5,3 +5,5 @@ If you look at the table to the right, you can see input boxes below each column
 When you click the "Apply filters" button, the filters that you have specified in the text boxes are applied to the data, so they become more permanent.
 
 To undo your applied filters, click the "Undo" button. Please note that this button only goes back one iteration.
+
+**Click on the animation below to see an example of applying filters with GSE41.**
