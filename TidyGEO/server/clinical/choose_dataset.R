@@ -22,37 +22,39 @@ observe({
   print(paste("Populating dropdown", end_time - start_time))
 })
 
+platforms <- reactive({
+  if (!is.null(input$geoID) && input$geoID != "") {
+    get_platforms(input$geoID, session)
+  }
+})
+
 output$platform_options <- renderUI({
   
   closeAlert(session, "fileError")
   
-  if (!is.null(input$geoID) && input$geoID != "") {
-    platforms <- get_platforms(input$geoID, session)
-    if (!is.null(platforms)) {
-      platform_links <- list()
-      for (i in 1:length(platforms)) {
-        id <- str_remove(platforms[i], "GSE\\d+-")
-        id <- str_remove(id, "_series_matrix.txt.gz")
-        platform_description <- if (any(str_detect(platform_list$Accession, id)))
-          platform_list$description[which(platform_list$Accession == id)] else ""
-        platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", id), 
-                                     id), icon("external-link"), 
-                                   em(platform_description))
-      }
-      
-      if (length(platforms) > 0) {
-        radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
-                     choiceNames = platform_links, 
-                     choiceValues = platforms)
-      }
+  if (length(platforms()) > 1) {
+    platform_links <- list()
+    for (i in 1:length(platforms())) {
+      id <- str_remove(platforms()[i], "GSE\\d+-")
+      id <- str_remove(id, "_series_matrix.txt.gz")
+      platform_description <- if (any(str_detect(platform_list$Accession, id)))
+        platform_list$description[which(platform_list$Accession == id)] else ""
+      platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", id), 
+                                   id), icon("external-link"), 
+                                 em(platform_description))
     }
+    radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
+                 choiceNames = platform_links, 
+                 choiceValues = platforms())
   }
 })
 
 observeEvent(input$download_data_evaluate, {
   
+  platform_index <- if (length(platforms()) == 1) platforms()[1] else input$platformIndex
+  
   values$allData <- withProgress(
-    load_series(input$geoID, input$platformIndex, session = session), 
+    load_series(input$geoID, platform_index, session = session), 
     message = "Downloading series data from GEO")
   clinical_vals$clinical_data <- NULL
   assay_vals$assay_data <- NULL

@@ -1,17 +1,29 @@
 output$sliderExclude <- renderUI({
   
+  output <- tagList()
+  
   if (isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
-    output <- tagList()
     currCol <- as.numeric(as.character(clinical_vals$clinical_data[!is.na(clinical_vals$clinical_data[,input$col_valsToExclude]),input$col_valsToExclude]))
     output[[1]] <- radioButtons("excludeToKeep", label = "I would like to:", 
                                 choices = list("exclude the values within the range." = "exclude", 
-                                               "keep only the values within the range." = "keep"))
+                                               "include the values within the range." = "keep"))
     output[[2]] <- sliderInput(inputId = "sliderExclude", label = "Please choose a range of values (inclusive)", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
-    output
   }
   else {
-    p(style = "color:red", "Looks like this column isn't numeric!")
+    #p(style = "color:red", "Looks like this column isn't numeric!")
+    output[[1]] <- div(tags$b("Which values would you like to exclude?"), 
+        help_button("Excluding a value will remove the entire row that contains that value."))
+    output[[2]] <- checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all"))
+    
+    if (!is.null(input$col_valsToExclude)) {
+      valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
+      valNames[which(is.na(valNames))] <- "NA"
+      output[[3]] <- checkboxGroupInput(inputId = "valsToExclude", 
+                         label = NULL,
+                         choices = to_exclude_options())
+    }
   }
+  output
   
 })
 
@@ -35,26 +47,29 @@ to_exclude_options <- reactive({
 })
 
 observe({
-  updateCheckboxGroupInput(
-    session, 'valsToExclude', choices = to_exclude_options(),
-    selected = if (input$select_all_exclude) to_exclude_options()
-  )
-})
-
-output$display_vals_to_exclude <- renderUI({
-  if (!is.null(input$col_valsToExclude)) {
-    valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
-    valNames[which(is.na(valNames))] <- "NA"
-    checkboxGroupInput(inputId = "valsToExclude", 
-                       label = NULL,
-                       choices = to_exclude_options())
+  if (!is.null(input$select_all_exclude)) {
+    updateCheckboxGroupInput(
+      session, 'valsToExclude', choices = to_exclude_options(),
+      selected = if (input$select_all_exclude) to_exclude_options()
+    )
   }
 })
+
+#output$display_vals_to_exclude <- renderUI({
+#  if (!is.null(input$col_valsToExclude)) {
+#    valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
+#    valNames[which(is.na(valNames))] <- "NA"
+#    checkboxGroupInput(inputId = "valsToExclude", 
+#                       label = NULL,
+#                       choices = to_exclude_options())
+#  }
+#})
 
 observeEvent(input$clinical_evaluate_exclude, {
   
   if (!is.null(input$col_valsToExclude) && (!is.null(input$valsToExclude) || !is.null(input$sliderExclude))) {
-    if (input$exclude_isrange && isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
+    #if (input$exclude_isrange && isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
+    if (isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
       to_exclude <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
     } 
     else {

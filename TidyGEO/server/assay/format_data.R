@@ -22,6 +22,10 @@ output$featureData <- DT::renderDT({
 observeEvent(input$expression_replace_id, {
   showModal(
     modalDialog(
+      p(div('"Expression profiling analysis usually generates quantitative data for features of interest. 
+        Features of interest may be genes, transcripts, exons, miRNA, or some other genetic entity."', 
+            a(href = "https://www.ncbi.nlm.nih.gov/geo/info/seq.html", "(GEO)"))),
+      p("Here, you can replace the feature in the ID column of the assay data with a different feature that is more interesting to you."),
       fluidRow(
         column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
         column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))

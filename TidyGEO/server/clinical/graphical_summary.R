@@ -25,13 +25,13 @@ output$plots <- renderUI({
   if (!is.null(clinical_vals$clinical_data)) {
     plot_output_list <- lapply(1:ncol(clinical_vals$clinical_data), function(i) {
       #if (!grepl("evalSame", colnames(clinical_vals$clinical_data)[i])) {
-      if (is_all_unique(clinical_vals$clinical_data[,i])) {
-        div(hr(), HTML(
-          paste0("<b>", colnames(clinical_vals$clinical_data)[i], "</b> consists of all unique values.")
-        ), hr())
-      } else if (is_all_identical(clinical_vals$clinical_data[,i])) {
+      if (is_all_identical(clinical_vals$clinical_data[,i])) {
         div(hr(), HTML(
           paste0("<b>", colnames(clinical_vals$clinical_data)[i], "</b> consists of all the same value.")
+        ), hr())
+      } else if (is_all_unique(clinical_vals$clinical_data[,i]) && !isAllNum(clinical_vals$clinical_data[i])) {
+        div(hr(), HTML(
+          paste0("<b>", colnames(clinical_vals$clinical_data)[i], "</b> consists of all unique values.")
         ), hr())
       } else {
         plotname <- make.names(colnames(clinical_vals$clinical_data)[i])
@@ -53,14 +53,13 @@ output$plots <- renderUI({
 observe({
   if (!is.null(clinical_vals$clinical_data)) {
     lapply(1:ncol(clinical_vals$clinical_data), function(i){
-      if (!is_all_unique(clinical_vals$clinical_data[,i]) && !is_all_identical(clinical_vals$clinical_data[,i])) {
+      if (!is_all_identical(clinical_vals$clinical_data[,i])) {
         is_all_numeric <- isAllNum(clinical_vals$clinical_data[i])
-        if (is_all_numeric) {
-          values$display_barwidth_option <- TRUE
+        if (!is_all_unique(clinical_vals$clinical_data[,i]) || is_all_numeric) {
+          output[[ make.names(colnames(clinical_vals$clinical_data)[i]) ]] <- renderPlotly({
+            suppressWarnings(create_plot(as.character(clinical_vals$clinical_data[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(clinical_vals$clinical_data)[i], is_all_numeric))
+          })
         }
-        output[[ make.names(colnames(clinical_vals$clinical_data)[i]) ]] <- renderPlotly({
-          suppressWarnings(create_plot(as.character(clinical_vals$clinical_data[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(clinical_vals$clinical_data)[i], isAllNum(clinical_vals$clinical_data[i])))
-        })
       }
     })
     #browser()
@@ -72,8 +71,8 @@ observeEvent(input$last_btn_clinical, {
     clinical_vals$plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_clinical, "savePlot")))
     showModal(
       modalDialog(
-        sliderInput("clinical_plot_width", label = "Image width (inches):", min = 1, max = 36, value = 6),
-        sliderInput("clinical_plot_height", label = "Image height (inches):", min = 1, max = 36, value = 6),
+        sliderInput("clinical_plot_width", label = "Image width (cm):", min = 20, max = 100, value = 60),
+        sliderInput("clinical_plot_height", label = "Image height (cm):", min = 20, max = 100, value = 60),
         radioButtons("clinical_plot_filetype", label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
         downloadButton("clinical_plot_download"),
         footer = modalButton("Close")
@@ -94,7 +93,7 @@ output$clinical_plot_download <- downloadHandler(
       colnames(clinical_vals$clinical_data)[clinical_vals$plot_to_save], 
       isAllNum(clinical_vals$clinical_data[clinical_vals$plot_to_save]))
     
-    ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, device = input$clinical_plot_filetype)
+    ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, units = "cm", device = input$clinical_plot_filetype)
     
   }
 )

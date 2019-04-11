@@ -68,6 +68,8 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     return(inputDataFrame) 
   }
   
+  browser()
+  
   errorMessage <- NULL
   
   inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
@@ -112,6 +114,7 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
   }
   
   metaData <- data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE)
+  colnames(metaData) <- col_names[-1]
   
   metaData <- as.data.frame(apply(metaData, 2, function(x) {
     gsub(x, pattern = "NA", replacement = NA)
