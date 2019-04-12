@@ -1,3 +1,10 @@
+#' Extract assay and feature data from the expressionSet object from GEO.
+#'
+#' @param expressionSet An object retrieved from GEO using getGEO.
+#' @param session The shiny session that is calling this function.
+#' @return A list with the assay dataset, the feature dataset, and whether there were any errors.
+#' @examples
+#' process_expression(my_expr_set, session)
 process_expression <- function(expressionSet, session = NULL) {
   
   incProgress(message = "Extracting expression data")
@@ -60,6 +67,12 @@ process_expression <- function(expressionSet, session = NULL) {
   return(list("expressionData" = expressionData, "featureData" = featureData, "status" = pass))
 }
 
+#' Transpose a data frame; faster than <code>t()</code>.
+#'
+#' @param dataToTranspose A data frame with a column named 'ID'.
+#' @return The data frame, transposed.
+#' @examples
+#' quickTranspose(data.frame(ID = c(1, 2, 3), B = c(4, 5, 6), C = c(7, 8, 9)))
 quickTranspose <- function(dataToTranspose) {
   
   incProgress()
@@ -79,6 +92,20 @@ quickTranspose <- function(dataToTranspose) {
   return(transposed)
 }
 
+#' Replace the ID column in an assay dataset with the specified column from the feature data.
+#'
+#' @param data A data frame with the ID column to replace.
+#' @param replacement The feature data with the column to replace the ID column, and its own ID column that matches the assay data's.
+#' @param replaceCol The name of the column in the feature data that will replace the ID column.
+#' @param summaryOption How to deal with duplicates in the new ID column: "mean", "median", "max", "min", or "keep all".
+#' @param dropNA TRUE/FALSE, drop NA values from the replacement before replacing the ID column?
+#' @return The assay data frame with a new ID column.
+#' @examples
+#' replaceID(data.frame(ID = c(1, 2, 3), B = c(4, 5, 6), C = c(7, 8, 9)), 
+#' data.frame(ID = c(1, 2, 3), B = c("a", "b", "c")), 
+#' "B", 
+#' "keep all", 
+#' FALSE)
 replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   
   #if (replaceCol == "ID") {
@@ -135,6 +162,13 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
 #  return(colnames(ftData[allDiff]))
 #}
 
+#' Drop rows from the data that don't meet specified criteria.
+#'
+#' @param data A data frame.
+#' @param shinyFilterSpecs A list with the rows to keep. In the format of the list returned by input$DT_search_columns, with the columns to filter as names for the list.
+#' @return The data, filtered.
+#' @examples
+#' filterExpressionData(data.frame(A = c("a", "b", "c"), B = c(4, 5, 6), C = c(7, 8, 9)), c(A = ["a", "b"], B = "4 ... 5"))
 filterExpressionData <- function(data, shinyFilterSpecs) {
   for (i in 1:length(shinyFilterSpecs)) {
     if (shinyFilterSpecs[[i]] != "") {
@@ -158,6 +192,15 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
   return(data)
 }
 
+#' Create a preview of the next (forward_distance) columns of the data.
+#'
+#' @param data The full data frame to subset.
+#' @param start The name or index of the first column in the subset.
+#' @param forward_distance The number of columns after the start (including the start) to include in the subset.
+#' @param previous_view The subset that was being displayed before this one.
+#' @return A data frame that is the subset of the data that includes (start) to (forward_distance) columns.
+#' @examples
+#' advance_columns_view(data.frame(A = c(1, 2, 3), B = c(4, 5, 6), C = c(7, 8, 9)), 0, 2)
 advance_columns_view <- function(data, start, forward_distance, previous_view = NULL) {
   if (class(start) == "character") {
     start <- which(colnames(data) == start)
@@ -183,6 +226,15 @@ advance_columns_view <- function(data, start, forward_distance, previous_view = 
   
 }
 
+#' Create a preview of the previous (backward_distance) columns in the data.
+#'
+#' @param data The full data frame to subset.
+#' @param last_column The name or index of the last column in the subset.
+#' @param backward_distance The number of columns, previous to last_column (and including last_column) to include in the subset.
+#' @param previous_view The subset that was being displayed before this one.
+#' @return A data frame that is the subset of the data that includes (backward_distance) to (last_column) columns.
+#' @examples
+#' help_modal("My_Help_File.md", "my_images_id")
 retract_columns_view <- function(data, last_column, backward_distance, previous_view = NULL) {
   
   if (class(last_column) == "character") {
@@ -208,7 +260,15 @@ retract_columns_view <- function(data, last_column, backward_distance, previous_
   }
 }
 
-#finds all of data1 in data2
+#' Filter data1 to have only the rows in which the ID column matches data2's ID column.
+#'
+#' @param data1 The data frame to match to the other one.
+#' @param data2 The data frame to use as a template to filter data1.
+#' @param id_col1 The column name to use as the ID for data1. This will be matched with the ID column in data2.
+#' @param id_col2 The column name to use as the ID for data2. This column will be used as filtering criteria for data1.
+#' @return A data frame that has only the rows in which data1's ID entries exist in data2's ID column.
+#' @examples
+#' find_intersection(data.frame(ID = c(1, 2, 3), B = c(4, 5, 6), C = c(7, 8, 9)), data.frame(ID = c(1, 3), B = c("a", "c")))
 find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
   #if (id_col1 != "ID") {
   #  browser()

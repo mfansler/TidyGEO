@@ -149,47 +149,47 @@ server <- function(input, output, session) {
   
   clinical_vals <- 
     reactiveValues(
-      display_default = data.frame("Please load some clinical data"), #done
-      clinical_data = NULL, #done
-      orig_data = NULL, #done
-      last_data = NULL, #done
-      last_selected_rename = NULL, #done
-      last_selected_substitute = NULL, #done
-      last_selected_exclude = NULL, #done
-      subs_input = data.frame(), #done
+      display_default = data.frame("Please load some clinical data"),
+      clinical_data = NULL,
+      orig_data = NULL,
+      last_data = NULL,
+      last_selected_rename = NULL,
+      last_selected_substitute = NULL,
+      last_selected_exclude = NULL,
+      subs_input = data.frame(),
       subs_display = data.frame(
         To_Replace = "",
         New_Val = "",
         stringsAsFactors = FALSE
-      ), #done
-      oFile = commentify(" "), #done
-      download_chunk_len = 0, #done
-      current_chunk_len = 0, #done
-      plot_to_save = NULL #done
+      ),
+      oFile = commentify(" "),
+      download_chunk_len = 0,
+      current_chunk_len = 0,
+      plot_to_save = NULL
     )
   
   assay_vals <-
     reactiveValues(
-      display_default = data.frame("Please load some assay data"), #done
-      orig_data = NULL, #done
-      assay_data = NULL, #done
-      assay_display = NULL, #done
-      last_data = NULL, #done
-      ft_default = data.frame("Please load some assay data"), #done
-      orig_feature = NULL, #done
-      last_feature = NULL, #done
-      feature_data = NULL, #done
-      feature_display = NULL, #done
-      oFile = commentify(" "), #done
-      download_chunk_len = 0, #done
-      current_chunk_len = 0, #done
-      id_col = "ID", #done
-      prev_id = "ID", #done
-      ft_id_col = "ID", #done
-      ft_prev_id = "ID", #done
-      plot_to_save = NULL, #done
-      disable_btns = FALSE, #done
-      expression_warning_state = FALSE #done
+      display_default = data.frame("Please load some assay data"),
+      orig_data = NULL,
+      assay_data = NULL,
+      assay_display = NULL,
+      last_data = NULL,
+      ft_default = data.frame("Please load some assay data"),
+      orig_feature = NULL,
+      last_feature = NULL,
+      feature_data = NULL,
+      feature_display = NULL,
+      oFile = commentify(" "),
+      download_chunk_len = 0,
+      current_chunk_len = 0,
+      id_col = "ID",
+      prev_id = "ID",
+      ft_id_col = "ID",
+      ft_prev_id = "ID",
+      plot_to_save = NULL,
+      disable_btns = FALSE,
+      expression_warning_state = FALSE
     )
   
   #get_series_information <- function() {
