@@ -10,7 +10,7 @@ output$input_sub_range <- renderUI({
       this_quantiles <- c(this_min, this_max)
     }
     output[[1]] <- sliderInput(inputId = "slideInSub", label = "Please choose a range of values (inclusive)", min = this_min, max = this_max, value = this_quantiles)
-    #output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
+    output[[2]] <- textInput("newRangeVal", label = "Please enter a value to replace all values in the range:")
     output[[3]] <- tertiary_button("add_val_to_sub", "Add range to table")
     #output[[4]] <- tertiary_button("remove_val_to_sub", "Remove")
     output
@@ -54,9 +54,9 @@ observeEvent(input$add_val_to_sub, {
       is.na(clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"]) |
       clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"] == ""
       ) {
-      clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"] <- paste("RANGE:", paste(input$slideInSub, collapse = " - "))
+      clinical_vals$subs_input[nrow(clinical_vals$subs_input),] <- c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal)
     } else {
-      clinical_vals$subs_input <- rbind(clinical_vals$subs_input, c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), ""))
+      clinical_vals$subs_input <- rbind(clinical_vals$subs_input, c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal))
     }
     clinical_vals$subs_display <- clinical_vals$subs_input
   }

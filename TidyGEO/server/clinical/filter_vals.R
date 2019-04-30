@@ -2,7 +2,8 @@ output$sliderExclude <- renderUI({
   
   output <- tagList()
   
-  if (isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
+  if (input$col_valsToExclude %in% clinical_vals$clinical_data && 
+      isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
     currCol <- as.numeric(as.character(clinical_vals$clinical_data[!is.na(clinical_vals$clinical_data[,input$col_valsToExclude]),input$col_valsToExclude]))
     output[[1]] <- radioButtons("excludeToKeep", label = "I would like to:", 
                                 choices = list("exclude the values within the range." = "exclude", 
@@ -38,7 +39,7 @@ output$display_cols_for_exclude <- renderUI({
 })
 
 to_exclude_options <- reactive({
-  if (!is.null(input$col_valsToExclude)) {
+  if (input$col_valsToExclude %in% clinical_vals$clinical_data) {
     valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
     valNames[which(is.na(valNames))] <- "NA"
     valNames

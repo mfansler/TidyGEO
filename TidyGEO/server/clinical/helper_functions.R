@@ -68,17 +68,20 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     return(inputDataFrame) 
   }
   
-  browser()
+  #browser()
   
   errorMessage <- NULL
   
   inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
+  num_split <- 0
   
   for (col in colsToSplit) {
     
     hasDelim <- is.na(inputDataFrame[, col]) | str_detect(inputDataFrame[, col], delimiter)
     
     if (all(hasDelim)) {
+      num_split <- num_split + 1
+      
       inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value")) %>%
         mutate(key = str_trim(key), value = str_trim(value))
       
@@ -108,46 +111,72 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     errorMessage <- paste(errorMessage, collapse = "<br/>")
     errorMessage <- paste('<font color="red">', errorMessage, '</font>')
     showModal(
-      modalDialog(HTML(errorMessage), title = "Error", footer = modalButton("OK")
+      modalDialog(HTML(errorMessage), title = HTML('<font color="red">Whoops!</font>'), footer = modalButton("OK")
       )
     )
   }
   
-  metaData <- data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE)
-  colnames(metaData) <- col_names[-1]
+  inputDataFrame <- data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE)
   
-  metaData <- as.data.frame(apply(metaData, 2, function(x) {
-    gsub(x, pattern = "NA", replacement = NA)
-  }))
+  if (num_split > 0) {
+    colnames(inputDataFrame) <- col_names[-1]
+    
+    inputDataFrame <- as.data.frame(apply(inputDataFrame, 2, function(x) {
+      gsub(x, pattern = "NA", replacement = NA)
+    }))
+    
+    inputDataFrame <- filterUninformativeCols(inputDataFrame)
+  }
   
-  metaData <- filterUninformativeCols(metaData)
-  
-  return(metaData)
+  return(inputDataFrame)
 }
 
 splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
   if (is.null(colsToDivide) || delimiter == "") {
     return(metaData)
   }
+  num_split <- 0
+  errorMessage <- NULL
   for (colName in colsToDivide) {
     numElements <- max(sapply(metaData[,colName], function(x) {
       length(str_extract_all(x, delimiter)[[1]]) + 1
     }), na.rm = TRUE)
     #targetCol <- metaData[,colName]
     if (numElements > 1) {
+      num_split <- num_split + 1
+      
       colNames <- NULL
       for (i in 1:numElements) {
         colNames <- c(colNames, paste(colName, i, sep = "."))
       }
       metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
+    } else {
+      offendingVals <- paste(metaData[, colName], collapse = ", ")
+      offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
+      
+      errorMessage <- c(errorMessage, paste0(colName, " could not be split."),
+                        paste0("Values: ", offendingVals))
     }
   }
   
-  metaData <- as.data.frame(apply(metaData, 2, function(x) {
-    gsub(x, pattern = "NA", replacement = NA)
-  }))
+  if (!is.null(errorMessage)) {
+    errorMessage <- c(paste0('<b>Looks like some of the specified columns don\'t contain the delimiter "', delimiter, '".</b>'),
+                      errorMessage)
+    errorMessage <- paste(errorMessage, collapse = "<br/>")
+    errorMessage <- paste('<font color="red">', errorMessage, '</font>')
+    showModal(
+      modalDialog(HTML(errorMessage), title = HTML('<font color="red">Whoops!</font>'), footer = modalButton("OK")
+      )
+    )
+  }
   
-  metaData <- filterUninformativeCols(metaData)
+  if (num_split > 0) {
+    metaData <- as.data.frame(apply(metaData, 2, function(x) {
+      gsub(x, pattern = "NA", replacement = NA)
+    }))
+    
+    metaData <- filterUninformativeCols(metaData)
+  }
   
   return(metaData)
 }
@@ -172,27 +201,7 @@ filterCols <- function(metaData, varsToKeep) {
 
 renameCols <- function(metaData, old_name, new_name) {
   
-  if (new_name %in% colnames(metaData)) {
-    showModal(
-      modalDialog(
-        HTML(
-          paste0('<font color="red"> Cannot name ', old_name, ' "', new_name, 
-                 '" because this would create duplicate column names, which is not allowed. </font>')
-        ), 
-        title = "Error", 
-        footer = modalButton("OK")
-      )
-    )
-  } else if (old_name %in% colnames(metaData)) {
-    #offendingChars <- findOffendingChars(unname(newNames))
-    #if (any(offendingChars)) {
-    #  createAlert(session, "alert", "offendingChars",
-    #              content = paste("The following characters were removed from", 
-    #                              newNames[colName], 
-    #                              "because they might cause problems later:", 
-    #                              paste(names(offendingChars[which(offendingChars == T)]), collapse = ", ")))
-    #newNames[1] <- str_replace_all(unname(newNames), "[^\._\s0-9A-Za-z]", ".")
-    #}
+  if (old_name %in% colnames(metaData)) {
     colnames(metaData)[which(colnames(metaData) == old_name)] <- new_name
   }
   return(metaData)

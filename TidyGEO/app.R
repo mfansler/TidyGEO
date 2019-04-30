@@ -39,7 +39,7 @@ ui <- fluidPage(
   #centers loading bars in the middle of the page
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
-    tags$link(rel = "icon", type = "image/png", href = "favicon.ico.png")
+    tags$link(rel = "icon", type = "image/png", href = "logo_icon.png")
     ),
     includeScript("reactive_preferences.js"),
   #titlePanel(#"TidyGEO",

@@ -281,3 +281,7 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
     data1[which(data1[,id_col1] %in% search_terms),]
   }
 }
+
+replace_NA_id <- function() {
+  replace_na()
+}

@@ -35,7 +35,7 @@ output$plots <- renderUI({
         ), hr())
       } else {
         plotname <- make.names(colnames(clinical_vals$clinical_data)[i])
-        div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "clinical_plot"))
+        div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), div(icon("download"), "Download plot"), class = "clinical_plot"))
       }
       #}
     })

@@ -13,7 +13,7 @@ output$histograms_expression <- renderUI({
   if (!is.null(assay_vals$assay_display)) {
     plot_output_list <- lapply(2:ncol(assay_vals$assay_display), function(i) {
       plotname <- make.names(colnames(assay_vals$assay_display)[i])
-      div(withSpinner(plotlyOutput(plotname, height = 500, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), "Download plot", class = "expression_plot"))
+      div(withSpinner(plotlyOutput(plotname, height = 500, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), div(icon("download"), "Download plot"), class = "expression_plot"))
     })   
     do.call(tagList, plot_output_list)
   }
