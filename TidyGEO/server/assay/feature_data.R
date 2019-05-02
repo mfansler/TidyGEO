@@ -91,7 +91,7 @@ output$summarizeOptions <- renderUI({
     #browser()
     can_summarize <- !is_all_unique(new_expression_labels)
     if (can_summarize) {
-      choices <- if (!assay_vals$warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
+      choices <- if (assay_vals$warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
       selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
                                                 How would you like to summarize the data?", 
                                                 help_button("Groups the data by ID and takes the specified measurement for the group.

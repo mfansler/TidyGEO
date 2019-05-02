@@ -30,13 +30,14 @@ help_link <- function(id) {
 #' @return .
 #' @examples
 #' help_modal("My_Help_File.md", "my_images_id")
-help_modal <- function(help_file, images_id = NULL) {
+help_modal <- function(help_file, images = NULL, image_names = NULL) {
   showModal(
     modalDialog(
       includeMarkdown(help_file),
       conditionalPanel(
-        condition = !is.null(images_id),
-        uiOutput(images_id)
+        condition = !is.null(images),
+        #uiOutput(images_id)
+        create_image_grid(images, image_names)
       ),
       footer = modalButton("Close"),
       size = "l"
