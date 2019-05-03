@@ -1,30 +1,31 @@
 output$sliderExclude <- renderUI({
   
   output <- tagList()
-  
-  if (input$col_valsToExclude %in% clinical_vals$clinical_data && 
-      isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
-    currCol <- as.numeric(as.character(clinical_vals$clinical_data[!is.na(clinical_vals$clinical_data[,input$col_valsToExclude]),input$col_valsToExclude]))
-    output[[1]] <- radioButtons("excludeToKeep", label = "I would like to:", 
-                                choices = list("exclude the values within the range." = "exclude", 
-                                               "include the values within the range." = "keep"))
-    output[[2]] <- sliderInput(inputId = "sliderExclude", label = "Please choose a range of values (inclusive)", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
+  #browser()
+  if (!is.null(input$col_valsToExclude) && input$col_valsToExclude %in% colnames(clinical_vals$clinical_data)) {
+        if (isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
+          currCol <- as.numeric(as.character(clinical_vals$clinical_data[!is.na(clinical_vals$clinical_data[,input$col_valsToExclude]),input$col_valsToExclude]))
+          output[[1]] <- radioButtons("excludeToKeep", label = "I would like to:", 
+                                      choices = list("exclude the values within the range." = "exclude", 
+                                                     "include the values within the range." = "keep"))
+          output[[2]] <- sliderInput(inputId = "sliderExclude", label = "Please choose a range of values (inclusive)", min = min(currCol), max = max(currCol), value = c(quantile(currCol)[2], quantile(currCol)[3]))
+        }
+        else {
+          #p(style = "color:red", "Looks like this column isn't numeric!")
+          output[[1]] <- div(tags$b("Which values would you like to exclude?"), 
+                             help_button("Excluding a value will remove the entire row that contains that value."))
+          output[[2]] <- checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all"))
+          #browser()
+          #if (!is.null(input$col_valsToExclude)) {
+            #valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
+            #valNames[which(is.na(valNames))] <- "NA"
+          output[[3]] <- checkboxGroupInput(inputId = "valsToExclude", 
+                                            label = NULL,
+                                            choices = to_exclude_options())
+          #}
+        }
+    output
   }
-  else {
-    #p(style = "color:red", "Looks like this column isn't numeric!")
-    output[[1]] <- div(tags$b("Which values would you like to exclude?"), 
-        help_button("Excluding a value will remove the entire row that contains that value."))
-    output[[2]] <- checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all"))
-    
-    if (!is.null(input$col_valsToExclude)) {
-      valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
-      valNames[which(is.na(valNames))] <- "NA"
-      output[[3]] <- checkboxGroupInput(inputId = "valsToExclude", 
-                         label = NULL,
-                         choices = to_exclude_options())
-    }
-  }
-  output
   
 })
 
@@ -39,7 +40,7 @@ output$display_cols_for_exclude <- renderUI({
 })
 
 to_exclude_options <- reactive({
-  if (input$col_valsToExclude %in% clinical_vals$clinical_data) {
+  if (!is.null(input$col_valsToExclude) && input$col_valsToExclude %in% colnames(clinical_vals$clinical_data)) {
     valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
     valNames[which(is.na(valNames))] <- "NA"
     valNames

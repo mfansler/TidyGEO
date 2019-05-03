@@ -72,7 +72,7 @@ FAQ
     + The "Use different column ID" button is disabled when the data is transposed because the ID becomes the column names, which is harder to substitute. If you would still like to replace the ID column, click "Undo" and "Use different column ID" before transposing.
     + The "Transpose" button is disabled when the entries in the ID column are not all unique. This is because transposing the data makes the ID column the column names, and duplicate column names are not allowed. To enable the "Transpose" button again, click on "Use different column ID" and make sure to use a summarize option other than "keep all". Also make sure to select "Drop NA values" underneath the summarize option.
 * __What functionality is not available when my assay data is non-numeric?__
-    + You cannot summarize numeric data with "Use different column ID". The only option is to keep all the duplicate entries.
+    + You cannot summarize non-numeric data with "Use different column ID". The only option is to keep all the duplicate entries.
     
 ### Bugs and suggestions
 

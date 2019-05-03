@@ -206,18 +206,18 @@ load_series <- function(geoID, platform, session = NULL) {
       }
     )
     incProgress()
-    if (status != "pass" && !is.null(session)) {
-      title <- "Error"
-      content <- unlist(status)
-      createAlert(session, "alert", "fileError", title = "Error",
-                  content = unlist(status), append = FALSE)
-    } else {
-      title <- "Success!"
-      content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
-      to see the data."
-    }
+    if (!is.null(session)) {
+      if (status != "pass") {
+        title <- "Error"
+        content <- unlist(status)
+      } else {
+        title <- "Success!"
+        content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
+        to see the data."
+      }
     createAlert(session, "alert", "fileError", title = title,
                 content = content, append = FALSE)
+    }
   }
   
   return(expressionSet)
@@ -257,20 +257,20 @@ shorten_labels <- function(label, max_char) {
   }
 }
 
-create_plot <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
+create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
   if (is_numeric) {
     p <- base_histogram + 
-      geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+      geom_histogram(data = data.frame(value = as.numeric(as.character(value))), aes(x = value),
                      binwidth = plot_binwidth, fill = plot_color) +
       ggtitle(title)
   }
   else {
     p <- base_barplot +
-      geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
+      geom_bar(data = as.data.frame(table(value, useNA = "ifany")), aes(x = value, y = Freq), 
                stat = "identity", fill = plot_color) +
       ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
+      scale_x_discrete(labels = sapply(unique(as.character(value)), shorten_labels, 10))
   }
   ggplotly(p) %>% config(displayModeBar = F)
 }

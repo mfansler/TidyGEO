@@ -11,11 +11,9 @@ process_expression <- function(expressionSet, session = NULL) {
   expression_raw <- assayData(expressionSet)$exprs
   incProgress(message = "Replacing blank values")
   if (nrow(expression_raw) == 1) {
-    expressionData <- data.frame("ID" = rownames(expression_raw), 
-                                 t(as.matrix(apply(expression_raw, 2, replace_blank_cells))), stringsAsFactors = FALSE)
+    expressionData <- as.data.frame(t(as.matrix(apply(expression_raw, 2, replace_blank_cells))), stringsAsFactors = FALSE)
   } else {
-    expressionData <- data.frame("ID" = rownames(expression_raw),
-                                 apply(expression_raw, 2, replace_blank_cells), stringsAsFactors = FALSE)
+    expressionData <- as.data.frame(apply(expression_raw, 2, replace_blank_cells), stringsAsFactors = FALSE)
   }
   incProgress(message = "Formatting numeric data")
   pass <- tryCatch({
@@ -27,16 +25,20 @@ process_expression <- function(expressionSet, session = NULL) {
     TRUE
   }, warning = function(w) {
     if (grepl("NAs introduced by coercion", w)) {
+      #browser()
       FALSE
     }
   })
-  if (!pass) {
-    expressionData <- data.frame("ID" = rownames(expression_raw), expression_raw)
-    createAlert(session, "alpha_alert", "parseError", title = "Warning",
+  if (!pass && !is.null(session)) {
+    # NOTE: It would seem that some alertIds are reserved ("parseError", for example), so if createAlert
+    # isn't working, try changing the alertId.
+    createAlert(session, anchorId = "alpha_alert", alertId = "nonnumeric", title = "Warning",
                 content = paste("Some of the data is non-numeric.",
                                 "This data is not supported by our some of our functionality.",
                                 "Feel free to download the data to edit with another application."), append = FALSE)
   }
+  
+  expressionData <- cbind("ID" = rownames(expression_raw), expressionData)
   
   incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))

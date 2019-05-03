@@ -15,9 +15,9 @@ output$input_sub_range <- renderUI({
     #output[[4]] <- tertiary_button("remove_val_to_sub", "Remove")
     output
   }
-  #else {
-  #  p(style = "color:red", "Looks like this column isn't numeric!")
-  #}
+  else {
+    tags$b("Please enter a value and its replacement in the table below.")
+  }
   
 })
 

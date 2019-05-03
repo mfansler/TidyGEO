@@ -235,7 +235,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
       
       clinical_data[which(!is.na(new_col)), col_to_sub] <- new_col[which(!is.na(new_col))]
       
-    } else {
+    } else if (subs$To_Replace[i] != "") {
       
       clinical_data[,col_to_sub] <- gsub(clinical_data[,col_to_sub], 
                                          pattern = subs$To_Replace[i], 

@@ -11,9 +11,10 @@ tabPanel("4",
                           uiOutput("input_sub_range"),#),
          h5('Right click to add or remove rows.'),
          rHandsontableOutput("input_subs_table"),
-         conditionalPanel(condition = "input.substitute_isrange == false",
+         #conditionalPanel(condition = "input.substitute_isrange == false",
                           checkboxInput("sub_w_regex", div("Use regex",
-                                                           help_link(id = "regex_help")))),
+                                                           help_link(id = "regex_help")))#)
+        ,
          div(
            primary_button("evaluate_subs", div(icon("exchange-alt"), "Substitute")),
            tipify(tertiary_button(id = "undo_subs", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")

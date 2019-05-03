@@ -5,9 +5,10 @@ tabPanel(title = "Clinical Data",
            
                column(8, 
                       h4("Clinical Data"),
-                      p("A description of the biological samples and protocols to which they were subjected.")
+                      div(em("A description of the biological samples and protocols to which they were subjected."),
+                          a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/info/overview.html", "(Read more)"))
                ),
-               column(2, 
+               column(2, offset = 1, 
                       br(),
                       tipify(tertiary_button("reset", div(icon("history"), "Reset")), 
                              title = "Reset the dataset to its original downloaded state.", placement = "bottom", trigger = "hover")

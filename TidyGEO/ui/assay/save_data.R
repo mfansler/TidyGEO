@@ -1,6 +1,6 @@
 tabPanel("2",
          h4("Saving the data"),
-         p("Here is where you can download the clinical data to your computer."), 
+         p("Here is where you can download the assay data to your computer."), 
          p("You can also download the R script that produced this data. The R script allows you
            to replicate the steps you took so you can see how the data was obtained."),
          radioButtons("expression_fileType", div("File type:", help_link("expression_files_help")), 

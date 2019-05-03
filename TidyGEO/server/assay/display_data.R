@@ -2,9 +2,9 @@ observeEvent(input$top_level, {
   input$top_level
   if (!is.null(values$allData) && input$top_level == "Assay data" && is.null(assay_vals$assay_data)) {
     
-    closeAlert(session, "alpha_alert")
+    closeAlert(session, "nonnumeric")
     
-    extracted_data <- withProgress(process_expression(values$allData, session))
+    extracted_data <- withProgress(process_expression(values$allData, session = session), message = "Processing assay data")
     
     assay_vals$warning_state <- extracted_data[["status"]]
     

@@ -1,3 +1,55 @@
+# helper functions --------------------------------------------------------
+
+
+#' Create a pop-up box with instructions.
+#'
+#' @param help_file .
+#' @param images_id .
+#' @return .
+#' @examples
+#' help_modal("My_Help_File.md", "my_images_id")
+help_modal <- function(help_file, images = NULL, image_names = NULL) {
+  #start_time <- Sys.time()
+  showModal(
+    modalDialog(
+      includeMarkdown(help_file),
+      conditionalPanel(
+        condition = !is.null(images),
+        #uiOutput(images_id)
+        create_image_grid(images, image_names)
+      ),
+      footer = modalButton("Close"),
+      size = "l"
+    )
+  )
+  #end_time <- Sys.time()
+  #print(paste("Creating help modal", end_time - start_time))
+}
+
+#' .
+#'
+#' @param images .
+#' @param image_names .
+#' @return .
+#' @examples
+#' create_image_grid(c("image.gif", "image2.gif"), c("Image", "Image 2"))
+create_image_grid <- function(images, image_names) {
+  #start_time <- Sys.time()
+  image_grid <- fluidRow(
+    mapply(function(my_image, img_name) {
+      column(3, 
+             div(tags$img(src = my_image, width = "200px", class = "clickimg", "data-value" = my_image), img_name)
+      )
+    }, images, image_names, SIMPLIFY = FALSE, USE.NAMES = FALSE)
+  )
+  #end_time <- Sys.time()
+  #print(paste("Creating image grid", end_time - start_time))
+  return(image_grid)
+}
+
+# listeners ---------------------------------------------------------------
+
+
 observeEvent(input$split_help, {
   images <- c("separate_example.gif")
   image_names <- c("Demo - Separate Columns")
@@ -80,11 +132,18 @@ observeEvent(input$expression_files_help, {
   help_modal("help_docs/File_Types_Documentation.md")
 })
 
+# enlarge image listener --------------------------------------------------
+
+
 observeEvent(input$clickimg, {
+  #start_time <- Sys.time()
   showModal(
     modalDialog(
       tags$img(src = input$clickimg, width = "100%", height = "100%"),
       size = "l"
       )
     )
+  #end_time <- Sys.time()
+  #print(paste("Creating enlarged image modal", end_time - start_time))
+  session$sendCustomMessage("resetValue", "clickimg")
 }, ignoreInit = TRUE)

@@ -21,11 +21,6 @@ platform_list <- read_feather("www/platform_list.feather")
 end_time <- Sys.time()
 print(paste("Reading files", end_time - start_time))
 
-# help icons to add as tag to buttons, etc --------------------------------
-
-source(file.path("ui", "help_ui.R"), local = TRUE)$value
-
-
 # colored buttons of different types --------------------------------------
 
 source(file.path("ui", "button_types.R"), local = TRUE)$value

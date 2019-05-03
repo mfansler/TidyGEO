@@ -2,9 +2,10 @@ tabPanel("Assay data",
          fluidRow(
            column(7,
                   h4("Assay Data"),
-                  p("The abundance measurement of each element derived from each sample.")
+                  div(em("The abundance measurement of each element derived from each sample."),
+                      a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/info/overview.html", "(Read more)"))
                   ),
-           column(2,
+           column(2, offset = 1,
                   br(),
                   tipify(tertiary_button(id = "resetExpr", label = div(icon("history"), "Reset"), class = "right_align"),
                          title = "Reset the dataset to its original downloaded state.", placement = "bottom", trigger = "hover")
