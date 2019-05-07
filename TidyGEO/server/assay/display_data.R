@@ -70,7 +70,8 @@ observeEvent(input$expression_prev_cols, {
 
 output$exprPreview <- DT::renderDT({
   if (!is.null(assay_vals$assay_display)) {
-    datatable(assay_vals$assay_display, filter = "top", rownames = FALSE, options = list(dom = "tp"))
+    datatable(assay_vals$assay_display, filter = list(position = "top", clear = FALSE), 
+              rownames = FALSE, options = list(dom = "tp"))
   } else {
     datatable(assay_vals$display_default, rownames = FALSE, 
               colnames = "NO DATA", options = list(dom = "tp"))

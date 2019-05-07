@@ -1,4 +1,4 @@
-tabPanel("4",
+tabPanel(title = icon("exchange-alt"), value = "5",
          h4("Substituting values"),
          p("In order to achieve the uniformity required to combine datasets, it may be helpful to substitute 
            some of the values in the data for other values."), 
@@ -19,5 +19,5 @@ tabPanel("4",
            primary_button("evaluate_subs", div(icon("exchange-alt"), "Substitute")),
            tipify(tertiary_button(id = "undo_subs", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_4_ui")
+         hr(), uiOutput("nav_5_ui")
 )

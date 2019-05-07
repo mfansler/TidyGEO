@@ -57,6 +57,11 @@ ui <- fluidPage(
 
                                       source(file.path("ui", "clinical", "select_cols.R"), local = TRUE)$value,
                                       
+
+                                      # split key-value pairs ---------------------------------------------------
+                                      
+                                      source(file.path("ui", "clinical", "split_pairs.R"), local = TRUE)$value,
+
                                       
                                       # split variables ---------------------------------------------------------
                                       
@@ -232,6 +237,8 @@ server <- function(input, output, session) {
   
   
   # extract columns ---------------------------------------------------------
+  
+  source(file.path("server", "clinical", "split_pairs.R"), local = TRUE)$value
   
   source(file.path("server", "clinical", "split_cols.R"), local = TRUE)$value
   

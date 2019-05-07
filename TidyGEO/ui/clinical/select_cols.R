@@ -1,4 +1,4 @@
-tabPanel("1",
+tabPanel(title = icon("filter"), value = "1",
          h4("Selecting informative columns"),
          p("It can be helpful to filter out unneeded columns for better storage capacity and improved
            human readability."), 

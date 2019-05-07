@@ -68,13 +68,26 @@ observeEvent(input$nav_5_to_6_button, {
 output$nav_6_ui <- renderUI({
   div(
     tertiary_button('nav_6_to_5_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_6_to_expression_button', 'Next - Process assay data', class = "right_align")
+    secondary_button('nav_6_to_expression_button', div('Next', icon('arrow-right')), class = "right_align")
   )
 })
 observeEvent(input$nav_6_to_5_button, {
   updateTabsetPanel(session, 'clinical_side_panel', selected = '5')
 })
 observeEvent(input$nav_6_to_expression_button, {
+  updateTabsetPanel(session, 'clinical_side_panel', selected = '7')
+})
+#7
+output$nav_7_ui <- renderUI({
+  div(
+    tertiary_button('nav_7_to_6_button', div(icon('arrow-left'), 'Back')),
+    secondary_button('nav_7_to_expression_button', 'Next - Process assay data', class = "right_align")
+  )
+})
+observeEvent(input$nav_7_to_6_button, {
+  updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
+})
+observeEvent(input$nav_7_to_expression_button, {
   updateTabsetPanel(session, 'top_level', selected = 'Assay data')
 })
 #expression 1
