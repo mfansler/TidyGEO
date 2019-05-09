@@ -132,6 +132,14 @@ observeEvent(input$expression_files_help, {
   help_modal("help_docs/File_Types_Documentation.md")
 })
 
+observeEvent(input$regex_help_split_pairs, {
+  help_modal("help_docs/Regular_Expressions_Documentation.md")
+})
+
+observeEvent(input$regex_help_split_cols, {
+  help_modal("help_docs/Regular_Expressions_Documentation.md")
+})
+
 # enlarge image listener --------------------------------------------------
 
 

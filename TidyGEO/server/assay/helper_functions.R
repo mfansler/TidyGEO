@@ -10,17 +10,22 @@ process_expression <- function(expressionSet, session = NULL) {
   incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
   incProgress(message = "Replacing blank values")
+  #browser()
   if (nrow(expression_raw) == 1) {
-    expressionData <- as.data.frame(t(as.matrix(apply(expression_raw, 2, replace_blank_cells))), stringsAsFactors = FALSE)
+    #expressionData <- as.data.frame(t(as.matrix(apply(expression_raw, 2, replace_blank_cells))), stringsAsFactors = FALSE)
+    expressionData <- t(as.matrix(apply(expression_raw, 2, replace_blank_cells)))
   } else {
-    expressionData <- as.data.frame(apply(expression_raw, 2, replace_blank_cells), stringsAsFactors = FALSE)
+    #expressionData <- as.data.frame(apply(expression_raw, 2, replace_blank_cells), stringsAsFactors = FALSE)
+    expressionData <- apply(expression_raw, 2, replace_blank_cells)
   }
   incProgress(message = "Formatting numeric data")
   pass <- tryCatch({
     if (nrow(expressionData) == 1) {
-      expressionData <- as.data.frame(t(as.matrix(apply(expressionData, 2, as.numeric))))
+      #expressionData <- as.data.frame(t(as.matrix(apply(expressionData, 2, as.numeric))))
+      expressionData <- t(as.matrix(apply(expressionData, 2, as.numeric)))
     } else {
-      expressionData <- as.data.frame(apply(expressionData, 2, as.numeric))
+      #expressionData <- as.data.frame(apply(expressionData, 2, as.numeric))
+      expressionData <- apply(expressionData, 2, as.numeric)
     }
     TRUE
   }, warning = function(w) {
@@ -38,7 +43,7 @@ process_expression <- function(expressionSet, session = NULL) {
                                 "Feel free to download the data to edit with another application."), append = FALSE)
   }
   
-  expressionData <- cbind("ID" = rownames(expression_raw), expressionData)
+  expressionData <- cbind("ID" = rownames(expression_raw), as.data.frame(expressionData))
   
   incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))

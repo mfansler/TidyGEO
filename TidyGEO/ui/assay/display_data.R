@@ -18,6 +18,6 @@ tabPanel("Assay data",
          ),
          br(),
          bsAlert("alpha_alert"),
-         withSpinner(dataTableOutput("exprPreview"), type = 5)#,
-         #primary_button("expression_evaluate_filters", label = "Evaluate filters")
+         withSpinner(dataTableOutput("exprPreview"), type = 5),
+         uiOutput("evaluate_filters_button")
 )

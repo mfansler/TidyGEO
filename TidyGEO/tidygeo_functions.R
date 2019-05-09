@@ -184,7 +184,7 @@ load_series <- function(geoID, platform, session = NULL) {
   
   if (is.null(expressionSet)) {
     status <- tryCatch({
-      if (!grepl("GSE", geoID)) {
+      if (!grepl("GSE", geoID, ignore.case = TRUE)) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)

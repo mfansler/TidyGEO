@@ -1,4 +1,4 @@
-tabPanel("2",
+tabPanel(title = icon("download"), value = "2",
          h4("Saving the data"),
          p("Here is where you can download the assay data to your computer."), 
          p("You can also download the R script that produced this data. The R script allows you

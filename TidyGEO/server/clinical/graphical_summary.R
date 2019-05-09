@@ -2,8 +2,14 @@
 
 output$choose_variable_to_view <- renderUI({
   if (!is.null(clinical_vals$clinical_data)) {
-    choices <- c(0, 1:length(colnames(clinical_vals$clinical_data)))
-    names(choices) <- c("(view all)", colnames(clinical_vals$clinical_data))
+    choices <- 1:length(colnames(clinical_vals$clinical_data))
+    choice_names <- colnames(clinical_vals$clinical_data)
+    if (nrow(clinical_vals$clinical_data) < 1000) {
+      choices <- c(0, choices)
+      choice_names <- c("(view all)", choice_names)
+    }
+    names(choices) <- choice_names
+    
     selectInput("variable_to_view", label = "Choose a variable to view:", choices = choices)
   }
 })

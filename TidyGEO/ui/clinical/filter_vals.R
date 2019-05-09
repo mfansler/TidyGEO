@@ -1,4 +1,4 @@
-tabPanel(title = icon("times"), value = "6",
+tabPanel(title = icon("cut"), value = "6",
          h4("Filtering samples"),
          p("You may want to remove some of the samples in the data, for example, if you have samples with missing (NA) values."), 
          p("Here, you can specify values to use as filtering criteria.
@@ -16,7 +16,7 @@ tabPanel(title = icon("times"), value = "6",
         #                  uiOutput("display_vals_to_exclude")),
          
          div(
-           primary_button("clinical_evaluate_exclude", div(icon("times"), "Exclude")),
+           primary_button("clinical_evaluate_exclude", div(icon("cut"), "Exclude")),
            tipify(tertiary_button(id = "undo_filter", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
          hr(), uiOutput("nav_6_ui")

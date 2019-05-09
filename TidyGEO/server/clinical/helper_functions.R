@@ -62,52 +62,61 @@ filterUninformativeCols <- function(metaData, toFilter = list())
   metaData
 }
 
-extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
+extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
   
   if (is.null(colsToSplit) || delimiter == "") {
-    return(inputDataFrame) 
+    return(input_df) 
   }
-  
-  #browser()
   
   errorMessage <- NULL
   
-  inputDataFrame <- cbind(row_names = rownames(inputDataFrame), inputDataFrame)
+  input_df <- cbind(row_names = rownames(input_df), input_df)
+  metaData <- input_df
   num_split <- 0
   
-  for (col in colsToSplit) {
-    
-    hasDelim <- is.na(inputDataFrame[, col]) | str_detect(inputDataFrame[, col], delimiter)
-    
-    if (all(hasDelim)) {
-      num_split <- num_split + 1
+  regex_delimiter <- if (!use_regex) paste0("\\Q", delimiter, "\\E") else delimiter
+  
+  tryCatch({
+    for (col in colsToSplit) {
+      hasDelim <- is.na(metaData[, col]) | str_detect(metaData[, col], regex_delimiter)
       
-      inputDataFrame <- separate(inputDataFrame, col, sep = delimiter, into = c("key", "value")) %>%
-        mutate(key = str_trim(key), value = str_trim(value))
-      
-      col_names <- colnames(inputDataFrame)
-      col_names <- append(col_names, unique(inputDataFrame$key)[which(!is.na(unique(inputDataFrame$key)))], which(col_names == "key"))
-      col_names <- col_names[-which(col_names %in% c("key", "value"))]
-      
-      inputDataFrame <- spread(inputDataFrame, key = "key", value = "value")
-      inputDataFrame <- inputDataFrame[,col_names]
-    } else {
-      
-      offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
-      offendingRows <- if_else(nchar(offendingRows) > 50, paste0(substr(offendingRows, 1, 50), "... "), offendingRows)
-      
-      offendingVals <- paste(inputDataFrame[!hasDelim, col], collapse = ", ")
-      offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
-      
-      errorMessage <- c(errorMessage, paste0(col, " could not be split."),
-                        paste0("Rows: ", offendingRows),
-                        paste0("Values: ", offendingVals))
+      if (all(hasDelim)) {
+        
+        metaData <- separate(metaData, col, sep = regex_delimiter, into = c("key", "value"), extra = "merge") %>%
+          mutate(key = str_trim(key), value = str_trim(value))
+        
+        col_names <- colnames(metaData)
+        col_names <- append(col_names, unique(metaData$key)[which(!is.na(unique(metaData$key)))], which(col_names == "key"))
+        col_names <- col_names[-which(col_names %in% c("key", "value"))]
+        
+        metaData <- spread(metaData, key = "key", value = "value")
+        metaData <- metaData[,col_names]
+        
+        num_split <- num_split + 1
+      } else {
+        
+        offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
+        offendingRows <- if_else(nchar(offendingRows) > 50, paste0(substr(offendingRows, 1, 50), "... "), offendingRows)
+        
+        offendingVals <- paste(metaData[!hasDelim, col], collapse = ", ")
+        offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
+        
+        errorMessage <- c(errorMessage, paste0(col, " could not be split."),
+                          paste0("Rows: ", offendingRows),
+                          paste0("Values: ", offendingVals))
+      }
     }
-  }
+  }, error = function(e) {
+    errorMessage <<- 'Something went wrong. Try running again with the "Use regex" option <b>unchecked</b>.'
+    metaData <<- input_df
+  })
+  
   
   if (!is.null(errorMessage)) {
-    errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
-                      errorMessage)
+    if (!str_detect(errorMessage, 'Something went wrong')) {
+      errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
+                        errorMessage)
+    }
     errorMessage <- paste(errorMessage, collapse = "<br/>")
     errorMessage <- paste('<font color="red">', errorMessage, '</font>')
     showModal(
@@ -116,52 +125,70 @@ extractColNames <- function(inputDataFrame, delimiter, colsToSplit) {
     )
   }
   
-  inputDataFrame <- data.frame(inputDataFrame[,-1], row.names = inputDataFrame$row_names, check.names = FALSE)
+  metaData <- data.frame(metaData[,-1], row.names = metaData$row_names, check.names = FALSE)
   
   if (num_split > 0) {
-    colnames(inputDataFrame) <- col_names[-1]
+    colnames(metaData) <- col_names[-1]
     
-    inputDataFrame <- as.data.frame(apply(inputDataFrame, 2, function(x) {
-      gsub(x, pattern = "NA", replacement = NA)
-    }))
+    #metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    #  gsub(x, pattern = "NA", replacement = NA)
+    #}))
     
-    inputDataFrame <- filterUninformativeCols(inputDataFrame)
+    metaData <- filterUninformativeCols(metaData)
   }
   
-  return(inputDataFrame)
+  return(metaData)
 }
 
-splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
+splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FALSE) {
   if (is.null(colsToDivide) || delimiter == "") {
-    return(metaData)
+    return(input_df)
   }
+  metaData <- input_df
   num_split <- 0
   errorMessage <- NULL
-  for (colName in colsToDivide) {
-    numElements <- max(sapply(metaData[,colName], function(x) {
-      length(str_extract_all(x, delimiter)[[1]]) + 1
-    }), na.rm = TRUE)
-    #targetCol <- metaData[,colName]
-    if (numElements > 1) {
-      num_split <- num_split + 1
-      
-      colNames <- NULL
-      for (i in 1:numElements) {
-        colNames <- c(colNames, paste(colName, i, sep = "."))
+  
+  regex_delimiter <- if (!use_regex) paste0("\\Q", delimiter, "\\E") else delimiter
+  
+  tryCatch({
+    for (colName in colsToDivide) {
+      numElements <- max(sapply(metaData[,colName], function(x) {
+        len <- length(str_extract_all(x, regex_delimiter)[[1]]) + 1
+        if (len > nchar(x)) {
+          stop("You have made a mistake.")
+        } else {
+          len
+        }
+      }), na.rm = TRUE)
+      #targetCol <- metaData[,colName]
+      if (numElements > 1) {
+        
+        colNames <- NULL
+        for (i in 1:numElements) {
+          colNames <- c(colNames, paste(colName, i, sep = "."))
+        }
+        metaData <- separate(metaData, col = colName, into = colNames, sep = regex_delimiter)
+        
+        num_split <- num_split + 1
+      } else {
+        offendingVals <- paste(metaData[, colName], collapse = ", ")
+        offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
+        
+        errorMessage <- c(errorMessage, paste0(colName, " could not be split."),
+                          paste0("Values: ", offendingVals))
       }
-      metaData <- separate(metaData, col = colName, into = colNames, sep = delimiter)
-    } else {
-      offendingVals <- paste(metaData[, colName], collapse = ", ")
-      offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
-      
-      errorMessage <- c(errorMessage, paste0(colName, " could not be split."),
-                        paste0("Values: ", offendingVals))
     }
-  }
+  }, error = function(e) {
+    errorMessage <<- 'Something went wrong. Try running again with the "Use regex" option <b>unchecked</b>.'
+    metaData <<- input_df
+  })
+  
   
   if (!is.null(errorMessage)) {
-    errorMessage <- c(paste0('<b>Looks like some of the specified columns don\'t contain the delimiter "', delimiter, '".</b>'),
-                      errorMessage)
+    if (!str_detect(errorMessage, 'Something went wrong')) {
+      errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
+                        errorMessage)
+    }
     errorMessage <- paste(errorMessage, collapse = "<br/>")
     errorMessage <- paste('<font color="red">', errorMessage, '</font>')
     showModal(
@@ -171,9 +198,9 @@ splitCombinedVars <- function(metaData, colsToDivide, delimiter) {
   }
   
   if (num_split > 0) {
-    metaData <- as.data.frame(apply(metaData, 2, function(x) {
-      gsub(x, pattern = "NA", replacement = NA)
-    }))
+    #metaData <- as.data.frame(apply(metaData, 2, function(x) {
+    #  gsub(x, pattern = "NA", replacement = NA)
+    #}))
     
     metaData <- filterUninformativeCols(metaData)
   }
@@ -221,7 +248,12 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   }
   
   for (i in 1:nrow(subs)) {
-    if (grepl("RANGE", subs$To_Replace[i])) {
+    if (is.na(subs$To_Replace[i]) || subs$To_Replace[i] == "") {
+      na_rows <- which(is.na(clinical_data[,col_to_sub]) | clinical_data[,col_to_sub] == "")
+      if (length(na_rows) > 0) {
+        clinical_data[na_rows, col_to_sub] <- rep(subs$New_Val[i], length(na_rows))
+      }
+    } else if (grepl("RANGE", subs$To_Replace[i])) {
       
       mySub <- str_remove(subs$To_Replace[i], "RANGE: ")
       mySub <- as.numeric(str_split(mySub, " - ")[[1]])
@@ -235,7 +267,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
       
       clinical_data[which(!is.na(new_col)), col_to_sub] <- new_col[which(!is.na(new_col))]
       
-    } else if (subs$To_Replace[i] != "") {
+    } else {
       
       clinical_data[,col_to_sub] <- gsub(clinical_data[,col_to_sub], 
                                          pattern = subs$To_Replace[i], 

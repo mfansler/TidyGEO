@@ -41,7 +41,16 @@ observeEvent(input$expression_transpose, {
   }
 })
 
-
+output$evaluate_filters_button <- renderUI({
+  if (!is.null(input$exprPreview_search_columns) && !all(input$exprPreview_search_columns == "")) {
+    div(
+    primary_button("expression_evaluate_filters", 
+                   label = div(icon("filter"),
+                               "Apply filters"),
+                   width = '200px', class = "indent"),
+    help_link(id = "evaluate_filters_help"))
+  }
+})
 
 observeEvent(input$expression_evaluate_filters, {
   #TODO: debug filtering when the data is transposed

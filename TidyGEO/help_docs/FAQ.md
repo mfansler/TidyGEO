@@ -17,6 +17,15 @@ FAQ
     + Please make sure it doesn't have any extra characters (spaces, dashes, etc).
 * __Why isn't the reset button doing anything?__
     + "Reset" restores the data to its original format upon being downloaded. If there haven't been any changes to the data, nothing will happen.
+
+### General questions
+
+* __I am pressing Undo over and over and nothing is happening.__
+    + Undo only goes back *one* operation. To undo more than one operation, you will likely have to Reset the data and start again.
+* __What can I do with my data after I have reformatted it?__
+    + You can download it onto your computer and load it into an analysis software of your choice.
+    + <a href="https://brb.nci.nih.gov/BRB-ArrayTools/index.html" target="_blank">BRB-ArrayTools</a> is a package with an Excel add-in that can be used to analyze Microarray gene expression, copy number, methylation and RNA-Seq data.
+    + <a href="https://gdancik.shinyapps.io/shinyGEO/" target="_blank">shinyGEO</a> is an application specializing in differential expression analysis and survival analysis for GEO datasets.
     
 ### Clinical data
 
@@ -28,20 +37,26 @@ FAQ
     + The filters you selected would have dropped all the columns from the table, so no columns were dropped. Try unselecting one of the filters and clicking "Filter columns" again.
     + The "Is unique" filter is usually the culprit. Try unselecting this filter and clicking "Filter columns" again.
 
-#### (2) Reformatting columns
+#### (2-3) Splitting pairs and splitting columns
 * __It says that the column has cells that don't contain the delimiter, but I can see that they do. How do I fix this?__
     + Take note of the rows and the values in the error message, and in the substitute values tab (tab 4), fix those values to have the same delimiter as the rest of the column. 
     + If the culprit is missing values ("NA", "?", "-" , etc.), you will have to substitute those values for NA. 
-    + Then, try pressing "Reformat columns" again.
+    + Then, try pressing either "Split pairs" or "Split columns" again.
 * __Why are my columns disappearing?__
     + Columns that are identical (have all the same values in the same positions) are automatically filtered out every time you make a change.
+* __What is the difference between splitting key-value pairs and splitting a column?__
+    + Splitting key-value pairs will assign the key (the thing before the delimiter) to the column name, and the value (the thing after the delimiter) will remain as it is in the column.
+    + Splitting a column will make multiple columns out of one column, each with a different value that was separated by the delimiter.
+    + Usually data with one ":" or "=" in the column indicates a key-value pair, and data with one or more of ",", or ";" indicates a column with multiple values.
+* __I tried to split a column into more columns, but it put the first value as the title of the column. What happened?__
+    + If a column has more than one of the delimiter you've specified, you should probably split the column instead of splitting the key-value pairs.
 
-#### (3) Renaming columns
+#### (4) Renaming columns
 * __Why do the column names have periods in them after I have renamed them?__
     + There are certain rules in R (the language the app is built upon) that regulate how columns can be named. 
     + See the Details section of <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/make.names.html" target="_blank">this webpage</a> for details on what kinds of column names are allowed.
 
-#### (4) Substituting values
+#### (5) Substituting values
 * __When I try to use the numeric option, it says that my column is not numeric, even though I can see that it is. Why?__
     + If your column of interest only has one or two unique values, it is treated as a non-numeric column. This is because, usually, two or fewer unique numbers in a column indicates that the column is a categorical, rather than a discrete, variable.
     + With only two unique entries, you should be able to filter the data normally by selecting which value you would like to exclude.
@@ -55,7 +70,7 @@ FAQ
     + Click "Substitute" to evaluate the changes.
     + Please note that the ranges are inclusive and that they are evaluated in the order that they appear in the table. This means that if you have overlapping ranges, the numbers in the first range will take precedence.
     
-#### (5) Excluding variables
+#### (6) Excluding variables
 * __When I try to use the numeric option, it says that my column is not numeric, even though I can see that it is. Why?__
     + If your column of interest only has one or two unique values, it is treated as a non-numeric column. This is because, usually, two or fewer unique numbers in a column indicates that the column is a categorical, rather than a discrete, variable.
     + With only two unique entries, you should be able to filter the data normally by selecting which value you would like to exclude.
