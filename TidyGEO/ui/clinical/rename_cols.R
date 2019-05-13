@@ -1,4 +1,4 @@
-tabPanel(title = icon("pencil-alt"), value = "4",
+tabPanel(title = icon("pencil-alt"), value = "5",
          h4("Renaming columns"),
          p("In order to integrate the data with other data sources or for humans to be able to understand the data,
            it may be helpful to replace the existing column names with more accurate/descriptive ones."),
@@ -9,5 +9,5 @@ tabPanel(title = icon("pencil-alt"), value = "4",
            primary_button(id = "rename", label = div(icon("pencil-alt"), "Rename column")),
            tipify(tertiary_button(id = "undo_rename", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_4_ui")
+         hr(), uiOutput("nav_5_ui")
 )

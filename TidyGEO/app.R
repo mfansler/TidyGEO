@@ -58,6 +58,11 @@ ui <- fluidPage(
                                       source(file.path("ui", "clinical", "select_cols.R"), local = TRUE)$value,
                                       
 
+                                      # shift cells -------------------------------------------------------------
+                                      
+                                      source(file.path("ui", "clinical", "shift_cells.R"), local = TRUE)$value,
+                                      
+                                      
                                       # split key-value pairs ---------------------------------------------------
                                       
                                       source(file.path("ui", "clinical", "split_pairs.R"), local = TRUE)$value,
@@ -240,6 +245,9 @@ server <- function(input, output, session) {
   
   source(file.path("server", "clinical", "split_pairs.R"), local = TRUE)$value
   
+
+  # shift cells -------------------------------------------------------------
+  
   source(file.path("server", "clinical", "split_cols.R"), local = TRUE)$value
   
   
@@ -260,6 +268,8 @@ server <- function(input, output, session) {
   # exclude vals ------------------------------------------------------------
   
   source(file.path("server", "clinical", "filter_vals.R"), local = TRUE)$value
+  
+  source(file.path("server", "clinical", "shift_cells.R"), local = TRUE)$value
 
   
   # download data -----------------------------------------------------------

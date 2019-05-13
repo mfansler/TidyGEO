@@ -334,3 +334,29 @@ excludeVars <- function(metaData, variable, to_exclude) {
 #  
 #  return(x)
 #}
+
+shift_cells <- function(data, col1, col2, conflicts = NULL) {
+  results <- list()
+  if (is.null(conflicts)) {
+    conflict_indices <- !is.na(data[,col1]) & !is.na(data[,col2]) 
+    if (any(conflict_indices)) {
+      results[["conflicts"]] <- data[conflict_indices, c(col1, col2)]
+    }
+    # The !! operator unquotes its argument. It gets evaluated immediately in the surrounding context.
+    data <- unite(data, col2, col1, col = !!col2)
+    data[,col2] <- str_remove_all(data[,col2], "_NA|NA_")
+  } else if (conflicts == col1) {
+    shift_indices <- which(!is.na(data[,col1]))
+    data[shift_indices, col2] <- data[shift_indices, col1]
+    data[shift_indices, col1] <- rep(NA, length(shift_indices))
+  } else if (conflicts == col2) {
+    shift_indices <- which(is.na(data[,col2]))
+    data[shift_indices, col2] <- data[shift_indices, col1]
+    data[shift_indices, col1] <- rep(NA, length(shift_indices))
+  } else {# conflicts = delimiter
+    data <- unite(data, col2, col1, col = !!col2, sep = conflicts)
+    data[,col2] <- str_remove_all(data[,col2], paste0(conflicts, "NA|NA", conflicts))
+  }
+  results[["result"]] <- data
+  return(results)
+}

@@ -1,4 +1,4 @@
-tabPanel(title = icon("th-list"), value = "2",
+tabPanel(title = icon("th-list"), value = "3",
          h4("Splitting key-value pairs"),
          p('Sometimes a single column contains key-value pairs in each cell. This makes it more difficult to analyze the data.'),
          p('If you see any columns in your data that contain key-value pairs separated by a delimiter
@@ -22,5 +22,5 @@ tabPanel(title = icon("th-list"), value = "2",
            primary_button(id = "split_pairs", label = div(icon("th-list"), "Split pairs")),
            tipify(tertiary_button(id = "undo_split_pairs", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_2_ui")
+         hr(), uiOutput("nav_3_ui")
 )

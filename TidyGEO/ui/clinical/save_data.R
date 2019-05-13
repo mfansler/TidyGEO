@@ -1,4 +1,4 @@
-tabPanel(title = icon("download"), value = "7",
+tabPanel(title = icon("download"), value = "8",
          h4("Saving the data"),
          p("Here is where you can download the clinical data to your computer."),
          p("You can also download the R script that produced this data. The R script allows you
@@ -14,5 +14,5 @@ tabPanel(title = icon("download"), value = "7",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link(id = "clinical_r_help")))
          ),
-         hr(), uiOutput("nav_7_ui")
+         hr(), uiOutput("nav_8_ui")
 )

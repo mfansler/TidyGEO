@@ -1,4 +1,4 @@
-tabPanel(title = icon("columns"), value = "3",
+tabPanel(title = icon("columns"), value = "4",
          h4("Splitting columns"),
          p('Sometimes a single column contains multiple values in each cell. This makes it more difficult to analyze the data.'),
          p('If you see any columns in your data that contain multiple values in a column (e.g., "control;geneA;female" or "time 0, treatment1"), 
@@ -20,5 +20,5 @@ tabPanel(title = icon("columns"), value = "3",
            primary_button(id = "split_cols", label = div(icon("columns"), "Split columns")),
            tipify(tertiary_button(id = "undo_split_cols", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_3_ui")
+         hr(), uiOutput("nav_4_ui")
          )
