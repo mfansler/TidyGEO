@@ -62,7 +62,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
   stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
   if (is.null(platform)) {
     gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
-    b = getDirListing(sprintf(gdsurl, stub, GEO))
+    b = GEOquery:::getDirListing(sprintf(gdsurl, stub, GEO))
     platform <- b[1]
   }
   destfile = file.path(destdir, platform)
@@ -197,6 +197,26 @@ saveFileDescription <- function(geoID, filePathToSave) {
       write("", file = desFilePath, append = TRUE, sep = "\n")
     }
   }
+}
+
+shift_cells <- function(data, col1, col2, conflicts = NULL) {
+  if (is.null(conflicts)) {
+    data <- unite(data, col2, col1, col = !!col2)
+    data[,col2] <- str_remove_all(data[,col2], "_NA|NA_")
+  } else if (conflicts == col1) {
+    shift_indices <- which(!is.na(data[,col1]))
+    data[shift_indices, col2] <- data[shift_indices, col1]
+    data[shift_indices, col1] <- rep(NA, length(shift_indices))
+  } else if (conflicts == col2) {
+    shift_indices <- which(is.na(data[,col2]))
+    data[shift_indices, col2] <- data[shift_indices, col1]
+    data[shift_indices, col1] <- rep(NA, length(shift_indices))
+  } else {# conflicts = delimiter
+    data <- unite(data, col2, col1, col = !!col2, sep = conflicts)
+    data[,col2] <- str_remove_all(data[,col2], paste0(conflicts, "NA|NA", conflicts))
+  }
+  results <- data
+  return(results)
 }
 
 extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
@@ -367,8 +387,6 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   row_names <- rownames(clinical_data)
   clinical_data[,col_to_sub] <- as.character(clinical_data[,col_to_sub])
   
-  incProgress()
-  
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA
   }
@@ -400,10 +418,8 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
                                          replacement = subs$New_Val[i], 
                                          fixed = !use_reg_ex)
     }
-    incProgress()
   }
   clinical_data <- clinical_data %>% mutate_all(~ replace(., . == "", NA))
-  incProgress()
   rownames(clinical_data) <- row_names
   return(clinical_data)
 }

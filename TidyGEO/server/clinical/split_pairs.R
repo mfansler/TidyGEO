@@ -24,7 +24,7 @@ observeEvent(input$split_pairs, ({
     clinical_vals$oFile <- saveLines(paste0("cols_to_split <- ", format_string(input$cols_to_split)), clinical_vals$oFile)
     clinical_vals$oFile <- saveLines(c(paste0("split_delimiter <- ", format_string(input$split_delimiter)),
                                        paste0("split_use_regex <- ", format_string(input$split_pairs_w_regex)),
-                                       "clinical_data <- extractColNames(clinical_data, split_delimiter, cols_to_split)"), 
+                                       "clinical_data <- extractColNames(clinical_data, split_delimiter, cols_to_split, split_use_regex)"), 
                                      clinical_vals$oFile)
     
     clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before

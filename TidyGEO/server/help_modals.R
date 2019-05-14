@@ -72,7 +72,7 @@ observeEvent(input$substitute_help, {
 })
 
 observeEvent(input$regex_help, {
-  help_modal("help_docs/Regular_Expressions_Documentation.md")
+  source(file.path("server", "regex_modal.R"), local = TRUE)$value
 })
 
 observeEvent(input$exclude_help, {
@@ -133,11 +133,11 @@ observeEvent(input$expression_files_help, {
 })
 
 observeEvent(input$regex_help_split_pairs, {
-  help_modal("help_docs/Regular_Expressions_Documentation.md")
+  source(file.path("server", "regex_modal.R"), local = TRUE)$value
 })
 
 observeEvent(input$regex_help_split_cols, {
-  help_modal("help_docs/Regular_Expressions_Documentation.md")
+  source(file.path("server", "regex_modal.R"), local = TRUE)$value
 })
 
 # enlarge image listener --------------------------------------------------

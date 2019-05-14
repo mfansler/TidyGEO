@@ -4,7 +4,7 @@ output$choose_variable_to_view <- renderUI({
   if (!is.null(clinical_vals$clinical_data)) {
     choices <- 1:length(colnames(clinical_vals$clinical_data))
     choice_names <- colnames(clinical_vals$clinical_data)
-    if (nrow(clinical_vals$clinical_data) < 1000) {
+    if (nrow(clinical_vals$clinical_data) < 50) {
       choices <- c(0, choices)
       choice_names <- c("(view all)", choice_names)
     }

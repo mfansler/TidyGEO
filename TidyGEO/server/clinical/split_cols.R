@@ -25,7 +25,7 @@ observeEvent(input$split_cols, ({
     clinical_vals$oFile <- saveLines(paste0("cols_to_divide <- ", format_string(input$colsToDivide)), clinical_vals$oFile)
     clinical_vals$oFile <- saveLines(c(paste0("divide_delimiter <- ", format_string(input$divide_delimiter)),
                                        paste0("divide_regex <- ", format_string(input$split_cols_w_regex)),
-                                "clinical_data <- splitCombinedVars(clinical_data, cols_to_divide, divide_delimiter)"), 
+                                "clinical_data <- splitCombinedVars(clinical_data, cols_to_divide, divide_delimiter, divide_regex)"), 
                               clinical_vals$oFile)
     clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
   }

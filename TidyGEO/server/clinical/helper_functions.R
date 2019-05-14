@@ -147,14 +147,12 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
   metaData <- input_df
   num_split <- 0
   errorMessage <- NULL
-  
   regex_delimiter <- if (!use_regex) paste0("\\Q", delimiter, "\\E") else delimiter
-  
   tryCatch({
     for (colName in colsToDivide) {
       numElements <- max(sapply(metaData[,colName], function(x) {
         len <- length(str_extract_all(x, regex_delimiter)[[1]]) + 1
-        if (len > nchar(x)) {
+        if (!is.na(x) && len > nchar(x)) {
           stop("You have made a mistake.")
         } else {
           len

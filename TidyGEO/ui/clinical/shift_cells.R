@@ -1,12 +1,14 @@
 tabPanel(title = icon("angle-double-right"), value = "2",
          h4("Shifting cells"),
-         p("Sometimes, missing values can cause columns to break and shift over, so that the values are listed under
-           the wrong column name", actionLink(inputId = "show_broken_cols_example", label = "(example).")),
-         p("Here, you can identify a column whose values you would like to shift into a different column.",
+         p('Sometimes, missing values can cause data from a single variable (such as "Sex" and "Freq" in ', 
+           actionLink(inputId = "show_broken_cols_example", label = "this example)"),
+           'to be scattered across multiple columns. This makes it difficult to extract data for the single variable.'),
+         p("Here, you can identify a column whose values you would like to shift back to their proper column.",
              help_link(id = "shift_help")),
          uiOutput("display_cols_to_shift"),
          uiOutput("display_destination_cols"),
-         h5('Here is a preview of the first 5 rows of the columns you have selected.'),
+         HTML('Here is a preview of the first 5 rows of the columns you have selected. Conflicts, where one value might
+            be overwritten by another value, are shown in <font color="red">red.</font>'),
          wellPanel(DTOutput("shift_preview_table")),
          div(
            primary_button("evaluate_shift", div(icon("angle-double-right"), "Shift cells")),

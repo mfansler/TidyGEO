@@ -170,7 +170,8 @@ server <- function(input, output, session) {
       oFile = commentify(" "),
       download_chunk_len = 0,
       current_chunk_len = 0,
-      plot_to_save = NULL
+      plot_to_save = NULL,
+      shift_results = list()
     )
   
   assay_vals <-
@@ -241,19 +242,21 @@ server <- function(input, output, session) {
   source(file.path("server", "clinical", "graphical_summary.R"), local = TRUE)$value
   
   
+  # filter columns ----------------------------------------------------------
+  
+  source(file.path("server", "clinical", "select_cols.R"), local = TRUE)$value
+  
+  
+  # shift cells -------------------------------------------------------------
+  
+  source(file.path("server", "clinical", "shift_cells.R"), local = TRUE)$value
+  
+  
   # extract columns ---------------------------------------------------------
   
   source(file.path("server", "clinical", "split_pairs.R"), local = TRUE)$value
   
-
-  # shift cells -------------------------------------------------------------
-  
   source(file.path("server", "clinical", "split_cols.R"), local = TRUE)$value
-  
-  
-  # filter columns ----------------------------------------------------------
-  
-  source(file.path("server", "clinical", "select_cols.R"), local = TRUE)$value
 
   
   # rename columns ----------------------------------------------------------
@@ -268,8 +271,6 @@ server <- function(input, output, session) {
   # exclude vals ------------------------------------------------------------
   
   source(file.path("server", "clinical", "filter_vals.R"), local = TRUE)$value
-  
-  source(file.path("server", "clinical", "shift_cells.R"), local = TRUE)$value
 
   
   # download data -----------------------------------------------------------
