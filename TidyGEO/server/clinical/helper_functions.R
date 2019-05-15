@@ -23,7 +23,7 @@ process_clinical <- function(expressionSet, session = NULL) {
 
 evaluate_cols_to_keep <- function(col, toFilter = list()) {
   functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
-                    "url" = function(x) all(!grepl("ftp:\\/\\/", x)),
+                    "url" = function(x) all(!grepl("(((https?)|(ftp)):\\/\\/)|www\\.", x)),
                     "dates" = function(x) all(!grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", x)),
                     "same_vals" = function(x) length(unique(as.factor(as.character(toupper(x))))) > 1,
                     "all_diff" = function(x) length(unique(as.factor(as.character(toupper(x))))) != total_rows,
@@ -84,6 +84,15 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
         
         metaData <- separate(metaData, col, sep = regex_delimiter, into = c("key", "value"), extra = "merge") %>%
           mutate(key = str_trim(key), value = str_trim(value))
+        
+        if (any(metaData$key %in% colnames(metaData))) {
+          metaData <- metaData %>%
+            group_by(key) %>%
+            mutate(key_mod = if (unique(key) %in% colnames(metaData)) paste0(key, ".1") else key) %>%
+            ungroup() %>%
+            select(-key) %>%
+            rename(key = "key_mod")
+        }
         
         col_names <- colnames(metaData)
         col_names <- append(col_names, unique(metaData$key)[which(!is.na(unique(metaData$key)))], which(col_names == "key"))
@@ -352,7 +361,7 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
     data[shift_indices, col2] <- data[shift_indices, col1]
     data[shift_indices, col1] <- rep(NA, length(shift_indices))
   } else {# conflicts = delimiter
-    data <- unite(data, col2, col1, col = !!col2, sep = conflicts)
+    data <- unite(data, col1, col2, col = !!col2, sep = conflicts)
     data[,col2] <- str_remove_all(data[,col2], paste0(conflicts, "NA|NA", conflicts))
   }
   results[["result"]] <- data

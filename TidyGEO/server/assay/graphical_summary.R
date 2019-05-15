@@ -1,12 +1,3 @@
-output$expr_select_binwidths <- renderUI({
-  if (is.null(assay_vals$assay_display) || !assay_vals$warning_state) {
-    upper_lim <- 10
-  } else {
-    upper_lim <- ceiling(max(assay_vals$assay_display[,which(colnames(assay_vals$assay_display) != "ID")], na.rm = TRUE))
-  }
-  sliderInput("expression_binwidths", "Width of bars (for numeric):", min = .1, max = abs(upper_lim) + .1, value = ceiling(upper_lim / 2), width = '100%')
-})
-
 # Create divs
 output$histograms_expression <- renderUI({
   

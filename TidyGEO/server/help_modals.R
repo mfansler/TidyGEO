@@ -19,7 +19,8 @@ help_modal <- function(help_file, images = NULL, image_names = NULL) {
         create_image_grid(images, image_names)
       ),
       footer = modalButton("Close"),
-      size = "l"
+      size = "l",
+      easyClose = TRUE
     )
   )
   #end_time <- Sys.time()
@@ -49,6 +50,9 @@ create_image_grid <- function(images, image_names) {
 
 # listeners ---------------------------------------------------------------
 
+observeEvent(input$shift_help, {
+  help_modal("help_docs/Shift_Cells_Documentation.md")
+})
 
 observeEvent(input$split_help, {
   images <- c("separate_example.gif")
@@ -148,7 +152,8 @@ observeEvent(input$clickimg, {
   showModal(
     modalDialog(
       tags$img(src = input$clickimg, width = "100%", height = "100%"),
-      size = "l"
+      size = "l",
+      easyClose = TRUE
       )
     )
   #end_time <- Sys.time()

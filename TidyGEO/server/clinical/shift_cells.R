@@ -71,7 +71,8 @@ output$conflict_actions <- renderUI({
                choiceNames = c(paste("Keep the values from", input$col_to_shift),
                                paste("Keep the values from", input$destination_col),
                                "Keep values from both columns, separated by a delimiter"),
-               choiceValues = c(input$col_to_shift, input$destination_col, "delim"))
+               choiceValues = c(input$col_to_shift, input$destination_col, "delim"),
+               selected = input$destination_col)
 })
 
 output$conflict_delimiter_option <- renderUI({
@@ -92,12 +93,13 @@ observeEvent(input$evaluate_shift, {
     showModal(modalDialog( title = div(HTML('<font color="red">Whoops!</font>'), 
                                        tertiary_button("cancel_shift", "Cancel", class = "right_align")),
       HTML(paste0('<font color="red">Looks like we\'re trying to overwrite some of the values in ',
-               input$destination_col, '. Please see the conflicts in the table below.</font>')),
+               input$destination_col, '. Please see the conflicts in the table below, and indicate how you
+               would like to resolve the conflicts.</font>')),
       DTOutput("shift_conflicts_table"),
       br(),
       uiOutput("conflict_actions"),
       uiOutput("conflict_delimiter_option"),
-      footer = primary_button("evaluate_conflicts", "Try again")
+      footer = primary_button("evaluate_conflicts", "Resolve")
     ))
   } else {
     clinical_vals$last_data <- clinical_vals$clinical_data

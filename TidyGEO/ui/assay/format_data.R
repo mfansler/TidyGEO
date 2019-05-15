@@ -8,7 +8,7 @@ tabPanel(title = icon("edit"), value = "1",
            column(12, 
                   primary_button("expression_replace_id", 
                                  label = div(icon("exchange-alt"),
-                                             "Use different column ID"),
+                                             "Use different ID column"),
                                  width = '200px', class = "indent"), 
                   help_link(id = "replace_id_help"))
            

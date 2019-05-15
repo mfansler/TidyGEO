@@ -5,10 +5,21 @@
 observeEvent(input$expression_replace_id, {
   showModal(
     modalDialog(
-      p(div(em('"Expression profiling analysis usually generates quantitative data for features of interest. 
-            Features of interest may be genes, transcripts, exons, miRNA, or some other genetic entity."'), 
-            a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/info/seq.html", "(GEO)"))),
-      p("Here, you can replace the feature in the ID column of the assay data with a different feature that is more interesting to you."),
+      HTML('<p>In the <b>assay data</b> table, you will see a column labeled <b>"ID"</b>. This is a unique identifier that usually
+        corresponds to the <b>probe set</b> used to take some measurement for the given sample ("GSM"). 
+        Probe sets may not be a useful way to look at patterns in the data.
+        Often, scientists want to look at <b>genes, transcripts, or exons,</b> for example. The <b>feature data</b> maps
+        the probe set identifiers (the "ID" column) to their corresponding genes, transcripts, exons, etc.
+        Frequently, <b>multiple probe sets refer to the same gene.</b>
+        </p>'), 
+      #p(div(em('"Expression profiling analysis usually generates quantitative data for features of interest. 
+      #      Features of interest may be genes, transcripts, exons, miRNA, or some other genetic entity."'), 
+      #      a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/info/seq.html", "(GEO)"))),
+      HTML('<p>In this window, you can find a column in the feature data that would be more useful than the
+        probe set identifiers.  In the case where multiple probe sets refer to the same gene, you might consider 
+        combining some of the rows in the assay data (i.e. <b>"summarizing"</b> the data) to keep the "ID" column 
+        in the assay data table unique.</p>'),
+      h4("Feature data"),
       fluidRow(
         column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
         column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
@@ -24,7 +35,7 @@ observeEvent(input$expression_replace_id, {
                                                                               "the ID column.")))),
       
       footer = primary_button(id = "expression_evaluate_id", label = "Replace ID column"), 
-      title = div("Feature data", tertiary_button("close_feature_modal", "Cancel", class = "right_align")),
+      title = div("Choose a different column to use as the ID column", tertiary_button("close_feature_modal", "Cancel", class = "right_align")),
       size = "l",
       easyClose = TRUE
     )
@@ -78,7 +89,7 @@ output$featureData <- DT::renderDT({
 })
 
 output$exprLabels <- renderUI({
-  selectInput("colForExprLabels", label = div("Please select a column to replace the expression IDs", 
+  selectInput("colForExprLabels", label = div("Please select a column that will identify each gene/transcript/exon/etc.", 
                                               help_button("To keep the same ID column, please choose ID.")), 
               choices = colnames(assay_vals$feature_data)[which(!colnames(assay_vals$feature_data) == "ID")]
   )
@@ -92,7 +103,7 @@ output$summarizeOptions <- renderUI({
     can_summarize <- !is_all_unique(new_expression_labels)
     if (can_summarize) {
       choices <- if (assay_vals$warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
-      selectInput("howToSummarize", label = div("It looks like this column contains multiple values for one expression ID.
+      selectInput("howToSummarize", label = div("It looks like this column maps to multiple ID values in the assay data.
                                                 How would you like to summarize the data?", 
                                                 help_button("Groups the data by ID and takes the specified measurement for the group.
                                                             Please note that if you choose 'keep all' you will not be able to transpose

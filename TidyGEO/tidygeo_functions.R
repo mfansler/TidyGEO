@@ -22,7 +22,7 @@ format_string <- function(element) {
   else if (mode(element) == "character") {
     element <-
       sapply(element, function(x) {
-        paste0("'", x, "'")
+        paste0("'", gsub("\\", "\\\\", x, fixed = TRUE), "'")
       }, USE.NAMES = FALSE)
   })
   if (length(element) > 1) {
@@ -262,7 +262,7 @@ create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FA
   if (is_numeric) {
     p <- base_histogram + 
       geom_histogram(data = data.frame(value = as.numeric(as.character(value))), aes(x = value),
-                     binwidth = plot_binwidth, fill = plot_color) +
+                     fill = plot_color, bins = plot_binwidth) +
       ggtitle(title)
   }
   else {

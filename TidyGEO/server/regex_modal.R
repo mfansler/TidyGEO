@@ -1,6 +1,7 @@
 showModal(
   modalDialog(
     includeMarkdown("help_docs/Regular_Expressions_Documentation.md"),
+    hr(),
     h4("Regular Expression Tester"),
     sidebarLayout(
       sidebarPanel(
@@ -9,6 +10,7 @@ showModal(
         primary_button("test_regex", "Test")
       ),
       mainPanel(
+        HTML('Any matches found by your regular expression will be highlighted here in <span style="background-color: #FFFF00">yellow.</span>'),
         wellPanel(
           DTOutput("col_match_results")
         )
@@ -26,14 +28,16 @@ output$choose_col_to_test <- renderUI({
 })
 
 output$col_match_results <- renderDT({
-  datatable(match_results(), options = list(dom = "t", scrollY = 300, paging = FALSE), rownames = FALSE)
+  datatable(match_results(), options = list(dom = "t", scrollY = 300, paging = FALSE), rownames = FALSE, escape = FALSE)
 })
 
 match_results <- eventReactive(input$test_regex, {
-  matches <- sapply(clinical_vals$clinical_data[,input$col_to_test], function(x) {
-    length(str_extract_all(x, input$regex_to_test)[[1]])
-  })
-  result <- cbind(clinical_vals$clinical_data[,input$col_to_test], matches)
-  colnames(result) <- c(input$col_to_test, "Num.Matches")
+  #matches <- sapply(clinical_vals$clinical_data[,input$col_to_test], function(x) {
+  #  length(str_extract_all(x, input$regex_to_test)[[1]])
+  #})
+  result <- as.data.frame(str_replace_all(clinical_vals$clinical_data[,input$col_to_test], input$regex_to_test, function(x) {
+    paste0('<span style="background-color: #FFFF00">', x, '</span>')
+  }))
+  colnames(result) <- c(input$col_to_test)
   result
 })

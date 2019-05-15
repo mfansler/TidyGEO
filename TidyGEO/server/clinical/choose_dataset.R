@@ -24,6 +24,7 @@ observe({
 
 platforms <- reactive({
   if (!is.null(input$geoID) && input$geoID != "") {
+    session$sendCustomMessage('resetValue', 'platformIndex')
     get_platforms(input$geoID, session)
   }
 })

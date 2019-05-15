@@ -212,7 +212,7 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
     data[shift_indices, col2] <- data[shift_indices, col1]
     data[shift_indices, col1] <- rep(NA, length(shift_indices))
   } else {# conflicts = delimiter
-    data <- unite(data, col2, col1, col = !!col2, sep = conflicts)
+    data <- unite(data, col1, col2, col = !!col2, sep = conflicts)
     data[,col2] <- str_remove_all(data[,col2], paste0(conflicts, "NA|NA", conflicts))
   }
   results <- data
@@ -238,8 +238,17 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
       
       if (all(hasDelim)) {
         
-        metaData <- separate(input_df, col, sep = regex_delimiter, into = c("key", "value"), extra = "merge") %>%
+        metaData <- separate(metaData, col, sep = regex_delimiter, into = c("key", "value"), extra = "merge") %>%
           mutate(key = str_trim(key), value = str_trim(value))
+        
+        if (any(metaData$key %in% colnames(metaData))) {
+          metaData <- metaData %>%
+            group_by(key) %>%
+            mutate(key_mod = if (unique(key) %in% colnames(metaData)) paste0(key, ".1") else key) %>%
+            ungroup() %>%
+            select(-key) %>%
+            rename(key = "key_mod")
+        }
         
         col_names <- colnames(metaData)
         col_names <- append(col_names, unique(metaData$key)[which(!is.na(unique(metaData$key)))], which(col_names == "key"))
@@ -290,6 +299,7 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
   if (is.null(colsToDivide) || delimiter == "") {
     return(input_df)
   }
+  metaData <- input_df
   num_split <- 0
   errorMessage <- NULL
   
@@ -297,7 +307,7 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
   
   tryCatch({
     for (colName in colsToDivide) {
-      numElements <- max(sapply(input_df[,colName], function(x) {
+      numElements <- max(sapply(metaData[,colName], function(x) {
         len <- length(str_extract_all(x, regex_delimiter)[[1]]) + 1
         if (len > nchar(x)) {
           stop("You have made a mistake.")
@@ -312,7 +322,7 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
         for (i in 1:numElements) {
           colNames <- c(colNames, paste(colName, i, sep = "."))
         }
-        metaData <- separate(input_df, col = colName, into = colNames, sep = regex_delimiter)
+        metaData <- separate(metaData, col = colName, into = colNames, sep = regex_delimiter)
         
         num_split <- num_split + 1
       } else {
