@@ -68,7 +68,7 @@ Most often, scattered values are caused by missing values in a column, which shi
     <td>?</td>
   </tr>
 </table>
-*In this example, row 2 is missing an entry for Letters, row 4 is missing entries for Letters and Numbers, and row 5 is missing an entry for Numbers.*
+*In this example, row 2 is missing an entry for Letters, row 4 is missing entries for Letters and Numbers, and row 5 is missing an entry for Numbers. This shifts the values for rows 2, 4, and 5 to the wrong columns.*
 
 To fix this:
 

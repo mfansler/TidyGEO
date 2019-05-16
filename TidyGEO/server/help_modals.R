@@ -51,6 +51,9 @@ create_image_grid <- function(images, image_names) {
 # listeners ---------------------------------------------------------------
 
 observeEvent(input$shift_help, {
+  images <- c("shift_cells_example.gif")
+  image_names <- c("Demo - Shift Cells")
+  
   help_modal("help_docs/Shift_Cells_Documentation.md")
 })
 

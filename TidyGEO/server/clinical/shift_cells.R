@@ -26,7 +26,7 @@ output$display_cols_to_shift <- renderUI({
 })
 
 output$display_destination_cols <- renderUI({
-  into_cols <- current_colnames()[-which(input$col_to_shift %in% current_colnames())]
+  into_cols <- current_colnames()[-which(current_colnames() %in% input$col_to_shift)]
   selectInput(inputId = "destination_col", label = div("into:"), choices = into_cols)  
 })
 

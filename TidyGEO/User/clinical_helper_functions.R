@@ -227,7 +227,7 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
   
   errorMessage <- NULL
   
-  input_df <- cbind(row_names = rownames(input_df), input_df)
+  metaData <- cbind(row_names = rownames(input_df), input_df)
   num_split <- 0
   
   regex_delimiter <- if (!use_regex) paste0("\\Q", delimiter, "\\E") else delimiter
@@ -396,6 +396,8 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   subs <- sub_specs[[col_to_sub]]
   row_names <- rownames(clinical_data)
   clinical_data[,col_to_sub] <- as.character(clinical_data[,col_to_sub])
+  
+  subs$New_Val <- str_replace_na(subs$New_Val, replacement = "")
   
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA

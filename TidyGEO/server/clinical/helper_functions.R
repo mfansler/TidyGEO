@@ -26,7 +26,7 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
                     "url" = function(x) all(!grepl("(((https?)|(ftp)):\\/\\/)|www\\.", x)),
                     "dates" = function(x) all(!grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", x)),
                     "same_vals" = function(x) length(unique(as.factor(as.character(toupper(x))))) > 1,
-                    "all_diff" = function(x) length(unique(as.factor(as.character(toupper(x))))) != total_rows,
+                    "all_diff" = function(x) if (isAllNum(x)) TRUE else length(unique(as.factor(as.character(toupper(x))))) != total_rows,
                     "tooLong" = function(x) {
                       isTooLong <- as.logical(nchar(x) > 100)
                       sum(isTooLong) < (length(x) / 2)
@@ -249,6 +249,8 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   clinical_data[,col_to_sub] <- as.character(clinical_data[,col_to_sub])
   
   incProgress()
+  
+  subs$New_Val <- str_replace_na(subs$New_Val, replacement = "")
   
   if (any(subs$New_Val == "NA")) {
     subs$New_Val[which(subs$New_Val == "NA")] <- NA
