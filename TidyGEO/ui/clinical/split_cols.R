@@ -14,8 +14,13 @@ tabPanel(title = icon("columns"), value = "4",
                           textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
          #)
          ,
-        checkboxInput("split_cols_w_regex", div("Use regex",
-                                         help_link(id = "regex_help_split_cols"))),
+        checkboxInput("split_cols_w_regex", div(
+          "Use regex",
+          actionLink(inputId = "regex_help_split_cols", label = div(
+            tags$i("Help/testing"),
+            icon("question-circle")
+          ))
+        )), 
          div(
            primary_button(id = "split_cols", label = div(icon("columns"), "Split columns")),
            tipify(tertiary_button(id = "undo_split_cols", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")

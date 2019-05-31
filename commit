@@ -1,0 +1,21 @@
+#!/bin/bash
+
+updateVersion=true
+message="$1"
+
+if [[ "$message" == "" ]]
+then
+  echo "No commit message was provided."
+  exit 1
+fi
+
+if [[ $updateVersion ]]
+then
+  currentVersion=$(cat TidyGEO/VERSION)
+  newVersion=$(($currentVersion + 1))
+  echo $newVersion > TidyGEO/VERSION
+fi
+
+git add --all
+git commit -m "$message"
+git push origin master

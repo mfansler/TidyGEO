@@ -21,6 +21,8 @@ platform_list <- read_feather("www/platform_list.feather")
 end_time <- Sys.time()
 print(paste("Reading files", end_time - start_time))
 
+version <- suppressWarnings(readLines("VERSION"))
+
 # colored buttons of different types --------------------------------------
 
 source(file.path("ui", "button_types.R"), local = TRUE)$value
@@ -126,9 +128,19 @@ ui <- fluidPage(
                         ) #main panel
                       ) #sidebar layout
              ), # expression data tab panel
+
+             # FAQ ---------------------------------------------------------------------
+
              tabPanel(title = "FAQ",
                       includeMarkdown("help_docs/FAQ.md")
-             )
+             ),
+
+             # about page --------------------------------------------------------------
+
+             tabPanel(title = "About",
+                      h2(paste("Version:", version)),
+                      includeMarkdown("help_docs/About.md")
+              )
   ) #master panel
 ) #fluidPage
 
@@ -167,7 +179,11 @@ server <- function(input, output, session) {
         New_Val = "",
         stringsAsFactors = FALSE
       ),
-      oFile = commentify(" "),
+      oFile = c(paste("#Script developed using version", version, 
+                      "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
+                "#application that allows scientists to quickly download and reformat data from",
+                "#the online repository Gene Expression Omnibus (GEO).", 
+                commentify(" ")),
       download_chunk_len = 0,
       current_chunk_len = 0,
       plot_to_save = NULL,
@@ -186,7 +202,11 @@ server <- function(input, output, session) {
       last_feature = NULL,
       feature_data = NULL,
       feature_display = NULL,
-      oFile = commentify(" "),
+      oFile = c(paste("#Script developed using version", version, 
+                      "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
+                "#application that allows scientists to quickly download and reformat data from",
+                "#the online repository Gene Expression Omnibus (GEO).", 
+                commentify(" ")),
       download_chunk_len = 0,
       current_chunk_len = 0,
       id_col = "ID",

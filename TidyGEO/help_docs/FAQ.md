@@ -67,7 +67,7 @@ FAQ
     + If a column has more than one of the delimiter you've specified, you should probably split the column instead of splitting the key-value pairs.
 * __I would like to do the _opposite_ of splitting a column, i.e., I would like to combine two columns. How do I achieve this?__
     + You can use the "Shift cells" functionality to combine columns.
-* __ I tried to split key-value pairs and the application crashed. What happened?__
+* __I tried to split key-value pairs and the application crashed. What happened?__
     + If multiple columns in your data have the same key (i.e., the value before the delimiter), splitting these columns will create duplicate column names, which is not allowed. To prevent this from happening, change the keys to be unique for each column. Then, you can combine the columns using "Shift cells" if they all describe the same variable.
 
 #### (5) Renaming columns

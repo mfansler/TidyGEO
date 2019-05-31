@@ -54,7 +54,7 @@ observeEvent(input$shift_help, {
   images <- c("shift_cells_example.gif")
   image_names <- c("Demo - Shift Cells")
   
-  help_modal("help_docs/Shift_Cells_Documentation.md")
+  help_modal("help_docs/Shift_Cells_Documentation.md", images, image_names)
 })
 
 observeEvent(input$split_help, {
