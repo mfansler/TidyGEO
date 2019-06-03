@@ -70,38 +70,56 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
   
   errorMessage <- NULL
   
+  # Save the rownames as a column so the tidyverse functions don't get rid of them
   input_df <- cbind(row_names = rownames(input_df), input_df)
   metaData <- input_df
   num_split <- 0
   
+  # Whether to treat the delimiter as literal or not
   regex_delimiter <- if (!use_regex) paste0("\\Q", delimiter, "\\E") else delimiter
   
   tryCatch({
     for (col in colsToSplit) {
+      # Check if every row has the delimiter (if not, separate won't work)
       hasDelim <- is.na(metaData[, col]) | str_detect(metaData[, col], regex_delimiter)
       
       if (all(hasDelim)) {
         
+        # the key column now has the new column names and the value column has the values
         metaData <- separate(metaData, col, sep = regex_delimiter, into = c("key", "value"), extra = "merge") %>%
           mutate(key = str_trim(key), value = str_trim(value))
+        metaData$value <- str_replace_all(metaData$value, "NA", NA_character_)
         
-        if (any(metaData$key %in% colnames(metaData))) {
-          metaData <- metaData %>%
-            group_by(key) %>%
-            mutate(key_mod = if (unique(key) %in% colnames(metaData)) paste0(key, ".1") else key) %>%
-            ungroup() %>%
-            select(-key) %>%
-            rename(key = "key_mod")
+        # if any of the keys are column names we've seen before
+        for (duplicate in unique(metaData$key)[which(unique(metaData$key) %in% colnames(metaData))]) {
+          # try to merge the duplicate with the column that already exists
+          new_data <- cbind(metaData, vals_to_merge = if_else(metaData$key == duplicate, metaData$value, NA_character_))
+          results <- shift_cells(new_data, "vals_to_merge", duplicate)
+          if (is.null(results[["conflicts"]])) { # make sure the duplicate won't overwrite any values in the original column
+            metaData <- results[["result"]]
+            metaData$key <- str_replace_all(metaData$key, duplicate, NA_character_)
+            num_split <- num_split + 1
+          } else {# if the duplicate will overwrite values in the original column, make a new column with a unique name
+            new_names <- make.unique(c(colnames(metaData), duplicate))
+            metaData$key <- str_replace(metaData$key, duplicate, new_names[length(new_names)])
+          }
         }
-        
-        col_names <- colnames(metaData)
-        col_names <- append(col_names, unique(metaData$key)[which(!is.na(unique(metaData$key)))], which(col_names == "key"))
-        col_names <- col_names[-which(col_names %in% c("key", "value"))]
-        
-        metaData <- spread(metaData, key = "key", value = "value")
-        metaData <- metaData[,col_names]
-        
-        num_split <- num_split + 1
+        if (all(c("key", "value") %in% colnames(metaData))) { # i.e. these columns weren't removed in the above code
+          
+          # this section makes sure the columns end up in the same order that they appeared originally
+          col_names <- colnames(metaData)
+          col_names <- append(col_names, unique(metaData$key)[which(!is.na(unique(metaData$key)))], which(col_names == "key"))
+          col_names <- col_names[-which(col_names %in% c("key", "value"))]
+          
+          # creates new columns, with the key column as the new column names and the value column as the values
+          metaData <- spread(metaData, key = "key", value = "value")
+          metaData <- metaData[,col_names]
+          
+          num_split <- num_split + 1
+          
+        } else if (any(!is.na(metaData$key))) { # we have keys that don't have any corresponding values
+          stop("You did something wrong.")
+        }
       } else {
         
         offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
@@ -118,11 +136,12 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
   }, error = function(e) {
     errorMessage <<- 'Something went wrong. Try running again with the "Use regex" option <b>unchecked</b>.'
     metaData <<- input_df
+    num_split <<- 0
   })
   
   
   if (!is.null(errorMessage)) {
-    if (!str_detect(errorMessage, 'Something went wrong')) {
+    if (!any(str_detect(errorMessage, 'Something went wrong'))) {
       errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
                         errorMessage)
     }
@@ -134,9 +153,11 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
     )
   }
   
+  # put the row names back where they belong
   metaData <- data.frame(metaData[,-1], row.names = metaData$row_names, check.names = FALSE)
   
-  if (num_split > 0) {
+  if (num_split > 0) { # i.e. we actually changed the data
+    
     colnames(metaData) <- col_names[-1]
     
     #metaData <- as.data.frame(apply(metaData, 2, function(x) {
@@ -188,6 +209,7 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
   }, error = function(e) {
     errorMessage <<- 'Something went wrong. Try running again with the "Use regex" option <b>unchecked</b>.'
     metaData <<- input_df
+    num_split <<- 0
   })
   
   
@@ -354,6 +376,7 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
     # The !! operator unquotes its argument. It gets evaluated immediately in the surrounding context.
     data <- unite(data, col2, col1, col = !!col2)
     data[,col2] <- str_remove_all(data[,col2], "_NA|NA_")
+    data[,col2] <- str_replace_all(data[,col2], "NA", NA_character_)
   } else if (conflicts == col1) {
     shift_indices <- which(!is.na(data[,col1]))
     data[shift_indices, col2] <- data[shift_indices, col1]

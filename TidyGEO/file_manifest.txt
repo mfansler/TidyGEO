@@ -2,6 +2,7 @@ app.html
 app.R
 reactive_preferences.js
 tidygeo_functions.R
+VERSION
 User/assay_helper_functions.R
 User/clinical_helper_functions.R
 server/

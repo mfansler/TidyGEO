@@ -29,6 +29,9 @@ output$clinical_evaluate_save <- downloadHandler(
       library(xlsx)
       
       write.xlsx(myData, file, row.names = FALSE, showNA = FALSE)
+    } else {
+      colnames(myData)[1] <- "UniqueID"
+      write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
   }
 )
@@ -60,10 +63,12 @@ output$clinical_save_rscript <- downloadHandler(
     else if (input$clinical_file_type == "xlsx") {
       clinical_vals$oFile <- saveLines(c("library(xlsx)", "write.xlsx(clinical_data, file, row.names = FALSE, showNA = FALSE)"), 
                                 clinical_vals$oFile)
+    } else {
+      
     }
     
     clinical_vals$current_chunk_len <- clinical_vals$current_chunk_len + (length(clinical_vals$oFile) - before)
     
-    saveToRscript(clinical_vals$oFile, file)
+    saveToRscript(clinical_vals$oFile, version, file)
   }
 )

@@ -5,7 +5,7 @@ tabPanel(title = icon("download"), value = "2",
            to replicate the steps you took so you can see how the data was obtained."),
          radioButtons("expression_fileType", div("File type:", help_link("expression_files_help")), 
                       choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                                  "JSON" = "JSON", "Excel" = "xlsx")),
+                                  "JSON" = "JSON", "Excel" = "xlsx", "Formatted for BRB Array Tools" = "zip")),
          uiOutput("expression_nameFile"),
          tags$b("Download:"),
          fluidRow(

@@ -43,12 +43,12 @@ process_expression <- function(expressionSet, session = NULL) {
                                 "Feel free to download the data to edit with another application."), append = FALSE)
   }
   
-  expressionData <- cbind("ID" = rownames(expression_raw), as.data.frame(expressionData))
+  expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
   
   incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))
   if (!"ID" %in% colnames(featureData)) {
-    featureData <- cbind(ID = rownames(featureData), featureData)
+    featureData <- cbind.data.frame(ID = rownames(featureData), featureData, stringsAsFactors = FALSE)
   }
   
   if (nrow(featureData) == 1) {
@@ -57,8 +57,12 @@ process_expression <- function(expressionSet, session = NULL) {
     featureData <- as.data.frame(apply(featureData, 2, replace_blank_cells), stringsAsFactors = FALSE)
   }
   
+  if (any(str_detect(featureData$ID, "\\s+"))) {
+    featureData$ID <- str_trim(featureData$ID)
+  }
+  
   rows_to_keep <- sapply(1:nrow(featureData), function(i) {
-    if (!all(is.na(featureData[i,]))) {
+    if (!all(is.na(featureData[i,])) && featureData$ID[i] %in% expressionData$ID) {
       i
     }
   })

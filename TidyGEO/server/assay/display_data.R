@@ -26,7 +26,7 @@ observeEvent(input$top_level, {
       assay_vals$last_data <- assay_vals$orig_data
       assay_vals$assay_data <- assay_vals$orig_data
       
-      assay_vals$orig_feature <- find_intersection(assay_vals$orig_feature, assay_vals$assay_data)
+      #assay_vals$orig_feature <- find_intersection(assay_vals$orig_feature, assay_vals$assay_data)
       assay_vals$last_feature <- assay_vals$orig_feature
       assay_vals$feature_data <- assay_vals$orig_feature
       

@@ -44,8 +44,14 @@ output$expression_downloadData <- downloadHandler(
         write.xlsx(assay_vals$assay_data, file, row.names = FALSE, showNA = FALSE)
         incProgress()
       })
+    } else {
+      files <- c(paste0(tempfile(), input$geoID, "_Data.txt"), paste0(tempfile(), input$geoID, "_GeneAnnotations.txt"))
+      withProgress(message = "Writing data to file",
+                   write.table(assay_vals$assay_data, files[1], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+      withProgress(message = "Writing feature data to file",
+                   write.table(assay_vals$feature_data, files[2], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+      zip(file, files)
     }
-    assay_vals$current_chunk_len <- assay_vals$current_chunk_len + (length(assay_vals$oFile) - before)
   }
 )
 
@@ -76,7 +82,7 @@ output$expression_downloadRscript <- downloadHandler(
                                            assay_vals$oFile)
     }
     
-    saveToRscript(assay_vals$oFile, file, 'User/assay_helper_functions.R')
+    saveToRscript(assay_vals$oFile, version, file, 'User/assay_helper_functions.R')
     
     assay_vals$current_chunk_len <- assay_vals$curr_chunk_len + (length(assay_vals$oFile) - before)
   }

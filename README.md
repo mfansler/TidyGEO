@@ -1,4 +1,4 @@
-TidyGEO
+<img src="TidyGEO/www/logo_final.png" width = 50%>
 ---------------------
 
 #### Summary
