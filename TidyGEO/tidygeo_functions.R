@@ -65,7 +65,7 @@ saveLines <- function(strings, oFile) {
 saveToRscript <- function(oFile, version,
                           filePath = file.path(tempdir(), "script_Temp.R"), 
                           functions_path = 'User/clinical_helper_functions.R') {
-  header <- c(paste("#Script developed using version", version, 
+  header <- c(paste("#Script generated using version", version, 
         "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
   "#application that allows scientists to quickly download and reformat data from",
   "#the online repository Gene Expression Omnibus (GEO).")

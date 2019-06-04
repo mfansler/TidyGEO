@@ -114,12 +114,7 @@ ui <- fluidPage(
              tabPanel(title = div(icon("microscope"), "Assay data"), value = "Assay data",
                       
                       sidebarLayout(
-                        sidebarPanel(
-                          tabsetPanel(id = "expression_side_panel",
-                                      source(file.path("ui", "assay", "format_data.R"), local = TRUE)$value,
-                                      source(file.path("ui", "assay", "save_data.R"), local = TRUE)$value
-                              ) #tabsetPanel
-                          ), #sidebarPanel
+                          source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, #sidebarPanel
                         mainPanel(
                           tabsetPanel(
                             source(file.path("ui", "assay", "display_data.R"), local = TRUE)$value,
@@ -207,7 +202,9 @@ server <- function(input, output, session) {
       ft_prev_id = "ID",
       plot_to_save = NULL,
       disable_btns = FALSE,
-      expression_warning_state = FALSE
+      expression_warning_state = FALSE,
+      data_to_display = NULL,
+      shift_results = NULL
     )
   
   #get_series_information <- function() {
@@ -299,11 +296,19 @@ server <- function(input, output, session) {
 
   # expression data sidebar -------------------------------------------------
    
+  source(file.path("server", "assay", "side_panel.R"), local = TRUE)$value
+
+  # format expression data --------------------------------------------------
+  
   source(file.path("server", "assay", "format_data.R"), local = TRUE)$value
   
   # download expression data -----------------------------------------------------------
   
   source(file.path("server", "assay", "save_data.R"), local = TRUE)$value
+
+  # feature formatting ------------------------------------------------------
+
+  source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   
   # main panel expression data ----------------------------------------------
   

@@ -5,26 +5,29 @@
 observeEvent(input$expression_replace_id, {
   showModal(
     modalDialog(
-      HTML('<p>In the <b>assay data</b> table, you will see a column labeled <b>"ID"</b>. This is a unique identifier that usually
-        corresponds to the <b>probe set</b> used to take some measurement for the given sample ("GSM"). 
-        Probe sets may not be a useful way to look at patterns in the data.
-        Often, scientists want to look at <b>genes, transcripts, or exons,</b> for example. The <b>feature data</b> maps
-        the probe set identifiers (the "ID" column) to their corresponding genes, transcripts, exons, etc.
-        Frequently, <b>multiple probe sets refer to the same gene.</b>
-        </p>'), 
+      #HTML('<p>In the <b>assay data</b> table, you will see a column labeled <b>"ID"</b>. This is a unique identifier that usually
+      #  corresponds to the <b>probe set</b> used to take some measurement for the given sample ("GSM"). 
+      #  Probe sets may not be a useful way to look at patterns in the data.
+      #  Often, scientists want to look at <b>genes, transcripts, or exons,</b> for example. The <b>feature data</b> maps
+      #  the probe set identifiers (the "ID" column) to their corresponding genes, transcripts, exons, etc.
+      #  Frequently, <b>multiple probe sets refer to the same gene.</b>
+      #  </p>'), 
       #p(div(em('"Expression profiling analysis usually generates quantitative data for features of interest. 
       #      Features of interest may be genes, transcripts, exons, miRNA, or some other genetic entity."'), 
       #      a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/info/seq.html", "(GEO)"))),
-      HTML('<p>In this window, you can find a column in the feature data that would be more useful than the
+      HTML('<p>In this window, you can find a column in the feature data'), actionLink("link_to_feature", "(what is this?)"), HTML('that would be more useful than the
         probe set identifiers.  In the case where multiple probe sets refer to the same gene, you might consider 
         combining some of the rows in the assay data (i.e. <b>"summarizing"</b> the data) to keep the "ID" column 
         in the assay data table unique.</p>'),
-      h4("Feature data"),
-      fluidRow(
-        column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
-        column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
+      wellPanel(
+        h4("Feature data", inline = TRUE),
+        fluidRow(
+          column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
+          column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
+        ),
+        withSpinner(dataTableOutput("featureData"), type = 5),
+        actionLink("link_to_feature_tab2", "How do I clean up this data?")
       ),
-      withSpinner(dataTableOutput("featureData"), type = 5),
       uiOutput("exprLabels"),
       uiOutput("summarizeOptions"),
       checkboxInput(inputId = "feature_dropNA", label = div("Drop NA values", 
@@ -40,6 +43,18 @@ observeEvent(input$expression_replace_id, {
       easyClose = TRUE
     )
       )
+})
+
+observeEvent(input$link_to_feature, {
+  removeModal()
+  updatePrettyToggle(session, "display_assay_or_feature", value = TRUE)
+  updateTabsetPanel(session, "expression_side_panel", selected = "1")
+})
+
+observeEvent(input$link_to_feature2, {
+  removeModal()
+  updatePrettyToggle(session, "display_assay_or_feature", value = TRUE)
+  updateTabsetPanel(session, "expression_side_panel", selected = "1")
 })
 
 # server ------------------------------------------------------------------

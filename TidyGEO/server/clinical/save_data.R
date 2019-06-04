@@ -30,7 +30,7 @@ output$clinical_evaluate_save <- downloadHandler(
       
       write.xlsx(myData, file, row.names = FALSE, showNA = FALSE)
     } else {
-      colnames(myData)[1] <- "UniqueID"
+      colnames(myData)[1] <- "ExpId"
       write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
   }
