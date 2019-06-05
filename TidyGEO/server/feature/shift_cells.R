@@ -19,15 +19,21 @@ output$broken_cols_example <- renderDT({
   datatable(test_data, rownames = FALSE, options = list(dom = "t"))
 })
 
-current_colnames <- reactive({ colnames(assay_vals$feature_data) })
+current_colnames <- reactive({
+  if (!is.null(assay_vals$feature_data)) {
+    colnames(assay_vals$feature_data)[-which(colnames(assay_vals$feature_data) == "ID")]
+  } 
+})
 
 output$display_cols_to_shift_feature <- renderUI({
   selectInput(inputId = "col_to_shift_feature", label = div("Shift the values from:"), choices = current_colnames())
 })
 
 output$display_destination_cols_feature <- renderUI({
-  into_cols <- current_colnames()[-which(current_colnames() %in% input$col_to_shift_feature)]
-  selectInput(inputId = "destination_col_feature", label = div("into:"), choices = into_cols)  
+  if (!is.null(current_colnames()) && !is.null(input$col_to_shift_feature)) {
+    into_cols <- current_colnames()[-which(current_colnames() %in% input$col_to_shift_feature)]
+    selectInput(inputId = "destination_col_feature", label = div("into:"), choices = into_cols)
+  }  
 })
 
 shift_preview <- reactive({ 
@@ -70,8 +76,9 @@ output$conflict_actions_feature <- renderUI({
   radioButtons("conflict_option_feature", label = "What would you like to do for these conflicts?", 
                choiceNames = c(paste("Keep the values from", input$col_to_shift_feature),
                                paste("Keep the values from", input$destination_col_feature),
-                               "Keep values from both columns, separated by a delimiter"),
-               choiceValues = c(input$col_to_shift_feature, input$destination_col_feature, "delim"),
+                               "Keep values from both columns, separated by a delimiter",
+                               "Keep values from both columns, repeating rows for each conflict"),
+               choiceValues = c(input$col_to_shift_feature, input$destination_col_feature, "delim", "keepall"),
                selected = input$destination_col_feature)
 })
 

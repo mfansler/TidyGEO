@@ -385,6 +385,17 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
     shift_indices <- which(is.na(data[,col2]))
     data[shift_indices, col2] <- data[shift_indices, col1]
     data[shift_indices, col1] <- rep(NA, length(shift_indices))
+  } else if (conflicts == "keepall") {
+    id_exists <- "ID" %in% colnames(data)
+    if (!id_exists) {
+      data <- cbind("ID" = rownames(data), data)
+    }
+    data2 <- select(data, ID, !!col1)
+    data <- merge(select(data, -!!col1), data2, by.x = c("ID", col2), by.y = c("ID", col1), all = TRUE)
+    if (!id_exists) {
+      rownames(data) <- data[,"ID"]
+      data <- select(data, -ID)
+    }
   } else {# conflicts = delimiter
     data <- unite(data, col1, col2, col = !!col2, sep = conflicts)
     data[,col2] <- str_remove_all(data[,col2], paste0(conflicts, "NA|NA", conflicts))

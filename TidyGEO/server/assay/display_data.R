@@ -48,6 +48,7 @@ observeEvent(input$top_level, {
       assay_vals$download_chunk_len <- length(assay_vals$oFile)
     }
     rm(extracted_data)
+    shinyjs::toggleState("undoEvalExpr", FALSE)
   }
 })
 
@@ -139,52 +140,43 @@ observeEvent(input$expression_evaluate_filters, {
                                   paste0("names(to_filter) <- ", format_string(colnames(assay_vals$data_to_display)))), 
                                   assay_vals$oFile)
   
-  assay_vals$last_feature <- assay_vals$feature_data
-  assay_vals$last_data <- assay_vals$assay_data
+  
+  
   
   to_filter <- input$exprPreview_search_columns
   names(to_filter) <- colnames(assay_vals$data_to_display)
   if (input$display_assay_or_feature) {
+    assay_vals$last_feature <- assay_vals$feature_data
     assay_vals$feature_data <- filterExpressionData(assay_vals$feature_data, to_filter)
-    assay_vals$assay_data <- find_intersection(assay_vals$assay_data, assay_vals$feature_data, assay_vals$id_col, assay_vals$ft_id_col)
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
     assay_vals$oFile <-
       saveLines(
         c(
-          "featureData <- filterExpressionData(featureData, to_filter)",
-          paste0("expressionIdCol <- ", format_string(assay_vals$id_col)),
-          paste0("featureIdCol <- ", format_string(assay_vals$ft_id_col)),
-          "expressionData <- find_intersection(expressionData, featureData, expressionIdCol, featureIdCol)"
+          "featureData <- filterExpressionData(featureData, to_filter)"
         ),
         assay_vals$oFile
       )
   } else {
+    assay_vals$last_data <- assay_vals$assay_data
     assay_vals$assay_data <- filterExpressionData(assay_vals$assay_data, to_filter)
-    assay_vals$feature_data <- find_intersection(assay_vals$feature_data, assay_vals$assay_data, assay_vals$ft_id_col, assay_vals$id_col)
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
     assay_vals$oFile <-
       saveLines(
         c(
-          "expressionData <- filterExpressionData(expressionData, to_filter)",
-          paste0("expressionIdCol <- ", format_string(assay_vals$id_col)),
-          paste0("featureIdCol <- ", format_string(assay_vals$ft_id_col)),
-          "featureData <- find_intersection(featureData, expressionData, featureIdCol, expressionIdCol)"
+          "expressionData <- filterExpressionData(expressionData, to_filter)"
         ),
         assay_vals$oFile
       )
+    
+    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
+                                                     start = 1, 
+                                                     forward_distance = 5, 
+                                                     previous_view = assay_vals$assay_data)
   }
   
-  assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
-                                                   start = 1, 
-                                                   forward_distance = 5, 
-                                                   previous_view = assay_vals$assay_data)
-  
-  
-  assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
-                                                     start = 1, 
-                                                     forward_distance = 4, 
-                                                     previous_view = assay_vals$feature_data)
   assay_vals$current_chunk_len <- length(assay_vals$oFile) - before
+  
+  shinyjs::toggleState("undoEvalExpr", TRUE)
 })

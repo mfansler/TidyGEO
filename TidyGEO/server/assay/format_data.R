@@ -37,6 +37,7 @@ observeEvent(input$expression_transpose, {
     
     assay_vals$current_chunk_len <- after - before
     assay_vals$disable_btns <- TRUE
+    shinyjs::toggleState("undoEvalExpr", TRUE)
   }
 })
 
@@ -59,13 +60,6 @@ observeEvent(input$undoEvalExpr, {
     if (any(grepl("quickTranspose", assay_vals$oFile[(file_len - (assay_vals$current_chunk_len - 1)):file_len]))) {
       assay_vals$disable_btns <- FALSE
     }
-    
-    assay_vals$ft_id_col <- assay_vals$ft_prev_id
-    assay_vals$feature_data <- assay_vals$last_feature
-    assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
-                                                      start = 1, 
-                                                      forward_distance = 4, 
-                                                      previous_view = assay_vals$feature_data)
     assay_vals$id_col <- assay_vals$prev_id
     assay_vals$assay_data <- assay_vals$last_data
     assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
@@ -74,5 +68,6 @@ observeEvent(input$undoEvalExpr, {
                                                    previous_view = assay_vals$assay_data)
     assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$current_chunk_len)
     assay_vals$current_chunk_len <- 0
+    shinyjs::toggleState("undoEvalExpr", FALSE)
   }
 })
