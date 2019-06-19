@@ -250,7 +250,11 @@ is_all_identical <- function(my_list) {
 }
 
 replace_blank_cells <- function(values) {
-  str_replace(values, "^ *$", NA_character_)
+  if (any(str_detect(values, "^ *$"))) {
+    str_replace_all(values, "^ *$", NA_character_)
+  } else {
+    values
+  }
 }
 
 #shortens values that are too many characters to use as graph labels

@@ -143,7 +143,11 @@ server <- function(input, output, session) {
       allData = NULL,
       display_barwidth_option = FALSE,
       errorState = FALSE,
-      series_needs_download = FALSE
+      series_needs_download = FALSE,
+      series_information = NULL,
+      paper_info_expanded = FALSE,
+      paper_information = NULL,
+      pm_id = NULL
     )
   
   clinical_vals <- 
@@ -254,6 +258,7 @@ server <- function(input, output, session) {
   source(file.path("server", "assay", "save_data.R"), local = TRUE)$value
 
   # ** ** feature formatting ---------------------------------------------------
+  source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   
   # ** ** main panel expression data -------------------------------------------

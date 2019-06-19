@@ -56,7 +56,7 @@ output$data_title <- renderUI({
   if (input$display_assay_or_feature) {
     tagList(
       h4("Feature Data"),
-      div(em("Experssion profiling analysis usually generates quantitative data for features of interest. 
+      div(em("Expression profiling analysis usually generates quantitative data for features of interest. 
              Features of interest may be genes, transcripts, exons, miRNA, or some other genetic entity."),
           a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/geo/info/seq.html", "(Read more)")))
   } else {

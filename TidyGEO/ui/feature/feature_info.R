@@ -9,4 +9,8 @@ tabPanel(title = icon("question-circle"), value = "1",
               </p>'),
          p('In the following tabs, you will be given the opportunity to reformat the feature data. This will be helpful in mapping
            genes, transcripts, exons, etc. to the corresponding probe sets in the assay data.'),
-         actionButton("start_feature_format", "Get started", class = "right_align"))
+         hr(),
+         div(
+           tertiary_button("back_to_assay", div(icon("arrow-left"), "Back to assay data")),
+           secondary_button("start_feature_format", div("Get started", icon("arrow-right")), class = "right_align"))
+         )

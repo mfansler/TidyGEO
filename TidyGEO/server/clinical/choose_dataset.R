@@ -95,34 +95,83 @@ observeEvent(input$nav_choose_to_assay_button, {
 
 # main panel --------------------------------------------------------------
 
-
-parse_series_summary <- function(geoID) {
-  #uses read_file and parses from resulting vector
-  tempFile <- file.path(tempdir(), paste0(geoID, "__ncbi.txt"))
-  url <- paste("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geoID, "&targ=self&form=text&view=quick", sep = "")
-  if (!file.exists(tempFile)) {
-    download.file(url, tempFile, method = "auto", quiet = TRUE)
-  }
-  summ2 <- suppressMessages(suppressWarnings(read_file(tempFile)))
-  div(h3(paste(geoID, str_split(str_extract(summ2, "!Series_title = [^!]+"), " = ")[[1]][2], sep = ": ")),
-      HTML(paste0("<p><b>Organism:</b> ", str_split(str_extract(summ2, "!Series_platform_organism = [^!]+"), " = ")[[1]][2], "</p>")),
-      HTML(paste0("<p><b>Experiment type:</b> ", str_split(str_extract(summ2, "!Series_type = [^!]+"), " = ")[[1]][2], "</p>")),
-      HTML(paste0("<p><b>Summary:</b> ", str_split(str_extract(summ2, "!Series_summary = [^!]+"), " = ")[[1]][2], "</p>")),
-      a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", geoID), 
-        paste("View", geoID, "on GEO")), icon("external-link"))
-}
-
 output$series_information <- renderUI({
-  if (is.null(input$geoID) || input$geoID == "") {
+  if (is.null(values$series_information)) {
     div(
       h4("Series information"),
       p("Please choose a GSE ID from the select box to view a summary of the series here."),
       imageOutput("color_logo")
     )
   } else {
-    withProgress(parse_series_summary(input$geoID), message = "Loading series summary")
+    values$series_information
   }
 })
+
+observeEvent(input$geoID, {
+  if (input$geoID != "") {
+    values$series_information <- withProgress({
+      tempFile <- file.path(tempdir(), paste0(input$geoID, "__ncbi.txt"))
+      url <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID, "&targ=self&form=text&view=quick")
+      if (!file.exists(tempFile)) {
+        download.file(url, tempFile, method = "auto", quiet = TRUE)
+      }
+      summ2 <- suppressMessages(suppressWarnings(read_file(tempFile)))
+      
+      values$pm_id <- str_match(summ2, "!Series_pubmed_id = ([^\\r]+)")[2]
+      if (values$paper_info_expanded) {
+        values$paper_information <- NULL
+        updateButton(session, inputId = "expand_paper_information", label = "View publication information", icon = icon("caret-right"))
+        values$paper_info_expanded <- FALSE
+      }
+      
+      div(h3(paste(input$geoID, str_match(summ2, "!Series_title = ([^\\r]+)")[2], sep = ": ")),
+          HTML(paste0("<p><b>Organism:</b> ", str_match(summ2, "!Series_platform_organism = ([^\\r]+)")[2], "</p>")),
+          HTML(paste0("<p><b>Experiment type:</b> ", str_match(summ2, "!Series_type = ([^\\r]+)")[2], "</p>")),
+          HTML(paste0("<p><b>Summary:</b> ", str_match(summ2, "!Series_summary = ([^\\r]+)")[2], "</p>")),
+          p(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
+              paste("View", input$geoID, "on GEO")), icon("external-link")),
+          hr(),
+          tertiary_button("expand_paper_information", div(icon("caret-right"), "View publication information")))
+    }, message = "Loading series summary")
+  }
+}, ignoreInit = TRUE, ignoreNULL = TRUE)
+
+output$paper_information <- renderUI({
+  values$paper_information
+})
+
+observeEvent(input$expand_paper_information, {
+  if (values$paper_info_expanded) { # close
+    values$paper_information <- NULL
+    updateButton(session, inputId = "expand_paper_information", label = "View publication information", icon = icon("caret-right"))
+    values$paper_info_expanded <- FALSE
+  } else { # open
+    values$paper_information <- withProgress({
+      if (is.na(values$pm_id)) {
+        div(
+          br(),
+          p(paste0("No publication information found for ", input$geoID, "."))
+        )
+      } else {
+        tempFile <- file.path(tempdir(), paste0(input$geoID, "__abstract.txt"))
+        if (!file.exists(tempFile)) {
+          url <- paste0("https://www.ncbi.nlm.nih.gov/pubmed/", values$pm_id, "?report=medline&format=text")
+          download.file(url, tempFile, method = "auto", quiet = TRUE)
+        }
+        summ3 <- suppressMessages(suppressWarnings(read_file(tempFile)))
+        div(
+          br(),
+          HTML(paste0("<p><b>Paper:</b> ",
+                      str_match(summ3, "TI  - ([^\\r]+)")[2], 
+                      " (PMID: <a target= \"_blank\" href=\"https://www.ncbi.nlm.nih.gov/pubmed/", values$pm_id, "\">", values$pm_id, ")</a></p>")),
+          HTML(paste0("<p><b>Abstract: </b>", str_replace_all(str_match(str_remove_all(summ3, "\\r\\n"), "AB  - (.+)\\.FAU")[2], " {2,}", " "), ".</p>"))
+        )
+      }
+    }, message = "Loading paper information")
+    updateButton(session, inputId = "expand_paper_information", label = "View publication information", icon = icon("caret-down"))
+    values$paper_info_expanded <- TRUE
+  }
+}, ignoreInit = TRUE, ignoreNULL = TRUE)
 
 output$color_logo <- renderImage({
   list(src="www/logo_final.png",

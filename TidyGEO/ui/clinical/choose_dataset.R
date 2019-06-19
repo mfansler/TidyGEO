@@ -23,6 +23,7 @@ sidebarLayout(
   ),
   mainPanel(
     bsAlert("alert"),
-    uiOutput("series_information")
+    uiOutput("series_information"),
+    uiOutput("paper_information")
   )
 )
