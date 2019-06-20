@@ -39,3 +39,10 @@ tertiary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) 
   shiny::actionButton(id, div(label, icon), width = width, 
                       style = "color: #fff; background-color: #6baed6; border-color: #6baed6", class = class)
 }
+
+navigation_set <- function(prev, from, to, section_prev = NULL, section_to = NULL) {
+  return(div(
+    tertiary_button(id = paste0("nav_", from, "_to_", prev, "_", section_prev), label = div(icon('arrow-left'), 'Back')),
+    secondary_button(id = paste0("nav_", from, "_to_", to, "_", section_to), label = div('Next', icon('arrow-right')), class = "right_align")
+  ))
+}

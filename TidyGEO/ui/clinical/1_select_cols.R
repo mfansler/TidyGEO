@@ -30,5 +30,5 @@ tabPanel(title = icon("filter"), value = "1",
            primary_button(id = "clinical_evaluate_filters", label = div(icon("filter"), "Filter columns")),
            tipify(tertiary_button(id = "undo_select", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_1_ui")
+         hr(), navigation_set(prev = "choose_dataset", from = "1", to = "2", section_prev = "top_level", section_to = "clinical_side_panel")
 )

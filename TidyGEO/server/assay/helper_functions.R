@@ -10,7 +10,6 @@ process_expression <- function(expressionSet, session = NULL) {
   incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
   incProgress(message = "Replacing blank values")
-  browser()
   if (nrow(expression_raw) == 1) {
     #expressionData <- as.data.frame(t(as.matrix(apply(expression_raw, 2, replace_blank_cells))), stringsAsFactors = FALSE)
     #expressionData <- t(as.matrix(apply(expression_raw, 2, replace_blank_cells)))
@@ -59,10 +58,12 @@ process_expression <- function(expressionSet, session = NULL) {
     featureData <- as.data.frame(apply(featureData, 2, replace_blank_cells), stringsAsFactors = FALSE)
   }
   
+  incProgress(message = "Removing whitespace")
   if (any(str_detect(featureData$ID, "\\s+"))) {
     featureData$ID <- str_trim(featureData$ID)
   }
   
+  incProgress(message = "Matching features to assay IDs")
   rows_to_keep <- sapply(1:nrow(featureData), function(i) {
     if (!all(is.na(featureData[i,])) && featureData$ID[i] %in% expressionData$ID) {
       i
@@ -88,7 +89,7 @@ process_expression <- function(expressionSet, session = NULL) {
 #' quickTranspose(data.frame(ID = c(1, 2, 3), B = c(4, 5, 6), C = c(7, 8, 9)))
 quickTranspose <- function(dataToTranspose) {
   
-  incProgress()
+  incProgress(message = "Transposing data")
   if (any(duplicated(dataToTranspose$ID, incomparables = NA))) {
     transposed <- dataToTranspose
     
@@ -101,7 +102,7 @@ quickTranspose <- function(dataToTranspose) {
       dplyr::rename(ID = "newrows")
   }
   
-  incProgress()
+  incProgress(message = "Transposing data")
   return(transposed)
 }
 
@@ -126,6 +127,7 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   #}
   
   #dataWRowNames <- data
+  incProgress(message = "Formatting replacement")
   if (dropNA) {
     #browser()
     replacementWRowNames <- replacement[!is.na(replacement[,replaceCol]), c("ID", replaceCol)]
@@ -134,15 +136,13 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   }
   replacementWRowNames$ID <- as.character(replacementWRowNames$ID)
   
-  incProgress()
-  
+  incProgress(message = "Merging changes")
   mergedData <- inner_join(data, replacementWRowNames, by = "ID") %>%
     select(-ID) %>%
     dplyr::rename(ID = replaceCol) %>%
     select(ID, everything())
   
-  incProgress()
-  
+  incProgress(message = "Summarizing data")
   if (!is.null(summaryOption)) {
     if (summaryOption == "mean") {
       mergedData <- mergedData %>% group_by(ID) %>%
@@ -163,8 +163,7 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
     }
   }
   
-  incProgress()
-  
+  incProgress(message = "Returning result")
   return(mergedData)
 }
 
@@ -236,7 +235,6 @@ advance_columns_view <- function(data, start, forward_distance, previous_view = 
   } else {
     return(next_cols)
   }
-  
 }
 
 #' Create a preview of the previous (backward_distance) columns in the data.
@@ -295,6 +293,6 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
   }
 }
 
-replace_NA_id <- function() {
-  replace_na()
-}
+#replace_NA_id <- function() {
+#  replace_na()
+#}

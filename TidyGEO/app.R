@@ -44,45 +44,31 @@ ui <- fluidPage(
   useShinyjs(),
   
   navbarPage(title = "TidyGEO", id = "top_level",
-             tabPanel(title = "Choose dataset",
+             tabPanel(title = "Choose dataset", value = "choose_dataset",
                       source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
              ),
              
              
              # ** clinical data -----------------------------------------------------------
              
-             tabPanel(title = div(icon("clipboard"), "Clinical data"), value = "Clinical data",
+             tabPanel(title = div(icon("clipboard"), "Clinical data"), value = "clinical_data",
                       sidebarLayout(
+                        
+                        # ** ** side panel --------------------------------------------------------------
                         sidebarPanel(
                           tabsetPanel(id = "clinical_side_panel",
-
-                                      # ** ** select columns ------------------------------------------------------------
-                                      source(file.path("ui", "clinical", "select_cols.R"), local = TRUE)$value,
-                                      
-                                      # ** ** shift cells -------------------------------------------------------------
-                                      source(file.path("ui", "clinical", "shift_cells.R"), local = TRUE)$value,
-                                      
-                                      # ** ** split key-value pairs ---------------------------------------------------
-                                      source(file.path("ui", "clinical", "split_pairs.R"), local = TRUE)$value,
-
-                                      # ** ** split columns ---------------------------------------------------------
-                                      source(file.path("ui", "clinical", "split_cols.R"), local = TRUE)$value,
-                                      
-                                      # ** ** rename columns ----------------------------------------------------------
-                                      source(file.path("ui", "clinical", "rename_cols.R"), local = TRUE)$value,
-                                      
-                                      # ** ** substitute values --------------------------------------------------------------
-                                      source(file.path("ui", "clinical", "substitute_vals.R"), local = TRUE)$value,
-                                      
-                                      # ** ** filter values -------------------------------------------------------
-                                      source(file.path("ui", "clinical", "filter_vals.R"), local = TRUE)$value,
-                                      
-                                      # ** ** save clinical data ------------------------------------------------------
-                                      source(file.path("ui", "clinical", "save_data.R"), local = TRUE)$value
+                                      source(file.path("ui", "clinical", "1_select_cols.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "2_shift_cells.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "3_split_pairs.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "4_split_cols.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "5_rename_cols.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "6_substitute_vals.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "7_filter_vals.R"), local = TRUE)$value,
+                                      source(file.path("ui", "clinical", "8_save_data.R"), local = TRUE)$value
                           ) # clinical tabpanel
                         ), # clinical sidebarpanel
-                        
-                        # ** ** display clinical data --------------------------------------------------------
+
+                        # ** ** main panel --------------------------------------------------------------
                         mainPanel(
                           tabsetPanel(
                             source(file.path("ui", "clinical", "display_data.R"), local = TRUE)$value,
@@ -93,11 +79,15 @@ ui <- fluidPage(
              ), #clinical data tab panel
              
              
-             # ** expression data ---------------------------------------------------------
+             # ** assay data ---------------------------------------------------------
              
-             tabPanel(title = div(icon("microscope"), "Assay data"), value = "Assay data",
+             tabPanel(title = div(icon("microscope"), "Assay data"), value = "assay_data",
+
+                      # ** ** side panel --------------------------------------------------------------
                       sidebarLayout(
                           source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, # sidebarPanel
+
+                      # ** ** main panel --------------------------------------------------------------
                         mainPanel(
                           tabsetPanel(
                             source(file.path("ui", "assay", "display_data.R"), local = TRUE)$value,
@@ -210,61 +200,41 @@ server <- function(input, output, session) {
     clinical_vals$current_chunk_len <- 0
   })  
   
-  # ** ** undo -----------------------------------------------------------------
+  # ** ** undo --------------------------------------------------------------------
   undo_last_action <- function() {
     clinical_vals$clinical_data <- clinical_vals$last_data
     clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$current_chunk_len)
     clinical_vals$current_chunk_len <- 0
   }
-  
-  # ** ** select columns -------------------------------------------------------
-  source(file.path("server", "clinical", "select_cols.R"), local = TRUE)$value
-  
-  # ** ** shift cells ----------------------------------------------------------
-  source(file.path("server", "clinical", "shift_cells.R"), local = TRUE)$value
-  
-  # ** ** split key-value pairs ------------------------------------------------------
-  source(file.path("server", "clinical", "split_pairs.R"), local = TRUE)$value
 
-  # ** ** split columns -----------------------------------------------------------
-  source(file.path("server", "clinical", "split_cols.R"), local = TRUE)$value
-  
-  # ** ** rename columns -------------------------------------------------------
-  source(file.path("server", "clinical", "rename_cols.R"), local = TRUE)$value
-  
-  # ** ** substitute values ------------------------------------------------------
-  source(file.path("server", "clinical", "substitute_vals.R"), local = TRUE)$value
-  
-  # ** ** filter values ---------------------------------------------------------
-  source(file.path("server", "clinical", "filter_vals.R"), local = TRUE)$value
+  # ** ** side panel --------------------------------------------------------------
+  source(file.path("server", "clinical", "1_select_cols.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "2_shift_cells.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "3_split_pairs.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "4_split_cols.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "5_rename_cols.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "6_substitute_vals.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "7_filter_vals.R"), local = TRUE)$value
+  source(file.path("server", "clinical", "8_save_data.R"), local = TRUE)$value
 
-  # ** ** save clinical data --------------------------------------------------------
-  source(file.path("server", "clinical", "save_data.R"), local = TRUE)$value
-  
-  # ** ** display clinical data ------------------------------------------
+  # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "clinical", "display_data.R"), local = TRUE)$value
   source(file.path("server", "clinical", "graphical_summary.R"), local = TRUE)$value
   
     
-  # ** assay data --------------------------------------------------------------
+  # ** assay data -----------------------------------------------------------------
 
-  # ** ** expression data sidebar ----------------------------------------------
+  # ** ** assay formatting --------------------------------------------------------
   source(file.path("server", "assay", "side_panel.R"), local = TRUE)$value
-
-  # ** ** format expression data -----------------------------------------------
   source(file.path("server", "assay", "format_data.R"), local = TRUE)$value
-  
-  # ** ** download expression data ---------------------------------------------
   source(file.path("server", "assay", "save_data.R"), local = TRUE)$value
 
-  # ** ** feature formatting ---------------------------------------------------
+  # ** ** feature formatting ------------------------------------------------------
   source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   
-  # ** ** main panel expression data -------------------------------------------
+  # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "assay", "display_data.R"), local = TRUE)$value
-
-  # ** ** graphical summary ----------------------------------------------------
   source(file.path("server", "assay", "graphical_summary.R"), local = TRUE)$value
   
   

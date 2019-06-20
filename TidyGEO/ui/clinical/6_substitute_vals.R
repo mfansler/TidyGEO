@@ -20,5 +20,5 @@ tabPanel(title = icon("exchange-alt"), value = "6",
            primary_button("evaluate_subs", div(icon("exchange-alt"), "Substitute")),
            tipify(tertiary_button(id = "undo_subs", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_6_ui")
+         hr(), navigation_set("5", "6", "7", "clinical_side_panel", "clinical_side_panel")
 )

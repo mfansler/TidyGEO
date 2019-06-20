@@ -1,6 +1,6 @@
 observeEvent(input$top_level, {
   input$top_level
-  if (!is.null(values$allData) && input$top_level == "Assay data" && is.null(assay_vals$assay_data)) {
+  if (!is.null(values$allData) && input$top_level == "assay_data" && is.null(assay_vals$assay_data)) {
     
     closeAlert(session, "nonnumeric")
     

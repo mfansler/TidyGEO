@@ -19,24 +19,24 @@ output$broken_cols_example <- renderDT({
   datatable(test_data, rownames = FALSE, options = list(dom = "t"))
 })
 
-current_colnames <- reactive({
+current_colnames_feature <- reactive({
   if (!is.null(assay_vals$feature_data)) {
     colnames(assay_vals$feature_data)[-which(colnames(assay_vals$feature_data) == "ID")]
   } 
 })
 
 output$display_cols_to_shift_feature <- renderUI({
-  selectInput(inputId = "col_to_shift_feature", label = div("Shift the values from:"), choices = current_colnames())
+  selectInput(inputId = "col_to_shift_feature", label = div("Shift the values from:"), choices = current_colnames_feature())
 })
 
 output$display_destination_cols_feature <- renderUI({
-  if (!is.null(current_colnames()) && !is.null(input$col_to_shift_feature)) {
-    into_cols <- current_colnames()[-which(current_colnames() %in% input$col_to_shift_feature)]
+  if (!is.null(current_colnames_feature()) && !is.null(input$col_to_shift_feature)) {
+    into_cols <- current_colnames_feature()[-which(current_colnames_feature() %in% input$col_to_shift_feature)]
     selectInput(inputId = "destination_col_feature", label = div("into:"), choices = into_cols)
   }  
 })
 
-shift_preview <- reactive({ 
+shift_preview_feature <- reactive({ 
   if (!is.null(assay_vals$feature_data) &&
       !is.null(input$col_to_shift_feature) &&
       !is.null(input$destination_col_feature) &&
@@ -60,7 +60,7 @@ output$shift_preview_table_feature <- DT::renderDT({
       input$col_to_shift_feature != "" && 
       input$destination_col_feature != "") {
     #datatable(shift_preview()[["result"]][input$destination_col_feature], options = list(dom = "t"))
-    datatable(shift_preview(), rownames = FALSE, 
+    datatable(shift_preview_feature(), rownames = FALSE, 
               options = list(dom = "t", columnDefs = list(list(targets = 3, visible = FALSE))), 
               escape = c(1, 3)) %>%
       formatStyle(

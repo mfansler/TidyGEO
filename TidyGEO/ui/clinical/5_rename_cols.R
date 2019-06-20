@@ -9,5 +9,5 @@ tabPanel(title = icon("pencil-alt"), value = "5",
            primary_button(id = "rename", label = div(icon("pencil-alt"), "Rename column")),
            tipify(tertiary_button(id = "undo_rename", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_5_ui")
+         hr(), navigation_set("4", "5", "6", "clinical_side_panel", "clinical_side_panel")
 )

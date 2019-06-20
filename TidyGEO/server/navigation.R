@@ -1,127 +1,29 @@
-#1  
-output$nav_1_ui <- renderUI({
-  div(
-    tertiary_button('nav_clinical_to_choose_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_1_to_2_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_clinical_to_choose_button, {
-  updateTabsetPanel(session, 'top_level', selected = "Choose dataset")
-})
-observeEvent(input$nav_1_to_2_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '2')
-})
-#2  
-output$nav_2_ui <- renderUI({
-  div(
-    tertiary_button('nav_2_to_1_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_2_to_3_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_2_to_1_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '1')
-})
-observeEvent(input$nav_2_to_3_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '3')
-}) 
-#3  
-output$nav_3_ui <- renderUI({
-  div(
-    tertiary_button('nav_3_to_2_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_3_to_4_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_3_to_2_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '2')
-})
-observeEvent(input$nav_3_to_4_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '4')
-})
-#4  
-output$nav_4_ui <- renderUI({
-  div(
-    tertiary_button('nav_4_to_3_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_4_to_5_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_4_to_3_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '3')
-})
-observeEvent(input$nav_4_to_5_button, {
-  closeAlert(session, "offendingChars")
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '5')
-})
-#5
-output$nav_5_ui <- renderUI({
-  div(
-    tertiary_button('nav_5_to_4_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_5_to_6_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_5_to_4_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '4')
-})
-observeEvent(input$nav_5_to_6_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
-})
-#6
-output$nav_6_ui <- renderUI({
-  div(
-    tertiary_button('nav_6_to_5_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_6_to_expression_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_6_to_5_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '5')
-})
-observeEvent(input$nav_6_to_expression_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '7')
-})
-#7
-output$nav_7_ui <- renderUI({
-  div(
-    tertiary_button('nav_7_to_6_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_7_to_8_button', div('Next', icon('arrow-right')), class = "right_align")
-  )
-})
-observeEvent(input$nav_7_to_6_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '6')
-})
-observeEvent(input$nav_7_to_8_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '8')
-})
-#8
-output$nav_8_ui <- renderUI({
-  div(
-    tertiary_button('nav_8_to_7_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('nav_8_to_expression_button', 'Next - Process assay data', class = "right_align")
-  )
-})
-observeEvent(input$nav_8_to_7_button, {
-  updateTabsetPanel(session, 'clinical_side_panel', selected = '7')
-})
-observeEvent(input$nav_8_to_expression_button, {
-  updateTabsetPanel(session, 'top_level', selected = 'Assay data')
-})
-#expression 1
-output$expression_nav_1_ui <- renderUI({
-  div(
-    tertiary_button('nav_1_to_clinical_button', div(icon('arrow-left'), 'Back')),
-    secondary_button('expression_nav_1_to_2_button', div('Next', icon('arrow-right')), class = 'right_align')
-  )
-})
-observeEvent(input$nav_1_to_clinical_button, {
-  updateTabsetPanel(session, 'top_level', selected = 'Clinical data')
-})
-observeEvent(input$expression_nav_1_to_2_button, {
-  updateTabsetPanel(session, 'expression_side_panel', selected = '2')
-})
-#expression 2
-output$expression_nav_2_ui <- renderUI({
-  div(
-    tertiary_button('expression_nav_2_to_1_button', div(icon('arrow-left'), 'Back'))
-  )
-})
+# creates observers for a navigation set
+navigation_set_server <- function(prev, from, to, section_prev = NULL, section_to = NULL) {
+  observeEvent(eval(parse(text = paste0("input$nav_", from, "_to_", prev, "_", section_prev))), {
+    updateTabsetPanel(session, section_prev, selected = prev)
+  })
+  observeEvent(eval(parse(text = paste0("input$nav_", from, "_to_", to, "_", section_to))), {
+    updateTabsetPanel(session, section_to, selected = to)
+  })
+}
+
+
+# Clinical side panel -----------------------------------------------------
+
+
+navigation_set_server(prev = "choose_dataset", from = "1", to = "2", section_prev = "top_level", section_to = "clinical_side_panel")
+navigation_set_server("1", "2", "3", "clinical_side_panel", "clinical_side_panel")
+navigation_set_server("2", "3", "4", "clinical_side_panel", "clinical_side_panel")
+navigation_set_server("3", "4", "5", "clinical_side_panel", "clinical_side_panel")
+navigation_set_server("4", "5", "6", "clinical_side_panel", "clinical_side_panel")
+navigation_set_server("5", "6", "7", "clinical_side_panel", "clinical_side_panel")
+navigation_set_server("6", "7", "8", "clinical_side_panel", "clinical_side_panel")
+navigation_set_server("7", "8", "assay_data","clinical_side_panel", "top_level")
+
+# Expression side panel ---------------------------------------------------
+
+navigation_set_server("clinical_data", "1", "2", "top_level", "expression_side_panel")
 observeEvent(input$expression_nav_2_to_1_button, {
   updateTabsetPanel(session, 'expression_side_panel', selected = '1')
 })

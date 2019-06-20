@@ -27,5 +27,5 @@ tabPanel(title = icon("th-list"), value = "3",
            primary_button(id = "split_pairs", label = div(icon("th-list"), "Split pairs")),
            tipify(tertiary_button(id = "undo_split_pairs", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_3_ui")
+         hr(), navigation_set("2", "3", "4", "clinical_side_panel", "clinical_side_panel")
 )

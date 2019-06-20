@@ -16,5 +16,5 @@ tabPanel(title = icon("angle-double-right"), value = "2",
            primary_button("evaluate_shift", div(icon("angle-double-right"), "Shift cells")),
            tipify(tertiary_button(id = "undo_shift", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
          ),
-         hr(), uiOutput("nav_2_ui")
+         hr(), navigation_set("1", "2", "3", "clinical_side_panel", "clinical_side_panel")
          )

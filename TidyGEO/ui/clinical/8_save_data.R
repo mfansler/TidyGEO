@@ -15,5 +15,5 @@ tabPanel(title = icon("download"), value = "8",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link(id = "clinical_r_help")))
          ),
-         hr(), uiOutput("nav_8_ui")
+         hr(), navigation_set("7", "8", "assay_data","clinical_side_panel", "top_level")
 )

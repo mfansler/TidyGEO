@@ -31,5 +31,5 @@ tabPanel(title = icon("edit"), value = "1",
                   title = "Undo the last action.", placement = "bottom", trigger = "hover"),
            br()
          ),
-         hr(), uiOutput("expression_nav_1_ui")
+         hr(), navigation_set("clinical_data", "1", "2", "top_level", "expression_side_panel")
 )

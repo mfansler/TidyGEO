@@ -14,5 +14,5 @@ tabPanel(title = icon("download"), value = "2",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link(id = "expression_r_help")))
          ),
-         hr(), uiOutput("expression_nav_2_ui")
+         hr(), tertiary_button('expression_nav_2_to_1_button', div(icon('arrow-left'), 'Back'))
 )

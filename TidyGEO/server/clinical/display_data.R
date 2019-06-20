@@ -1,6 +1,6 @@
 observe({
   input$top_level
-  if (input$top_level == "Clinical data" && is.null(clinical_vals$clinical_data) && !is.null(values$allData)) {
+  if (input$top_level == "clinical_data" && is.null(clinical_vals$clinical_data) && !is.null(values$allData)) {
     clinical_vals$clinical_data <- withProgress(process_clinical(values$allData, session))
     
     #WRITING COMMANDS TO R SCRIPT

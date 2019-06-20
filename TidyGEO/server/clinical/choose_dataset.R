@@ -85,12 +85,12 @@ observe({
 
 observeEvent(input$nav_choose_to_clinical_button, {
   values$series_needs_download = is.null(values$allData)
-  updateTabsetPanel(session, 'top_level', selected = 'Clinical data')
+  updateTabsetPanel(session, 'top_level', selected = 'clinical_data')
 })
 
 observeEvent(input$nav_choose_to_assay_button, {
   values$series_needs_download = is.null(values$allData)
-  updateTabsetPanel(session, 'top_level', selected = 'Assay data')
+  updateTabsetPanel(session, 'top_level', selected = 'assay_data')
 })
 
 # main panel --------------------------------------------------------------
