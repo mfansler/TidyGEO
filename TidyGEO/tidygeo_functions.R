@@ -250,7 +250,7 @@ is_all_identical <- function(my_list) {
 }
 
 replace_blank_cells <- function(values) {
-  if (any(str_detect(values, "^ *$"))) {
+  if (any(str_detect(values, "^ *$"), na.rm = TRUE)) {
     str_replace_all(values, "^ *$", NA_character_)
   } else {
     values

@@ -232,6 +232,7 @@ server <- function(input, output, session) {
   # ** ** feature formatting ------------------------------------------------------
   source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
+  source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
   
   # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "assay", "display_data.R"), local = TRUE)$value

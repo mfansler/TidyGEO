@@ -27,3 +27,4 @@ navigation_set_server("clinical_data", "1", "2", "top_level", "expression_side_p
 observeEvent(input$expression_nav_2_to_1_button, {
   updateTabsetPanel(session, 'expression_side_panel', selected = '1')
 })
+navigation_set_server("2", "3", "4", "expression_side_panel", "expression_side_panel")
