@@ -39,7 +39,7 @@ suggestions <- reactive({
 })
 
 output$input_subs_table <- renderRHandsontable({
-  rhandsontable(clinical_vals$subs_display, width = 350, height = 400, rowHeaders = FALSE) %>% 
+  rhandsontable(clinical_vals$subs_display, height = 250, rowHeaders = FALSE, stretchH = "all") %>% 
     hot_col(col = "To_Replace", type = "autocomplete", source = suggestions(), strict = FALSE) #%>%
   #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
 })

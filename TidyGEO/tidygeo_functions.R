@@ -157,8 +157,10 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
                   method = getOption("download.file.method.GEOquery"))
   }
   incProgress()
-  return(GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
-                        AnnotGPL = AnnotGPL, getGPL = getGPL)$eset)
+  result <- GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
+                                      AnnotGPL = AnnotGPL, getGPL = getGPL)$eset
+  file.remove(destfile)
+  return(result)
 }
 
 get_platforms <- function(geoID, session = NULL) {

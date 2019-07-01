@@ -9,4 +9,3 @@ server/
 ui/
 www/
 help_docs/
-help_gifs/

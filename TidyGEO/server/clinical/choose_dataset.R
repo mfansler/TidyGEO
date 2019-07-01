@@ -15,7 +15,8 @@ observe({
       create = TRUE,
       multiple = FALSE,
       maxItems = 5,
-      maxOptions = 100
+      maxOptions = 100,
+      placeholder = "Select a dataset or start typing..."
     )
   )
   end_time <- Sys.time()

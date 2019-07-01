@@ -31,6 +31,7 @@ output$clinical_evaluate_save <- downloadHandler(
       write.xlsx(myData, file, row.names = FALSE, showNA = FALSE)
     } else {
       colnames(myData)[1] <- "ExpId"
+      colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
       write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
   }

@@ -9,7 +9,8 @@ tabPanel(title = icon("th-list"), value = "3",
          checkboxInput(inputId = "select_all_split_feature", 
                        label = tags$i("Select all")),
          uiOutput("choose_cols_to_split_feature"),
-         textInput(inputId = "split_delimiter_feature", label = "Delimiter (including any spaces): "),
+         textInput(inputId = "split_delimiter_feature", label = "Delimiter (including any spaces): ", 
+                   placeholder = "Start typing..."),
          checkboxInput("split_pairs_w_regex_feature", div(
            "Use regex",
            actionLink(inputId = "regex_help_split_pairs_feature", label = div(

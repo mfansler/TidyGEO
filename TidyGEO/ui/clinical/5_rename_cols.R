@@ -4,7 +4,7 @@ tabPanel(title = icon("pencil-alt"), value = "5",
            it may be helpful to replace the existing column names with more accurate/descriptive ones."),
          p("Here, you can give any column a new name."),
          uiOutput("display_cols_to_rename"),
-         textInput(inputId = "rename_new_name", label = "Please specify a new name for the column."),
+         textInput(inputId = "rename_new_name", label = "Please specify a new name for the column.", placeholder = "Start typing..."),
          div(
            primary_button(id = "rename", label = div(icon("pencil-alt"), "Rename column")),
            tipify(tertiary_button(id = "undo_rename", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")

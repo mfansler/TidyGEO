@@ -22,12 +22,14 @@ output$broken_cols_example <- renderDT({
 current_colnames <- reactive({ colnames(clinical_vals$clinical_data) })
 
 output$display_cols_to_shift <- renderUI({
-  selectInput(inputId = "col_to_shift", label = div("Shift the values from:"), choices = current_colnames())
+  selectInput(inputId = "col_to_shift", label = div("Shift the values from:"), choices = current_colnames(), 
+              options(list(placeholder = "Please load a dataset...")))
 })
 
 output$display_destination_cols <- renderUI({
   into_cols <- current_colnames()[-which(current_colnames() %in% input$col_to_shift)]
-  selectInput(inputId = "destination_col", label = div("into:"), choices = into_cols)  
+  selectInput(inputId = "destination_col", label = div("into:"), choices = into_cols,
+              options(list(placeholder = "Please load a dataset...")))
 })
 
 shift_preview <- reactive({ 

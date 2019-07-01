@@ -45,12 +45,14 @@ output$expression_downloadData <- downloadHandler(
         incProgress()
       })
     } else {
-      files <- c(paste0(tempfile(), input$geoID, "_Data.txt"), paste0(tempfile(), input$geoID, "_GeneAnnotations.txt"))
+      #files <- c(paste0(tempfile(), input$geoID, "_Data.txt"), paste0(tempfile(), input$geoID, "_GeneAnnotations.txt"))
+      myData <- assay_vals$assay_data
+      colnames(myData) <- colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
       withProgress(message = "Writing data to file",
-                   write.table(assay_vals$assay_data, files[1], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-      withProgress(message = "Writing feature data to file",
-                   write.table(assay_vals$feature_data, files[2], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-      zip(file, files)
+                   write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+      #withProgress(message = "Writing feature data to file",
+      #             write.table(assay_vals$feature_data, files[2], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+      #zip(file, files)
     }
   }
 )

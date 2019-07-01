@@ -43,7 +43,7 @@ ui <- fluidPage(
   includeScript("www/reactive_preferences.js"),
   useShinyjs(),
   
-  navbarPage(title = "TidyGEO", id = "top_level",
+  navbarPage(title = "TidyGEO", id = "top_level", collapsible = TRUE,
              tabPanel(title = "Choose dataset", value = "choose_dataset",
                       source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
              ),
@@ -96,8 +96,25 @@ ui <- fluidPage(
                         ) # main panel
                       ) # sidebar layout
              ), # expression data tab panel
-
              
+
+            # ** feature data ------------------------------------------------------------
+
+            tabPanel(title = div(icon("dna"), "Feature data"), value = "feature_data",
+                     sidebarLayout(
+                       sidebarPanel(),
+                       mainPanel()
+                     )),
+
+            # ** all data ----------------------------------------------------------------
+
+            tabPanel(title = div(icon("project-diagram"), "Integrate data"), value = "integrate_data",
+                      sidebarLayout(
+                        sidebarPanel(),
+                        mainPanel()
+                      )),
+            
+            
              # ** FAQ ---------------------------------------------------------------------
 
              tabPanel(title = "FAQ",
@@ -188,6 +205,34 @@ server <- function(input, output, session) {
       shift_results = NULL
     )
   
+  feature_vals <-
+    reactiveValues(
+      display_default = data.frame("Please load some assay data"),
+      orig_data = NULL,
+      assay_data = NULL,
+      assay_display = NULL,
+      last_data = NULL,
+      ft_default = data.frame("Please load some assay data"),
+      orig_feature = NULL,
+      last_feature = NULL,
+      feature_data = NULL,
+      feature_display = NULL,
+      oFile = commentify(" "),
+      download_chunk_len = 0,
+      current_chunk_len = 0,
+      id_col = "ID",
+      prev_id = "ID",
+      ft_id_col = "ID",
+      ft_prev_id = "ID",
+      plot_to_save = NULL,
+      disable_btns = FALSE,
+      expression_warning_state = FALSE,
+      data_to_display = NULL,
+      shift_results = NULL
+    )
+  
+  integrate_vals <- reactiveValues()
+  
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
 
 
@@ -233,6 +278,7 @@ server <- function(input, output, session) {
   source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
+  source(file.path("server", "feature", "save_data.R"), local = TRUE)$value
   
   # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "assay", "display_data.R"), local = TRUE)$value

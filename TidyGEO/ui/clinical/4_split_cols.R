@@ -11,7 +11,7 @@ tabPanel(title = icon("columns"), value = "4",
                           checkboxInput(inputId = "select_all_divide", 
                                         label = tags$i("Select all")),
                           uiOutput("choose_cols_to_divide"),
-                          textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ")
+                          textInput(inputId = "divide_delimiter", label = "Delimiter (including any spaces): ", placeholder = "Start typing...")
          #)
          ,
         checkboxInput("split_cols_w_regex", div(

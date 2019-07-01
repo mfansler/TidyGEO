@@ -8,6 +8,7 @@ sidebarLayout(
         a(target = "_blank", href = "https://www.ncbi.nlm.nih.gov/gds", "series of interest,"),
         "complete the instructions below."
     ),
+    br(),
     selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
                                                   help_link(id = "download_help")), choices = NULL),
     uiOutput("platform_options"),
