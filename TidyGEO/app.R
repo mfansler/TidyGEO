@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   library(rhandsontable)
   library(shinyWidgets)
   library(RColorBrewer)
+  library(shinydashboard)
   source("tidygeo_functions.R")
 })
 
@@ -34,101 +35,103 @@ options(shiny.autoreload = F)
 # UI ----------------------------------------------------------------------
 
 
-ui <- fluidPage(
-  
-  tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
-    tags$link(rel = "icon", type = "image/png", href = "logo_icon.png")
+ui <- dashboardPage(
+  dashboardHeader(title = "TidyGEO"
+  ),
+  dashboardSidebar(
+    sidebarMenu(id = "top_level",
+      menuItem("Choose dataset", tabName = "choose_dataset"),
+      menuItem("Process data", tabName = "process_data",
+               menuSubItem("Clinical data", icon = icon("clipboard"), tabName = "clinical_data"),
+               menuSubItem("Assay data", icon = icon("microscope"), tabName = "assay_data"),
+               menuSubItem("Feature data", icon = icon("dna"), tabName = "feature_data"),
+               menuSubItem("All data", icon = icon("project-diagram"), tabName = "all_data")),
+      menuItem("FAQ", tabName = "faq"),
+      menuItem("About", tabName = "about")
+    )
+  ),
+  dashboardBody(
+    
+    tags$head(
+      tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
+      tags$link(rel = "icon", type = "image/png", href = "logo_icon.png")
     ),
-  includeScript("www/reactive_preferences.js"),
-  useShinyjs(),
-  
-  navbarPage(title = "TidyGEO", id = "top_level", collapsible = TRUE,
-             tabPanel(title = "Choose dataset", value = "choose_dataset",
-                      source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
-             ),
-             
-             
-             # ** clinical data -----------------------------------------------------------
-             
-             tabPanel(title = div(icon("clipboard"), "Clinical data"), value = "clinical_data",
-                      sidebarLayout(
-                        
-                        # ** ** side panel --------------------------------------------------------------
-                        sidebarPanel(
-                          tabsetPanel(id = "clinical_side_panel",
-                                      source(file.path("ui", "clinical", "1_select_cols.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "2_shift_cells.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "3_split_pairs.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "4_split_cols.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "5_rename_cols.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "6_substitute_vals.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "7_filter_vals.R"), local = TRUE)$value,
-                                      source(file.path("ui", "clinical", "8_save_data.R"), local = TRUE)$value
-                          ) # clinical tabpanel
-                        ), # clinical sidebarpanel
-
-                        # ** ** main panel --------------------------------------------------------------
-                        mainPanel(
-                          tabsetPanel(
-                            source(file.path("ui", "clinical", "display_data.R"), local = TRUE)$value,
-                            source(file.path("ui", "clinical", "graphical_summary.R"), local = TRUE)$value
-                          ) # tabset panel in main panel
-                        ) # clinical main panel
-                      ) #sidebar layout
-             ), #clinical data tab panel
-             
-             
-             # ** assay data ---------------------------------------------------------
-             
-             tabPanel(title = div(icon("microscope"), "Assay data"), value = "assay_data",
-
-                      # ** ** side panel --------------------------------------------------------------
-                      sidebarLayout(
-                          source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, # sidebarPanel
-
-                      # ** ** main panel --------------------------------------------------------------
-                        mainPanel(
-                          tabsetPanel(
-                            source(file.path("ui", "assay", "display_data.R"), local = TRUE)$value,
-                            source(file.path("ui", "assay", "graphical_summary.R"), local = TRUE)$value
-                          )
-                        ) # main panel
-                      ) # sidebar layout
-             ), # expression data tab panel
-             
-
-            # ** feature data ------------------------------------------------------------
-
-            tabPanel(title = div(icon("dna"), "Feature data"), value = "feature_data",
-                     sidebarLayout(
-                       sidebarPanel(),
-                       mainPanel()
-                     )),
-
-            # ** all data ----------------------------------------------------------------
-
-            tabPanel(title = div(icon("project-diagram"), "Integrate data"), value = "integrate_data",
-                      sidebarLayout(
-                        sidebarPanel(),
-                        mainPanel()
-                      )),
-            
-            
-             # ** FAQ ---------------------------------------------------------------------
-
-             tabPanel(title = "FAQ",
-                      includeMarkdown("help_docs/FAQ.md")
-             ),
-             
-
-             # ** about page --------------------------------------------------------------
-
-             tabPanel(title = "About",
-                      h2(paste("Version:", version)),
-                      includeMarkdown("help_docs/About.md")
-              )
-  ) #master panel
+    includeScript("www/reactive_preferences.js"),
+    useShinyjs(),
+    tabItems(
+      tabItem("choose_dataset",
+               source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
+      ),
+      tabItem("clinical_data",
+               sidebarLayout(
+                 
+                 # ** ** side panel --------------------------------------------------------------
+                 sidebarPanel(
+                   tabsetPanel(id = "clinical_side_panel",
+                               source(file.path("ui", "clinical", "1_select_cols.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "2_shift_cells.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "3_split_pairs.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "4_split_cols.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "5_rename_cols.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "6_substitute_vals.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "7_filter_vals.R"), local = TRUE)$value,
+                               source(file.path("ui", "clinical", "8_save_data.R"), local = TRUE)$value
+                   ) # clinical tabpanel
+                 ), # clinical sidebarpanel
+                 
+                 # ** ** main panel --------------------------------------------------------------
+                 mainPanel(
+                   tabsetPanel(
+                     source(file.path("ui", "clinical", "display_data.R"), local = TRUE)$value,
+                     source(file.path("ui", "clinical", "graphical_summary.R"), local = TRUE)$value
+                   ) # tabset panel in main panel
+                 ) # clinical main panel
+               ) #sidebar layout
+      ), #clinical data tab panel
+      # ** assay data ---------------------------------------------------------
+      
+      tabItem("assay_data",
+               
+               # ** ** side panel --------------------------------------------------------------
+               sidebarLayout(
+                 source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, # sidebarPanel
+                 
+                 # ** ** main panel --------------------------------------------------------------
+                 mainPanel(
+                   tabsetPanel(
+                     source(file.path("ui", "assay", "display_data.R"), local = TRUE)$value,
+                     source(file.path("ui", "assay", "graphical_summary.R"), local = TRUE)$value
+                   )
+                 ) # main panel
+               ) # sidebar layout
+      ), # expression data tab panel
+      # ** feature data ------------------------------------------------------------
+      
+      tabItem("feature_data",
+               sidebarLayout(
+                 sidebarPanel(),
+                 mainPanel()
+               )),
+      # ** all data ----------------------------------------------------------------
+      
+      tabItem("integrate_data",
+               sidebarLayout(
+                 sidebarPanel(),
+                 mainPanel()
+               )),
+      # ** FAQ ---------------------------------------------------------------------
+      
+      tabItem("faq",
+               includeMarkdown("help_docs/FAQ.md")
+      ),
+      # ** about page --------------------------------------------------------------
+      
+      tabItem("about",
+               h2(paste("Version:", version)),
+               includeMarkdown("help_docs/About.md")
+      )
+    )
+  )
 ) #fluidPage
 
 
