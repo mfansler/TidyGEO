@@ -14,5 +14,6 @@ tabPanel(title = icon("download"), value = "5",
                                              style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                               help_link(id = "feature_r_help")))
   ),
-  hr(), tertiary_button('feature_nav_5_to_4_button', div(icon('arrow-left'), 'Back'))
+  hr(), tertiary_button('feature_nav_5_to_4_button', div(icon('arrow-left'), 'Back')),
+  secondary_button('feature_5_to_expression_button', div('Finish assay data', icon('arrow-right')), class = "right_align")
 )

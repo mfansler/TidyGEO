@@ -31,5 +31,6 @@ tabPanel(title = icon("edit"), value = "1",
                   title = "Undo the last action.", placement = "bottom", trigger = "hover"),
            br()
          ),
-         hr(), navigation_set("clinical_data", "1", "2", "top_level", "expression_side_panel")
+         hr(), tertiary_button("assay_to_clinical", div(icon("arrow-left"), "Back to clinical data")),
+         secondary_button("expression_nav_1_to_2_button", div("Next", icon("arrow-right")), class = "right_align")
 )

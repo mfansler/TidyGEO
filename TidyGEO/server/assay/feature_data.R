@@ -3,6 +3,9 @@
 
 
 observeEvent(input$expression_replace_id, {
+  if (is.null(feature_vals$feature_data)) {
+    get_feature_data()
+  }
   showModal(
     modalDialog(
       #HTML('<p>In the <b>assay data</b> table, you will see a column labeled <b>"ID"</b>. This is a unique identifier that usually
@@ -42,19 +45,17 @@ observeEvent(input$expression_replace_id, {
       size = "l",
       easyClose = TRUE
     )
-      )
+  )
 })
 
 observeEvent(input$link_to_feature, {
   removeModal()
-  updatePrettyToggle(session, "display_assay_or_feature", value = TRUE)
-  updateTabsetPanel(session, "expression_side_panel", selected = "1")
+  updateTabItems(session, "top_level", "feature_data")
 })
 
 observeEvent(input$link_to_feature2, {
   removeModal()
-  updatePrettyToggle(session, "display_assay_or_feature", value = TRUE)
-  updateTabsetPanel(session, "expression_side_panel", selected = "1")
+  updateTabItems(session, "top_level", "feature_data")
 })
 
 # server ------------------------------------------------------------------
@@ -64,41 +65,44 @@ observeEvent(input$close_feature_modal, {
   removeModal()
 })
 
+feature_move_by <- reactive({
+  ncol(feature_vals$feature_data) / 5
+})
+
 observeEvent(input$feature_next_cols, {
-  if (!is.null(assay_vals$feature_data)) {
-    assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
-                                                       start = colnames(assay_vals$feature_display)[ncol(assay_vals$feature_display)], 
-                                                       forward_distance = 4, 
-                                                       previous_view = assay_vals$feature_display)
+  if (!is.null(feature_vals$feature_data) && ncol(feature_vals$feature_data) > 6) {
+    start <- min(ncol(feature_vals$feature_data), feature_vals$viewing_subset[1] + feature_move_by())
+    end <- min(ncol(feature_vals$feature_data), start + feature_move_by())
+    feature_vals$viewing_subset <- c(start, end)
   }
 })
 
 observeEvent(input$feature_prev_cols, {
-  if (!is.null(assay_vals$feature_data)) {
-    assay_vals$feature_display <- retract_columns_view(assay_vals$feature_data, 
-                                                       last_column = colnames(assay_vals$feature_display)[2], 
-                                                       backward_distance = 4, 
-                                                       previous_view = assay_vals$feature_display)
+  if (!is.null(feature_vals$feature_data) && ncol(feature_vals$feature_data) > 6) {
+    end <- max(2, feature_vals$viewing_subset[2] - feature_move_by())
+    start <- max(2, end - feature_move_by())
+    feature_vals$viewing_subset <- c(start, end)
   }
 })
 
 output$featureData <- DT::renderDT({
-  if (!is.null(assay_vals$feature_display)) {
-    datatable(assay_vals$feature_display, filter = "top", rownames = FALSE, options = list(dom = "tp", 
-                                                                                           pageLength = 5,
-                                                                                           columnDefs = list(list(
-                                                                                             targets = "_all",
-                                                                                             ##Makes it so that the table will only display the first 30 chars.
-                                                                                             ##See https://rstudio.github.io/DT/options.html
-                                                                                             render = JS(
-                                                                                               "function(data, type, row, meta) {",
-                                                                                               "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
-                                                                                               "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
-                                                                                               "}")
-                                                                                           ))))
+  if (!is.null(feature_vals$feature_data)) {
+    datatable(feature_vals$feature_data[c(1, feature_vals$viewing_subset[1]:feature_vals$viewing_subset[2])], 
+              filter = "top", rownames = FALSE, options = list(dom = "tp",
+                                                               pageLength = 5,
+                                                               columnDefs = list(list(
+                                                                 targets = "_all",
+                                                                 ##Makes it so that the table will only display the first 30 chars.
+                                                                 ##See https://rstudio.github.io/DT/options.html
+                                                                 render = JS(
+                                                                            "function(data, type, row, meta) {",
+                                                                            "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
+                                                                            "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
+                                                                            "}")
+                                                                            ))))
   }
   else {
-    datatable(assay_vals$ft_default, rownames = FALSE, 
+    datatable(feature_vals$ft_default, rownames = FALSE, 
               colnames = "NO DATA", options = list(dom = "tp"))
   }
 })
@@ -106,14 +110,14 @@ output$featureData <- DT::renderDT({
 output$exprLabels <- renderUI({
   selectInput("colForExprLabels", label = div("Please select a column that will identify each gene/transcript/exon/etc.", 
                                               help_button("To keep the same ID column, please choose ID.")), 
-              choices = colnames(assay_vals$feature_data)[which(!colnames(assay_vals$feature_data) == "ID")]
+              choices = colnames(feature_vals$feature_data)[which(!colnames(feature_vals$feature_data) == "ID")]
   )
 })
 
 output$summarizeOptions <- renderUI({
   if (!is.null(input$colForExprLabels) && input$colForExprLabels != "") {
     new_expression_labels <- if (input$feature_dropNA) 
-      assay_vals$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else assay_vals$feature_data[, input$colForExprLabels]
+      feature_vals$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else feature_vals$feature_data[, input$colForExprLabels]
     #browser()
     can_summarize <- !is_all_unique(new_expression_labels)
     if (can_summarize) {
@@ -133,26 +137,26 @@ observeEvent(input$expression_evaluate_id, {
   
   removeModal()
   
-  if (!is.null(assay_vals$assay_data) && assay_vals$ft_id_col != input$colForExprLabels) {
+  if (!is.null(assay_vals$assay_data) && feature_vals$id_col != input$colForExprLabels) {
     assay_vals$last_data <- assay_vals$assay_data
     
-    feature_data <- assay_vals$feature_data
+    feature_data <- feature_vals$feature_data
     
     assay_vals$oFile <- saveLines(c(commentify("replace ID column"),
                                     "featureData2 <- featureData"), assay_vals$oFile)
     
-    if (assay_vals$ft_id_col != "ID") {
+    if (feature_vals$id_col != "ID") {
       
       assay_vals$oFile <- saveLines(
         c(paste0("colnames(featureData2)[which(colnames(featureData2) == 'ID')] <- ", 
                  format_string(colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")]))),
           paste0("colnames(featureData2)[which(colnames(featureData2) == ", 
-                 format_string(assay_vals$ft_id_col), ")] <- 'ID'")), 
+                 format_string(feature_vals$id_col), ")] <- 'ID'")), 
         assay_vals$oFile)
       
       colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
         colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")])
-      colnames(feature_data)[which(colnames(feature_data) == assay_vals$ft_id_col)] <- "ID"
+      colnames(feature_data)[which(colnames(feature_data) == feature_vals$id_col)] <- "ID"
       
       if (length(which(colnames(feature_data) == "ID")) > 1) {
         assay_vals$oFile <- saveLines("featureData2 <- featureData2[,-1]", assay_vals$oFile)
@@ -164,8 +168,8 @@ observeEvent(input$expression_evaluate_id, {
     
     assay_vals$assay_data <- withProgress(message = "Replacing the ID column", 
                                           replaceID(assay_vals$assay_data, feature_data, input$colForExprLabels, input$howToSummarize, input$feature_dropNA))
-    assay_vals$ft_prev_id <- assay_vals$ft_id_col
-    assay_vals$ft_id_col <- input$colForExprLabels
+    feature_vals$prev_id <- feature_vals$id_col
+    feature_vals$id_col <- input$colForExprLabels
     
     before <- length(assay_vals$oFile)
     
@@ -175,11 +179,6 @@ observeEvent(input$expression_evaluate_id, {
                                            format_string(input$howToSummarize), ", ", 
                                            format_string(input$feature_dropNA), ")")), 
                                   assay_vals$oFile)
-    
-    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
-                                                     start = 1, 
-                                                     forward_distance = 5, 
-                                                     assay_vals$assay_data)
     
     after <- length(assay_vals$oFile)
     

@@ -31,7 +31,6 @@ process_expression <- function(expressionSet, session = NULL) {
     TRUE
   }, warning = function(w) {
     if (grepl("NAs introduced by coercion", w)) {
-      #browser()
       FALSE
     }
   })
@@ -46,39 +45,44 @@ process_expression <- function(expressionSet, session = NULL) {
   
   expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
   
+  if (nrow(expressionData) == 0) {
+    expressionData <- NULL
+  }
+  
+  return(list("expressionData" = expressionData, "status" = pass))
+}
+
+process_feature <- function(expressionSet, session = NULL) {
   incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))
   if (!"ID" %in% colnames(featureData)) {
     featureData <- cbind.data.frame(ID = rownames(featureData), featureData, stringsAsFactors = FALSE)
   }
-  
+  incProgress(message = "Replacing blank cells")
   if (nrow(featureData) == 1) {
     featureData <- as.data.frame(t(as.matrix(apply(featureData, 2, replace_blank_cells))), stringsAsFactors = FALSE)
   } else {
     featureData <- as.data.frame(apply(featureData, 2, replace_blank_cells), stringsAsFactors = FALSE)
   }
   
-  incProgress(message = "Removing whitespace")
+  incProgress(message = "Removing whitespace from ID column")
   if (any(str_detect(featureData$ID, "\\s+"))) {
     featureData$ID <- str_trim(featureData$ID)
   }
   
-  incProgress(message = "Matching features to assay IDs")
+  incProgress(message = "Dropping empty columns")
   rows_to_keep <- sapply(1:nrow(featureData), function(i) {
-    if (!all(is.na(featureData[i,])) && featureData$ID[i] %in% expressionData$ID) {
+    if (!all(is.na(featureData[i,]))) {
       i
     }
   })
   featureData <- featureData[unlist(rows_to_keep),]
   
-  if (nrow(expressionData) == 0) {
-    expressionData <- NULL
-  }
+  
   if (nrow(featureData) == 0) {
     featureData <- NULL
   }
-  
-  return(list("expressionData" = expressionData, "featureData" = featureData, "status" = pass))
+  return(featureData)
 }
 
 #' Transpose a data frame; faster than <code>t()</code>.

@@ -86,6 +86,6 @@ output$expression_downloadRscript <- downloadHandler(
     
     saveToRscript(assay_vals$oFile, version, file, 'User/assay_helper_functions.R')
     
-    assay_vals$current_chunk_len <- assay_vals$curr_chunk_len + (length(assay_vals$oFile) - before)
+    assay_vals$current_chunk_len <- assay_vals$current_chunk_len + (length(assay_vals$oFile) - before)
   }
 )

@@ -14,5 +14,6 @@ tabPanel(title = icon("download"), value = "2",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link(id = "expression_r_help")))
          ),
-         hr(), tertiary_button('expression_nav_2_to_1_button', div(icon('arrow-left'), 'Back'))
+         hr(), tertiary_button('expression_nav_2_to_1_button', div(icon('arrow-left'), 'Back')),
+         secondary_button("expression_to_all", div("Continue to all data", icon("arrow-right")), class = "right_align")
 )

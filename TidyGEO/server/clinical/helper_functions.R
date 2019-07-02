@@ -63,7 +63,7 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 }
 
 extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
-  
+  browser()
   if (is.null(colsToSplit) || delimiter == "") {
     return(input_df) 
   }

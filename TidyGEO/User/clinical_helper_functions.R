@@ -220,7 +220,6 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
 }
 
 extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
-  
   if (is.null(colsToSplit) || delimiter == "") {
     return(input_df) 
   }

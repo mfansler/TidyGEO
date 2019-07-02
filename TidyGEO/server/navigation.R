@@ -11,20 +11,48 @@ navigation_set_server <- function(prev, from, to, section_prev = NULL, section_t
 
 # Clinical side panel -----------------------------------------------------
 
-
-navigation_set_server(prev = "choose_dataset", from = "1", to = "2", section_prev = "top_level", section_to = "clinical_side_panel")
+observeEvent(input$clinical_to_choose_button, {
+  updateTabItems(session, "top_level", "choose_dataset")
+})
+observeEvent(input$clinical_1_to_2_button, {
+  updateTabsetPanel(session, "clinical_side_panel", selected = "2")
+})
 navigation_set_server("1", "2", "3", "clinical_side_panel", "clinical_side_panel")
 navigation_set_server("2", "3", "4", "clinical_side_panel", "clinical_side_panel")
 navigation_set_server("3", "4", "5", "clinical_side_panel", "clinical_side_panel")
 navigation_set_server("4", "5", "6", "clinical_side_panel", "clinical_side_panel")
 navigation_set_server("5", "6", "7", "clinical_side_panel", "clinical_side_panel")
 navigation_set_server("6", "7", "8", "clinical_side_panel", "clinical_side_panel")
-navigation_set_server("7", "8", "assay_data","clinical_side_panel", "top_level")
+observeEvent(input$clinical_8_to_7_button, {
+  updateTabsetPanel(session, "clinical_side_panel", selected = "7")
+})
+observeEvent(input$clinical_to_assay_data, {
+  updateTabItems(session, "top_level", "assay_data")
+})
 
 # Expression side panel ---------------------------------------------------
 
-navigation_set_server("clinical_data", "1", "2", "top_level", "expression_side_panel")
+observeEvent(input$assay_to_clinical, {
+  updateTabItems(session, "top_level", "clinical_data")
+})
+observeEvent(input$expression_nav_1_to_2_button, {
+  updateTabsetPanel(session, "expression_side_panel", selected = "2")
+})
 observeEvent(input$expression_nav_2_to_1_button, {
   updateTabsetPanel(session, 'expression_side_panel', selected = '1')
 })
-navigation_set_server("2", "3", "4", "expression_side_panel", "expression_side_panel")
+observeEvent(input$expression_to_all, {
+  updateTabItems(session, "top_level", "all_data")
+})
+
+# Feature side panel ------------------------------------------------------
+
+navigation_set_server("1", "2", "3", "feature_side_panel", "feature_side_panel")
+navigation_set_server("2", "3", "4", "feature_side_panel", "feature_side_panel")
+navigation_set_server("3", "4", "5", "feature_side_panel", "feature_side_panel")
+observeEvent(input$feature_nav_5_to_4_button, {
+  updateTabsetPanel(session, "feature_side_panel", selected = "4")
+})
+observeEvent(input$feature_5_to_expression_button, {
+  updateTabItems(session, "top_level", "assay_data")
+})

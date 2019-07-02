@@ -1,9 +1,9 @@
 # Create divs
 output$histograms_expression <- renderUI({
   
-  if (!is.null(assay_vals$data_to_display)) {
-    plot_output_list <- lapply(2:ncol(assay_vals$data_to_display), function(i) {
-      plotname <- make.names(colnames(assay_vals$data_to_display)[i])
+  if (!is.null(assay_in_view())) {
+    plot_output_list <- lapply(1:ncol(assay_in_view()), function(i) {
+      plotname <- make.names(colnames(assay_in_view())[i])
       div(withSpinner(plotlyOutput(plotname, height = 500, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), div(icon("download"), "Download plot"), class = "expression_plot"))
     })   
     do.call(tagList, plot_output_list)
@@ -11,10 +11,10 @@ output$histograms_expression <- renderUI({
 })
 # Create the actual plots associated with the plot names
 observe({
-  if (!is.null(assay_vals$data_to_display)) {
-    lapply(2:ncol(assay_vals$data_to_display), function(i){
-      output[[ make.names(colnames(assay_vals$data_to_display)[i]) ]] <- renderPlotly({
-        suppressWarnings(create_plot(as.character(assay_vals$data_to_display[,i]), input$expr_plot_color, input$expression_binwidths, colnames(assay_vals$data_to_display)[i], is_numeric = isAllNum(assay_vals$data_to_display[i])))
+  if (!is.null(assay_in_view())) {
+    lapply(1:ncol(assay_in_view()), function(i){
+      output[[ make.names(colnames(assay_in_view())[i]) ]] <- renderPlotly({
+        suppressWarnings(create_plot(as.character(assay_in_view()[,i]), input$expr_plot_color, input$expression_binwidths, colnames(assay_in_view())[i], is_numeric = isAllNum(assay_in_view()[i])))
       })
     })
   }
@@ -34,15 +34,15 @@ observeEvent(input$last_btn_expression, {
 
 output$expr_plot_download <- downloadHandler(
   filename = function() {
-    paste(make.names(colnames(assay_vals$data_to_display)[assay_vals$plot_to_save]), input$expr_plot_filetype, sep = ".")
+    paste(make.names(colnames(assay_in_view())[assay_vals$plot_to_save]), input$expr_plot_filetype, sep = ".")
   },
   content = function(file) {
     
-    plot_to_save <- create_plot_to_save(as.character(assay_vals$data_to_display[,assay_vals$plot_to_save]), 
+    plot_to_save <- create_plot_to_save(as.character(assay_in_view()[,assay_vals$plot_to_save]), 
                                         input$expr_plot_color, 
                                         input$expression_binwidths, 
-                                        colnames(assay_vals$data_to_display)[assay_vals$plot_to_save], 
-                                        is_numeric = isAllNum(assay_vals$data_to_display[assay_vals$plot_to_save]))
+                                        colnames(assay_in_view())[assay_vals$plot_to_save], 
+                                        is_numeric = isAllNum(assay_in_view()[assay_vals$plot_to_save]))
     
     ggsave(file, plot_to_save, width = input$expr_plot_width, height = input$expr_plot_height, device = input$expr_plot_filetype)
     

@@ -15,5 +15,6 @@ tabPanel(title = icon("download"), value = "8",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link(id = "clinical_r_help")))
          ),
-         hr(), navigation_set("7", "8", "assay_data","clinical_side_panel", "top_level")
+         hr(), tertiary_button("clinical_8_to_7_button", div(icon("arrow-left"), "Back")),
+         secondary_button("clinical_to_assay_data", div("Continue to assay data", icon("arrow-right")), class = "right_align")
 )

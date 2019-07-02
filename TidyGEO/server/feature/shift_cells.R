@@ -20,8 +20,8 @@ output$broken_cols_example <- renderDT({
 })
 
 current_colnames_feature <- reactive({
-  if (!is.null(assay_vals$feature_data)) {
-    colnames(assay_vals$feature_data)[-which(colnames(assay_vals$feature_data) == "ID")]
+  if (!is.null(feature_vals$feature_data)) {
+    colnames(feature_vals$feature_data)[-which(colnames(feature_vals$feature_data) == "ID")]
   } 
 })
 
@@ -37,13 +37,13 @@ output$display_destination_cols_feature <- renderUI({
 })
 
 shift_preview_feature <- reactive({ 
-  if (!is.null(assay_vals$feature_data) &&
+  if (!is.null(feature_vals$feature_data) &&
       !is.null(input$col_to_shift_feature) &&
       !is.null(input$destination_col_feature) &&
       input$col_to_shift_feature != "" && 
       input$destination_col_feature != "") {
-    #shift_cells(head(assay_vals$feature_data, 5), input$col_to_shift_feature, input$destination_col_feature)
-    preview_data <- head(assay_vals$feature_data, 5)
+    #shift_cells(head(feature_vals$feature_data, 5), input$col_to_shift_feature, input$destination_col_feature)
+    preview_data <- head(feature_vals$feature_data, 5)
     preview_data <- cbind(sapply(preview_data[,input$col_to_shift_feature], shorten_labels, 20), 
                           rep(as.character(icon("arrow-right")), nrow(preview_data)), 
                           sapply(preview_data[,input$destination_col_feature], shorten_labels, 20),
@@ -54,7 +54,7 @@ shift_preview_feature <- reactive({
 })
 
 output$shift_preview_table_feature <- DT::renderDT({
-  if (!is.null(assay_vals$feature_data) &&
+  if (!is.null(feature_vals$feature_data) &&
       !is.null(input$col_to_shift_feature) &&
       !is.null(input$destination_col_feature) &&
       input$col_to_shift_feature != "" && 
@@ -89,14 +89,14 @@ output$conflict_delimiter_option_feature <- renderUI({
 })
 
 output$shift_conflicts_table_feature <- DT::renderDT({
-  if (!is.null(assay_vals$shift_results[["conflicts"]])) {
-    datatable(assay_vals$shift_results[["conflicts"]], options = list(dom = "t", scrollY = 300, paging = FALSE))
+  if (!is.null(feature_vals$shift_results[["conflicts"]])) {
+    datatable(feature_vals$shift_results[["conflicts"]], options = list(dom = "t", scrollY = 300, paging = FALSE))
   }
 })
 
 observeEvent(input$evaluate_shift_feature, {
-  assay_vals$shift_results <- shift_cells(assay_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature)
-  if (!is.null(assay_vals$shift_results[["conflicts"]])) {
+  feature_vals$shift_results <- shift_cells(feature_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature)
+  if (!is.null(feature_vals$shift_results[["conflicts"]])) {
     showModal(modalDialog( title = div(HTML('<font color="red">Whoops!</font>'), 
                                        tertiary_button("cancel_shift_feature", "Cancel", class = "right_align")),
                            HTML(paste0('<font color="red">Looks like we\'re trying to overwrite some of the values in ',
@@ -109,22 +109,22 @@ observeEvent(input$evaluate_shift_feature, {
                            footer = primary_button("evaluate_conflicts_feature", "Resolve")
                            ))
   } else {
-    assay_vals$last_feature <- assay_vals$feature_data
+    feature_vals$last_feature <- feature_vals$feature_data
     
-    assay_vals$feature_data <- assay_vals$shift_results[["result"]]
+    feature_vals$feature_data <- feature_vals$shift_results[["result"]]
     
-    assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
+    feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 
                                                        start = 1, 
                                                        forward_distance = 4, 
-                                                       previous_view = assay_vals$feature_data)
+                                                       previous_view = feature_vals$feature_data)
     
     #WRITING COMMANDS TO R SCRIPT
-    before <- length(assay_vals$oFile)
-    assay_vals$oFile <- saveLines(commentify("shift cells"), assay_vals$oFile)
-    assay_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
+    before <- length(feature_vals$oFile)
+    feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
+    feature_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
                                             format_string(input$col_to_shift_feature), ", ",
-                                            format_string(input$destination_col_feature), ")"), assay_vals$oFile)
-    assay_vals$current_chunk_len <- length(assay_vals$oFile) - before
+                                            format_string(input$destination_col_feature), ")"), feature_vals$oFile)
+    feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
   }
 })
 
@@ -134,33 +134,33 @@ observeEvent(input$cancel_shift_feature, {
 
 observeEvent(input$evaluate_conflicts_feature, {
   removeModal()
-  results <- shift_cells(assay_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature, 
+  results <- shift_cells(feature_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature, 
                          conflicts = if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature)
-  assay_vals$last_feature <- assay_vals$feature_data
-  assay_vals$feature_data <- results[["result"]]
+  feature_vals$last_feature <- feature_vals$feature_data
+  feature_vals$feature_data <- results[["result"]]
   
-  assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
+  feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 
                                                      start = 1, 
                                                      forward_distance = 4, 
-                                                     previous_view = assay_vals$feature_data)
+                                                     previous_view = feature_vals$feature_data)
   
   #WRITING COMMANDS TO R SCRIPT
-  before <- length(assay_vals$oFile)
-  assay_vals$oFile <- saveLines(commentify("shift cells"), assay_vals$oFile)
-  assay_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
+  before <- length(feature_vals$oFile)
+  feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
+  feature_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
                                           format_string(input$col_to_shift_feature), ", ",
                                           format_string(input$destination_col_feature), ", ",
                                           format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
-                                   assay_vals$oFile)
-  assay_vals$current_chunk_len <- length(assay_vals$oFile) - before
+                                   feature_vals$oFile)
+  feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
 })
 
 observeEvent(input$undo_shift_feature, {
-  assay_vals$feature_data <- assay_vals$last_feature
-  assay_vals$feature_display <- advance_columns_view(assay_vals$feature_data, 
+  feature_vals$feature_data <- feature_vals$last_feature
+  feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 
                                                      start = 1, 
                                                      forward_distance = 4, 
-                                                     previous_view = assay_vals$feature_data)
-  assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$current_chunk_len)
-  assay_vals$current_chunk_len <- 0
+                                                     previous_view = feature_vals$feature_data)
+  feature_vals$oFile <- removeFromScript(feature_vals$oFile, len = feature_vals$current_chunk_len)
+  feature_vals$current_chunk_len <- 0
 })

@@ -1,47 +1,47 @@
 /* logo */
 .skin-blue .main-header .logo {
                       background-color: #337ab7;
+                      font-family: trebuchet ms;
                       }
 
-/* logo when hovered 
+/* logo when hovered */
 .skin-blue .main-header .logo:hover {
-                      background-color: #f4b943;
+                      background-color: #6baed6;
                       }
-*/
+
 
 /* navbar (rest of the header) */
 .skin-blue .main-header .navbar {
                       background-color: #337ab7;
-                      }        
+                      } 
+                      
 
 /* main sidebar */
 .skin-blue .main-sidebar {
                       background-color: #337ab7;
                       }
 
-/* active selected tab in the sidebarmenu 
+/* active selected tab in the sidebarmenu */
 .skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
-                      background-color: #ff0000;
+                      background-color: #6baed6;
                       }
-                      */
+                      
 
-/* other links in the sidebarmenu 
+/* other links in the sidebarmenu */
 .skin-blue .main-sidebar .sidebar .sidebar-menu a{
-                      background-color: #00ff00;
-                      color: #000000;
+                      background-color: #337ab7;
+                      color: #fff;
                       }
-                      */
 
-/* other links in the sidebarmenu when hovered 
+/* other links in the sidebarmenu when hovered */
  .skin-blue .main-sidebar .sidebar .sidebar-menu a:hover{
-                      background-color: #ff69b4;
+                      background-color: #6baed6;
                       }
-                      */
-/* toggle button when hovered                      
+                      
+/* toggle button when hovered  */                    
  .skin-blue .main-header .navbar .sidebar-toggle:hover{
-                      background-color: #ff69b4;
+                      background-color: #6baed6;
                       }
-                      */
 
 .right_align{
   display: block;

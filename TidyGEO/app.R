@@ -38,7 +38,7 @@ options(shiny.autoreload = F)
 ui <- dashboardPage(
   dashboardHeader(title = "TidyGEO"
   ),
-  dashboardSidebar(
+  dashboardSidebar(collapsed = TRUE,
     sidebarMenu(id = "top_level",
       menuItem("Choose dataset", tabName = "choose_dataset"),
       menuItem("Process data", tabName = "process_data",
@@ -94,8 +94,13 @@ ui <- dashboardPage(
                
                # ** ** side panel --------------------------------------------------------------
                sidebarLayout(
-                 source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, # sidebarPanel
-                 
+                 #source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, # sidebarPanel
+                 sidebarPanel(
+                   tabsetPanel(id = "expression_side_panel", 
+                               source(file.path("ui", "assay", "format_data.R"), local = TRUE)$value,
+                               source(file.path("ui", "assay", "save_data.R"), local = TRUE)$value)
+                   
+                 ),
                  # ** ** main panel --------------------------------------------------------------
                  mainPanel(
                    tabsetPanel(
@@ -109,12 +114,25 @@ ui <- dashboardPage(
       
       tabItem("feature_data",
                sidebarLayout(
-                 sidebarPanel(),
-                 mainPanel()
+                 sidebarPanel(
+                   tabsetPanel(id = "feature_side_panel",
+                     source(file.path("ui", "feature", "feature_info.R"), local = TRUE)$value,
+                     source(file.path("ui", "feature", "shift_cells.R"), local = TRUE)$value,
+                     source(file.path("ui", "feature", "split_pairs.R"), local = TRUE)$value,
+                     source(file.path("ui", "feature", "split_cols.R"), local = TRUE)$value,
+                     source(file.path("ui", "feature", "save_data.R"), local = TRUE)$value
+                   )
+                 ),
+                 mainPanel(
+                   tabsetPanel(
+                     source(file.path("ui", "feature", "display_data.R"), local = TRUE)$value,
+                     source(file.path("ui", "feature", "graphical_summary.R"), local = TRUE)$value
+                   )
+                 )
                )),
       # ** all data ----------------------------------------------------------------
       
-      tabItem("integrate_data",
+      tabItem("all_data",
                sidebarLayout(
                  sidebarPanel(),
                  mainPanel()
@@ -184,60 +202,112 @@ server <- function(input, output, session) {
   
   assay_vals <-
     reactiveValues(
-      display_default = data.frame("Please load some assay data"),
+      display_default = data.frame("Please load a dataset"),
       orig_data = NULL,
       assay_data = NULL,
-      assay_display = NULL,
       last_data = NULL,
-      ft_default = data.frame("Please load some assay data"),
-      orig_feature = NULL,
-      last_feature = NULL,
-      feature_data = NULL,
-      feature_display = NULL,
       oFile = commentify(" "),
       download_chunk_len = 0,
       current_chunk_len = 0,
       id_col = "ID",
       prev_id = "ID",
-      ft_id_col = "ID",
-      ft_prev_id = "ID",
       plot_to_save = NULL,
       disable_btns = FALSE,
       expression_warning_state = FALSE,
-      data_to_display = NULL,
-      shift_results = NULL
+      viewing_subset = c(2, 6)
     )
   
   feature_vals <-
     reactiveValues(
-      display_default = data.frame("Please load some assay data"),
-      orig_data = NULL,
-      assay_data = NULL,
-      assay_display = NULL,
-      last_data = NULL,
-      ft_default = data.frame("Please load some assay data"),
-      orig_feature = NULL,
-      last_feature = NULL,
       feature_data = NULL,
-      feature_display = NULL,
+      shift_results = NULL,
+      last_feature = NULL,
       oFile = commentify(" "),
-      download_chunk_len = 0,
       current_chunk_len = 0,
+      orig_feature = NULL,
+      ft_default = data.frame("Please load a dataset"),
       id_col = "ID",
       prev_id = "ID",
-      ft_id_col = "ID",
-      ft_prev_id = "ID",
-      plot_to_save = NULL,
-      disable_btns = FALSE,
-      expression_warning_state = FALSE,
-      data_to_display = NULL,
-      shift_results = NULL
+      viewing_subset = c(2, 6)
     )
   
   integrate_vals <- reactiveValues()
   
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
 
+  get_clinical_data <- function() {
+    clinical_vals$clinical_data <- withProgress(process_clinical(values$allData, session))
+    
+    #WRITING COMMANDS TO R SCRIPT
+    clinical_vals$oFile <- saveLines(commentify("extract clinical data"), clinical_vals$oFile)
+    clinical_vals$oFile <- saveLines("clinical_data <- process_clinical(series_data)", clinical_vals$oFile)
+    clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
+  }
+  
+  get_assay_data <- function() {
+    closeAlert(session, "nonnumeric")
+    
+    extracted_data <- withProgress(process_expression(values$allData, session = session), message = "Processing assay data")
+    
+    assay_vals$warning_state <- extracted_data[["status"]]
+    
+    assay_vals$orig_data <- extracted_data[["expressionData"]]
+    
+    if (is.null(assay_vals$orig_data)) {
+      assay_vals$display_default <- data.frame(paste0("No assay data available for ", input$geoID))
+    } else {
+      assay_vals$id_col <- colnames(assay_vals$orig_data)[1]
+      assay_vals$prev_id <- assay_vals$id_col
+      
+      assay_vals$last_data <- assay_vals$orig_data
+      assay_vals$assay_data <- assay_vals$orig_data
+      
+      assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
+      
+      #WRITING COMMANDS TO R SCRIPT
+      assay_vals$oFile <- saveLines(commentify("extract expression data"), assay_vals$oFile)
+      assay_vals$oFile <- saveLines(c("extracted_data <- process_expression(series_data)",
+                                      "expressionData <- extracted_data[['expressionData']]"), 
+                                    assay_vals$oFile)
+      
+      assay_vals$download_chunk_len <- length(assay_vals$oFile)
+    }
+    rm(extracted_data)
+    shinyjs::toggleState("undoEvalExpr", FALSE)
+  }
+  
+  get_feature_data <- function() {
+    feature_vals$orig_feature <- withProgress(process_feature(values$allData, session = session), message = "Processing feature data")
+    if (is.null(feature_vals$orig_feature)) {
+      feature_vals$ft_default <- data.frame(paste0("No feature data available for ", input$geoID))
+    } else {
+      feature_vals$id_col <- colnames(feature_vals$orig_feature)[1]
+      feature_vals$prev_id <- feature_vals$id_col
+      
+      #feature_vals$orig_feature <- find_intersection(feature_vals$orig_feature, assay_vals$assay_data)
+      feature_vals$last_feature <- feature_vals$orig_feature
+      feature_vals$feature_data <- feature_vals$orig_feature
+      
+      feature_vals$viewing_subset <- c(2, min(6, ncol(feature_vals$feature_data)))
+      
+      feature_vals$oFile <- saveLines(commentify("extract feature data"), feature_vals$oFile)
+      feature_vals$oFile <- saveLines(c("featureData <- process_feature(series_data)"), 
+                                      assay_vals$oFile)
+    }
+  }
+  
+  observeEvent(input$top_level, {
+    if (!is.null(values$allData)) {
+      if (input$top_level == "clinical_data" && is.null(clinical_vals$clinical_data)) {
+        get_clinical_data()
+      } else if (input$top_level == "assay_data" && is.null(assay_vals$assay_data)) {
+        get_assay_data()
+      } else if (input$top_level == "feature_data" && is.null(feature_vals$feature_data)) {
+        get_feature_data()
+      }
+    }
+  })
+  
 
   # ** clinical data -----------------------------------------------------------
 

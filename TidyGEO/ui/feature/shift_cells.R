@@ -15,6 +15,6 @@ tabPanel(title = icon("angle-double-right"), value = "2",
   div(
     primary_button("evaluate_shift_feature", div(icon("angle-double-right"), "Shift cells")),
     tipify(tertiary_button(id = "undo_shift_feature", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
-  )#,
-  #hr(), uiOutput("nav_2_ui")
+  ),
+  hr(), navigation_set("1", "2", "3", "feature_side_panel", "feature_side_panel")
 )
