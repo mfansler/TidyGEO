@@ -16,7 +16,7 @@ output$feature_preview <- DT::renderDT({
   }
 })
 
-output$evaluate_filters_button <- renderUI({
+output$evaluate_filters_button_feature <- renderUI({
   if (!is.null(input$feature_preview_search_columns) && !all(input$feature_preview_search_columns == "")) {
     div(
       primary_button("feature_evaluate_filters", 

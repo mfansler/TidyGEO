@@ -2,10 +2,23 @@
 # libraries ---------------------------------------------------------------
 
 
-library(GEOquery)
-library(stringr)
-library(dplyr)
-library(tidyr)
+if (!require(GEOquery, quietly = TRUE)) {
+  source("https://bioconductor.org/biocLite.R")
+  BiocInstaller::biocLite("GEOquery")
+  library(GEOquery)
+}
+if (!require(stringr, quietly = TRUE)) {
+  install.packages("stringr")
+  library(stringr)
+}
+if (!require(dplyr, quietly = TRUE)) {
+  install.packages("dplyr")
+  library(dplyr)
+}
+if (!require(tidyr, quietly = TRUE)) {
+  install.packages("tidyr")
+  library(tidyr)
+}
 
 # helper functions --------------------------------------------------------
 

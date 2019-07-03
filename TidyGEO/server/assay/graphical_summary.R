@@ -4,7 +4,7 @@ output$histograms_expression <- renderUI({
   if (!is.null(assay_in_view())) {
     plot_output_list <- lapply(1:ncol(assay_in_view()), function(i) {
       plotname <- make.names(colnames(assay_in_view())[i])
-      div(withSpinner(plotlyOutput(plotname, height = 500, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), div(icon("download"), "Download plot"), class = "expression_plot"))
+      div(withSpinner(plotlyOutput(plotname, height = 500, width = "auto"), type = 5), tertiary_button(paste0("expression_savePlot", i), div(icon("download"), "Download plot"), class = "expression_plot"))
     })   
     do.call(tagList, plot_output_list)
   }
@@ -21,7 +21,7 @@ observe({
 })
 
 observeEvent(input$last_btn_expression, {
-  assay_vals$plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_expression, "savePlot")))
+  assay_vals$plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_expression, "expression_savePlot")))
   showModal(
     modalDialog(
       sliderInput("expr_plot_width", label = "Image width (inches):", min = 1, max = 36, value = 6),

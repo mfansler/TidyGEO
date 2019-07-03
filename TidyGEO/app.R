@@ -134,7 +134,13 @@ ui <- dashboardPage(
       
       tabItem("all_data",
                sidebarLayout(
-                 sidebarPanel(),
+                 sidebarPanel(
+                   tabsetPanel(
+                     source(file.path("ui", "all_data", "filter_rows.R"), local = TRUE)$value,
+                     source(file.path("ui", "all_data", "join_dfs.R"), local = TRUE)$value#,
+                     #source(file.path("ui", "all_data", "save_data.R"), local = TRUE)$value
+                   )
+                 ),
                  mainPanel()
                )),
       # ** FAQ ---------------------------------------------------------------------
@@ -228,6 +234,7 @@ server <- function(input, output, session) {
       ft_default = data.frame("Please load a dataset"),
       id_col = "ID",
       prev_id = "ID",
+      plot_to_save = NULL,
       viewing_subset = c(2, 6)
     )
   
@@ -342,20 +349,29 @@ server <- function(input, output, session) {
     
   # ** assay data -----------------------------------------------------------------
 
-  # ** ** assay formatting --------------------------------------------------------
-  source(file.path("server", "assay", "side_panel.R"), local = TRUE)$value
+  # ** ** side panel --------------------------------------------------------------
+  #source(file.path("server", "assay", "side_panel.R"), local = TRUE)$value
   source(file.path("server", "assay", "format_data.R"), local = TRUE)$value
   source(file.path("server", "assay", "save_data.R"), local = TRUE)$value
 
-  # ** ** feature formatting ------------------------------------------------------
+  # ** ** main panel --------------------------------------------------------------
+  source(file.path("server", "assay", "display_data.R"), local = TRUE)$value
+  source(file.path("server", "assay", "graphical_summary.R"), local = TRUE)$value
+
+  
+  # ** feature data ---------------------------------------------------------------
+
+  # ** ** side panel --------------------------------------------------------------
   source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
   source(file.path("server", "feature", "save_data.R"), local = TRUE)$value
-  
+
   # ** ** main panel --------------------------------------------------------------
-  source(file.path("server", "assay", "display_data.R"), local = TRUE)$value
-  source(file.path("server", "assay", "graphical_summary.R"), local = TRUE)$value
+  source(file.path("server", "feature", "display_data.R"), local = TRUE)$value
+  source(file.path("server", "feature", "graphical_summary.R"), local = TRUE)$value
+  
+  
   
   
   # ** navigation --------------------------------------------------------------

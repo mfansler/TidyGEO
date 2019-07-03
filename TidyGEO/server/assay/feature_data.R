@@ -3,7 +3,7 @@
 
 
 observeEvent(input$expression_replace_id, {
-  if (is.null(feature_vals$feature_data)) {
+  if (!is.null(values$allData) && is.null(feature_vals$feature_data)) {
     get_feature_data()
   }
   showModal(

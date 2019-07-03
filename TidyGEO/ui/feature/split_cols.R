@@ -1,5 +1,29 @@
 tabPanel(title = icon("columns"), value = "4",
          h4("Splitting columns"),
-         hr(),
-         navigation_set("3", "4", "5", "feature_side_panel", "feature_side_panel")
-)
+         p('Sometimes a single column contains multiple values in each cell. This makes it more difficult to analyze the data.'),
+         p('If you see any columns in your data that contain multiple values in a column (e.g., "control;geneA;female" or "time 0, treatment1"), 
+           you can indicate that here and separate them.'),
+         #checkboxInput(inputId = "to_divide", label = div(tags$b("Modify columns with multiple values in one column"),
+         #                                                  help_link(id = "divide_help"))),
+         div(tags$b("Please select columns with multiple values in one column"),
+             help_link(id = "feature_divide_help")),
+         #conditionalPanel(condition = "input.to_divide == true",
+         checkboxInput(inputId = "feature_select_all_divide", 
+                       label = tags$i("Select all")),
+         uiOutput("feature_choose_cols_to_divide"),
+         textInput(inputId = "feature_divide_delimiter", label = "Delimiter (including any spaces): ", placeholder = "Start typing...")
+         #)
+         ,
+         checkboxInput("feature_split_cols_w_regex", div(
+           "Use regex",
+           actionLink(inputId = "feature_regex_help_split_cols", label = div(
+             tags$i("Help/testing"),
+             icon("question-circle")
+           ))
+         )), 
+         div(
+           primary_button(id = "feature_split_cols", label = div(icon("columns"), "Split columns")),
+           tipify(tertiary_button(id = "feature_undo_split_cols", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
+         ),
+         hr(), navigation_set("3", "4", "5", "feature_side_panel", "feature_side_panel")
+         )

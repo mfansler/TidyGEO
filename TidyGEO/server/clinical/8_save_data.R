@@ -21,7 +21,6 @@ output$clinical_evaluate_save <- downloadHandler(
     }
     else if (input$clinical_file_type == "JSON") {
       library(jsonlite)
-      #library(readr)
       
       myData %>% toJSON() %>% write_lines(file)
     }

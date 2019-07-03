@@ -16,7 +16,8 @@ observe({
       multiple = FALSE,
       maxItems = 5,
       maxOptions = 100,
-      placeholder = "Select a dataset or start typing..."
+      placeholder = "Select a dataset or start typing...",
+      closeAfterSelect = TRUE
     )
   )
   end_time <- Sys.time()
@@ -69,6 +70,9 @@ observeEvent(input$download_data_evaluate, {
   
   assay_vals$oFile <- clinical_vals$oFile
   assay_vals$download_chunk_len <- clinical_vals$download_chunk_len
+  
+  feature_vals$oFile <- clinical_vals$oFile
+  feature_vals$download_chunk_len <- clinical_vals$download_chunk_len
 })
 
 observe({
