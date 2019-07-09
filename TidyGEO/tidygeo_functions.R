@@ -1,9 +1,11 @@
-library(rdrop2)
+#library(rdrop2)
 library(readr)
 library(GEOquery)
 library(stringr)
 library(dplyr)
 library(tidyr)
+
+#user_functions <- read_lines("User/functions.R")
 
 # detects variable type & formats string to be written to R script --------
 

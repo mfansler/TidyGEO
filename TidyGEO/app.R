@@ -13,8 +13,10 @@ suppressPackageStartupMessages({
   source("tidygeo_functions.R")
 })
 
-source(file.path("server", "clinical", "helper_functions.R"), local = TRUE)$value
-source(file.path("server", "assay", "helper_functions.R"), local = TRUE)$value
+func_strings <- capture.output(source(file.path("server", "formatting_helper_functions.R"), local = TRUE, echo = TRUE)$value)
+browser()
+#source(file.path("server", "clinical", "helper_functions.R"), local = TRUE)$value
+#source(file.path("server", "assay", "helper_functions.R"), local = TRUE)$value
 
 start_time <- Sys.time()
 series_list <- read_feather("www/series_list.feather")
@@ -304,6 +306,7 @@ server <- function(input, output, session) {
   }
   
   observeEvent(input$top_level, {
+    print(getDefaultReactiveDomain())
     if (!is.null(values$allData)) {
       if (input$top_level == "clinical_data" && is.null(clinical_vals$clinical_data)) {
         get_clinical_data()
