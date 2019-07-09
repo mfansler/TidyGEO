@@ -156,11 +156,5 @@ observeEvent(input$evaluate_conflicts_feature, {
 })
 
 observeEvent(input$undo_shift_feature, {
-  feature_vals$feature_data <- feature_vals$last_feature
-  feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 
-                                                     start = 1, 
-                                                     forward_distance = 4, 
-                                                     previous_view = feature_vals$feature_data)
-  feature_vals$oFile <- removeFromScript(feature_vals$oFile, len = feature_vals$current_chunk_len)
-  feature_vals$current_chunk_len <- 0
+  undo_last_action_feature()
 })

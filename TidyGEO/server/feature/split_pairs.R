@@ -35,5 +35,5 @@ observeEvent(input$split_pairs_feature, ({
 }))
 
 observeEvent(input$undo_split_pairs, {
-  undo_last_action()
+  undo_last_action_feature()
 })

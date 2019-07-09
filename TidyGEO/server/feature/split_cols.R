@@ -33,5 +33,5 @@ observeEvent(input$feature_split_cols, ({
 }))
 
 observeEvent(input$feature_undo_split_cols, {
-  undo_last_action()
+  undo_last_action_feature()
 })
