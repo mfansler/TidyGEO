@@ -83,13 +83,21 @@ observeEvent(input$clinical_evaluate_exclude, {
                                     message = "Filtering rows")
     
     #WRITING COMMANDS TO R SCRIPT
-    before <- length(clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines(commentify("exclude undesired samples"), clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines(c(paste0("variable <- ", format_string(input$col_valsToExclude)),
-                                paste0("values <- ", format_string(to_exclude))), clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines("clinical_data <- excludeVars(clinical_data, variable, values)", 
-                              clinical_vals$oFile)
-    clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+    #before <- length(clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(commentify("exclude undesired samples"), clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(c(paste0("variable <- ", format_string(input$col_valsToExclude)),
+    #                            paste0("values <- ", format_string(to_exclude))), clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines("clinical_data <- excludeVars(clinical_data, variable, values)", 
+    #                          clinical_vals$oFile)
+    #clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+    
+    set_undo_point_script("clinical")
+    save_lines(commentify("exclude undesired samples"), "clinical", "body")
+    add_function("excludeVars", "clinical")
+    save_lines(c(paste0("variable <- ", format_string(input$col_valsToExclude)),
+                 paste0("values <- ", format_string(to_exclude))), "clinical", "body")
+    save_lines("clinical_data <- excludeVars(clinical_data, variable, values)", 
+                                     "clinical", "body")
   }
 })
 

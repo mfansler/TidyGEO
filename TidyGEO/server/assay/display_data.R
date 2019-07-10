@@ -64,12 +64,19 @@ observeEvent(input$expression_evaluate_filters, {
   #TODO: debug filtering when the data is transposed
   
   
-  before <- length(assay_vals$oFile)
-  assay_vals$oFile <- saveLines(c(commentify("filter data"),
-                                  paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
-                                  paste0("names(to_filter) <- ", 
-                                         format_string(colnames(assay_vals$assay_data)[assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2]]))), 
-                                  assay_vals$oFile)
+  #before <- length(assay_vals$oFile)
+  #assay_vals$oFile <- saveLines(c(commentify("filter data"),
+  #                                paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
+  #                                paste0("names(to_filter) <- ", 
+  #                                       format_string(colnames(assay_vals$assay_data)[assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2]]))), 
+  #                                assay_vals$oFile)
+  
+  set_undo_point("assay")
+  save_lines(c(commentify("filter data"),
+               paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
+               paste0("names(to_filter) <- ", 
+               format_string(colnames(assay_vals$assay_data)[assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2]]))), 
+             "assay", "body")
   
   
   
@@ -81,15 +88,18 @@ observeEvent(input$expression_evaluate_filters, {
   assay_vals$assay_data <- filterExpressionData(assay_vals$assay_data, to_filter)
   
   #WRITING COMMANDS TO EXPRESSION RSCRIPT
-  assay_vals$oFile <-
-    saveLines(
-      c(
-        "expressionData <- filterExpressionData(expressionData, to_filter)"
-      ),
-      assay_vals$oFile
-    )
+  #assay_vals$oFile <-
+  #  saveLines(
+  #    c(
+  #      "expressionData <- filterExpressionData(expressionData, to_filter)"
+  #    ),
+  #    assay_vals$oFile
+  #  )
+  #assay_vals$current_chunk_len <- length(assay_vals$oFile) - before
   
-  assay_vals$current_chunk_len <- length(assay_vals$oFile) - before
+  add_function("filterExpressionData", "assay")
+  save_lines(c("expressionData <- filterExpressionData(expressionData, to_filter)"),
+      "assay", "body")
   
   shinyjs::toggleState("undoEvalExpr", TRUE)
 })

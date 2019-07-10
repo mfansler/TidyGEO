@@ -31,14 +31,17 @@ observeEvent(input$feature_evaluate_filters, {
   #TODO: debug filtering when the data is transposed
   
   
-  before <- length(feature_vals$oFile)
-  feature_vals$oFile <- saveLines(c(commentify("filter data"),
-                                  paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
-                                  paste0("names(to_filter) <- ", format_string(colnames(feature_vals$data_to_display)))), 
-                                feature_vals$oFile)
+  #before <- length(feature_vals$oFile)
+  #feature_vals$oFile <- saveLines(c(commentify("filter data"),
+  #                                paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
+  #                                paste0("names(to_filter) <- ", format_string(colnames(feature_vals$data_to_display)))), 
+  #                              feature_vals$oFile)
   
-  
-  
+  set_undo_point_script("feature")
+  save_lines(c(commentify("filter data"),
+               paste0("to_filter <- ", format_string(input$exprPreview_search_columns)),
+               paste0("names(to_filter) <- ", format_string(colnames(feature_vals$data_to_display)))), 
+               "feature", "body")
   
   to_filter <- input$feature_preview_search_columns
   names(to_filter) <- colnames(feature_vals$data_to_display)
@@ -46,13 +49,15 @@ observeEvent(input$feature_evaluate_filters, {
   feature_vals$feature_data <- filterExpressionData(feature_vals$feature_data, to_filter)
   
   #WRITING COMMANDS TO EXPRESSION RSCRIPT
-  feature_vals$oFile <-
-    saveLines(
-      c(
-        "featureData <- filterExpressionData(featureData, to_filter)"
-      ),
-      feature_vals$oFile
-    )
+  #feature_vals$oFile <-
+  #  saveLines(
+  #    c(
+  #      "featureData <- filterExpressionData(featureData, to_filter)"
+  #    ),
+  #    feature_vals$oFile
+  #  )
+  add_function("filterExpressionData", "feature")
+  save_lines("featureData <- filterExpressionData(featureData, to_filter)", "feature", "body")
   
-  feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
+  #feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
 })

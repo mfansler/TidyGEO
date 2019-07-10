@@ -1,6 +1,188 @@
 in_app <- TRUE
 
+# Retrieve the platform information for a dataset -------------------------
+# Library dependencies: GEOquery
+# Function dependencies:
+get_platforms <- function(geoID, session = NULL) {
+  platforms <- NULL
+  status <- tryCatch({
+    GEO <- toupper(geoID)
+    stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
+    #browser()
+    platforms = GEOquery:::getDirListing(sprintf(gdsurl, stub, GEO))
+    "pass"
+  }, error = function(e) {
+    if (str_detect(paste0(e), "open\\.connection.*HTTP error 404.")) {
+      return("File not found. Please enter a valid ID.")
+    } else {
+      return(paste(e))
+    }
+  })
+  if (status != "pass" && !is.null(session)) {
+    createAlert(session, "alert", "fileError", title = "Error",
+                content = unlist(status), append = FALSE)
+  }
+  return(platforms)
+}
+
+# A helper function for getGEO --------------------------------------------
+# Library dependencies:
+# Function dependencies:
+getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE, 
+                                   parseCharacteristics = TRUE, platform = NULL) 
+{ # Please note: this function was copied from the GEOquery package. It was altered
+  # to only download one platform (rather than all the platforms) from GEO and to
+  # delete the temp file after downloading.
+  GEO <- toupper(GEO)
+  stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
+  if (is.null(platform)) {
+    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
+    b = getDirListing(sprintf(gdsurl, stub, GEO))
+    platform <- b[1]
+  }
+  incProgress()
+  destfile = file.path(destdir, platform)
+  if (file.exists(destfile)) {
+    message(sprintf("Using locally cached version: %s", 
+                    destfile))
+  }
+  else {
+    download.file(sprintf("https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/%s", 
+                          stub, GEO, platform), destfile = destfile, mode = "wb", 
+                  method = getOption("download.file.method.GEOquery"))
+  }
+  incProgress()
+  result <- GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
+                                      AnnotGPL = AnnotGPL, getGPL = getGPL)$eset
+  file.remove(destfile)
+  return(result)
+}
+
+# Get expressionSet object from GEO ---------------------------------------
+# Library dependencies:
+# Function dependencies:
+getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(), 
+                   GSElimits = NULL, GSEMatrix = TRUE, AnnotGPL = FALSE, getGPL = TRUE, 
+                   parseCharacteristics = TRUE, platform = NULL) 
+{ # Please note: this function was copied from the GEOquery package. It was altered
+  # to only download one platform (rather than all the platforms) from GEO and to
+  # delete the temp file after downloading.
+  con <- NULL
+  if (!is.null(GSElimits)) {
+    if (length(GSElimits) != 2) {
+      stop("GSElimits should be an integer vector of length 2, like (1,10) to include GSMs 1 through 10")
+    }
+  }
+  if (is.null(GEO) & is.null(filename)) {
+    stop("You must supply either a filename of a GEO file or a GEO accession")
+  }
+  incProgress()
+  if (is.null(filename)) {
+    GEO <- toupper(GEO)
+    geotype <- toupper(substr(GEO, 1, 3))
+    if (GSEMatrix & geotype == "GSE") {
+      return(getAndParseGSEMatrices(GEO, destdir, AnnotGPL = AnnotGPL, 
+                                    getGPL = getGPL, parseCharacteristics = parseCharacteristics, platform = platform))
+    }
+    filename <- getGEOfile(GEO, destdir = destdir, AnnotGPL = AnnotGPL)
+  }
+  ret <- parseGEO(filename, GSElimits, destdir, AnnotGPL = AnnotGPL, 
+                  getGPL = getGPL)
+  return(ret)
+}
+
+# Get expressionSet object for a given GSE and platform -------------------
+# Library dependencies:
+# Function dependencies:
+load_series <- function(geoID, platform, session = NULL) {
+  
+  #expressionSet <- loadRdsFromDropbox(geoID)
+  expressionSet <- NULL
+  
+  if (is.null(expressionSet)) {
+    status <- tryCatch({
+      if (!grepl("GSE", geoID, ignore.case = TRUE)) {
+        stop('Please enter an ID that begins with "GSE".', call. = FALSE)
+      }
+      #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
+      #browser()
+      incProgress()
+      expressionSet <- getGEO(geoID, platform = platform)
+      #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
+      "pass"
+    }, error = function(e){
+      if (grepl("open\\.connection", paste0(e))) {
+        return(paste0("Trouble establishing connection to GEO. Please try again later."))
+      }
+      else if (grepl("file\\.exists", paste0(e))) {
+        return(paste0("File not found. Please enter a valid ID."))
+      }
+      else {
+        return(paste(e))
+      }
+    }
+    )
+    incProgress()
+    if (!is.null(session)) {
+      if (status != "pass") {
+        title <- "Error"
+        content <- unlist(status)
+      } else {
+        title <- "Success!"
+        content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
+        to see the data."
+      }
+      createAlert(session, "alert", "fileError", title = title,
+                  content = content, append = FALSE)
+      }
+  }
+  
+  return(expressionSet)
+}
+
+# Check if a column is all numeric ----------------------------------------
+# Library dependencies:
+# Function dependencies:
+isAllNum <- function(metaData) {
+  #toEvaluate <- metaData[which(!is.na(metaData)),]
+  toEvaluate <- na.omit(unlist(metaData))
+  vals <- unique(toEvaluate)
+  temp <- suppressWarnings(as.numeric(as.character(toEvaluate)))
+  isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
+  return(isNum)
+}
+
+# Check if all values in a column are unique ------------------------------
+# Library dependencies:
+# Function dependencies:
+is_all_unique <- function(my_list) {
+  vals <- unique(my_list[which(!is.na(my_list))])
+  return(length(vals) == length(my_list))
+}
+
+# Check if all values in a column are identical ---------------------------
+# Library dependencies:
+# Function dependencies:
+is_all_identical <- function(my_list) {
+  vals <- unique(my_list[which(!is.na(my_list))])
+  return(length(vals) == 1)
+}
+
+# Replace empty strings with NA -------------------------------------------
+# Library dependencies:
+# Function dependencies
+replace_blank_cells <- function(values) {
+  if (any(str_detect(values, "^ *$"), na.rm = TRUE)) {
+    str_replace_all(values, "^ *$", NA_character_)
+  } else {
+    values
+  }
+}
+
 # Extract clinical data from expressionSet object -------------------------
+# Library dependencies:
+# Function dependencies
 process_clinical <- function(expressionSet, session = NULL) {
 
   if (in_app) incProgress(message = "Extracting data")
@@ -25,6 +207,8 @@ process_clinical <- function(expressionSet, session = NULL) {
 }
 
 # Mark which columns in the dataset are informative -----------------------
+# Library dependencies:
+# Function dependencies
 evaluate_cols_to_keep <- function(col, toFilter = list()) {
   functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
                     "url" = function(x) all(!grepl("(((https?)|(ftp)):\\/\\/)|www\\.", x)),
@@ -49,6 +233,8 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
 }
 
 # Drop columns from the data that are not informative ---------------------
+# Library dependencies:
+# Function dependencies
 filterUninformativeCols <- function(metaData, toFilter = list())
 {
   metaData <- metaData[!duplicated(as.list(metaData))]
@@ -68,6 +254,8 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 }
 
 # Split key-value pairs ---------------------------------------------------
+# Library dependencies:
+# Function dependencies
 extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
   
   if (is.null(colsToSplit) || delimiter == "") {
@@ -181,6 +369,8 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
 }
 
 # Split columns that have multiple values separated by a delimiter --------
+# Library dependencies:
+# Function dependencies:
 splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FALSE) {
   if (is.null(colsToDivide) || delimiter == "") {
     return(input_df)
@@ -249,6 +439,8 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
 }
 
 # Keep only the specified columns -----------------------------------------
+# Library dependencies:
+# Function dependencies
 filterCols <- function(metaData, varsToKeep) {
   if (length(varsToKeep) == 0) {
     return(NULL)
@@ -260,6 +452,8 @@ filterCols <- function(metaData, varsToKeep) {
 
 
 # Change a column name ----------------------------------------------------
+# Library dependencies:
+# Function dependencies
 renameCols <- function(metaData, old_name, new_name) {
   
   if (old_name %in% colnames(metaData)) {
@@ -269,6 +463,8 @@ renameCols <- function(metaData, old_name, new_name) {
 }
 
 # Replace values with different values, for one column --------------------
+# Library dependencies:
+# Function dependencies
 substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 {
   col_to_sub <- names(sub_specs) 
@@ -320,6 +516,8 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 }
 
 # Filter out (or keep only) rows that match the specifications ------------
+# Library dependencies:
+# Function dependencies
 excludeVars <- function(metaData, variable, to_exclude) {
   metaData <- cbind(ID = rownames(metaData), metaData)
   tryCatch({ #for debugging purposes, take out in final product
@@ -365,6 +563,8 @@ excludeVars <- function(metaData, variable, to_exclude) {
 
 
 # Move values into the correct column -------------------------------------
+# Library dependencies:
+# Function dependencies
 shift_cells <- function(data, col1, col2, conflicts = NULL) {
   results <- list()
   if (is.null(conflicts)) {

@@ -145,14 +145,23 @@ observeEvent(input$evaluate_conflicts_feature, {
                                                      previous_view = feature_vals$feature_data)
   
   #WRITING COMMANDS TO R SCRIPT
-  before <- length(feature_vals$oFile)
-  feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
-  feature_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
-                                          format_string(input$col_to_shift_feature), ", ",
-                                          format_string(input$destination_col_feature), ", ",
-                                          format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
-                                   feature_vals$oFile)
-  feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
+  #before <- length(feature_vals$oFile)
+  #feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
+  #feature_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
+  #                                        format_string(input$col_to_shift_feature), ", ",
+  #                                        format_string(input$destination_col_feature), ", ",
+  #                                        format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
+  #                                 feature_vals$oFile)
+  #feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
+  
+  set_undo_point_script("feature")
+  save_lines(commentify("shift cells"), "feature", "body")
+  add_function("shift_cells", "feature")
+  save_lines(paste0("featureData <- shift_cells(featureData, ", 
+                    format_string(input$col_to_shift_feature), ", ",
+                    format_string(input$destination_col_feature), ", ",
+                    format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
+             "feature", "end")
 })
 
 observeEvent(input$undo_shift_feature, {

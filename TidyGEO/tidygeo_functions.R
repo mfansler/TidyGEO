@@ -1,3 +1,7 @@
+
+# Load libraries ----------------------------------------------------------
+
+
 #library(rdrop2)
 library(readr)
 library(GEOquery)
@@ -5,11 +9,63 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 
-#user_functions <- read_lines("User/functions.R")
-
-# detects variable type & formats string to be written to R script --------
+# Version -----------------------------------------------------------------
 
 
+version <- suppressWarnings(readLines("VERSION"))
+
+# R Script writing --------------------------------------------------------
+
+
+# ** initialize scripts ---------------------------------------------------
+
+script_template <- list(
+  header = c(paste("# Script generated using version", version, 
+                   "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
+             "# application that allows scientists to quickly download and reformat data from",
+             "# the online repository Gene Expression Omnibus (GEO).",
+             "",
+             ""),
+  libraries = c(),
+  functions = c(),
+  body = c(),
+  end = c()
+)
+
+original_scripts <- list(
+  clinical = script_template,
+  assay = script_template,
+  feature = script_template
+)
+
+last_scripts <- list(
+  clinical = script_template,
+  assay = script_template,
+  feature = script_template
+)
+
+scripts <- list(
+  clinical = script_template,
+  assay = script_template,
+  feature = script_template
+)
+
+# ** helper functions -----------------------------------------------------
+func_strings <- capture.output(source(file.path("server", "formatting_helper_functions.R"), local = TRUE, echo = TRUE, max.deparse.length = Inf)$value)
+func_strings <- str_remove_all(func_strings, "\\+ |\\> ")
+section_indices <- which(str_detect(func_strings, "# .+-{3}"))
+func_names <- NULL
+func_lists <- lapply(1:(length(section_indices) - 1), function(i) {
+  this_section <- func_strings[section_indices[i]:(section_indices[i+1] - 1)]
+  search_str <-  " ?\\<\\- ?function\\(.*"
+  func_name <- str_remove(this_section[which(str_detect(this_section, search_str))], search_str)
+  func_names <<- c(func_names, func_name)
+  this_section
+  
+})
+names(func_lists) <- func_names
+
+# ** variable formatting --------------------------------------------------
 format_string <- function(element) {
   suppressWarnings(if (is.null(element)) {
     return("NULL")
@@ -33,9 +89,8 @@ format_string <- function(element) {
   return(element)
 }
 
-# creates section headings for R script -----------------------------------
 
-
+# ** section headings -----------------------------------------------------
 commentify <- function(message) {
   
   num_chars <- 75
@@ -44,12 +99,152 @@ commentify <- function(message) {
   c("", "", comment, "")
 }
 
+# ** storing lines in a variable ------------------------------------------
+#saveLines <- function(strings, oFile) {
+#  
+#  oFile <- c(oFile, strings)
+#  
+#  return(oFile)
+#}
+
+save_lines <- function(lines, datatype = c("clinical", "assay", "feature"), 
+                       section = c("header", "body", "end"), overwrite = F) {
+  if (length(datatype) > 1 || !datatype %in% c("clinical", "assay", "feature")) {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  } else if (length(section) > 1 || !section %in% c("header", "body", "end")) {
+    stop('Please specify a valid section ("header", "body", or "end")')
+  } else {
+    scripts[[datatype]][[section]] <<- if (overwrite) lines else c(scripts[[datatype]][[section]], lines)
+  }
+}
+
+add_library <- function(lib_name, datatype = c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    scripts[[datatype]][["libraries"]] <<- c(scripts[[datatype]][["libraries"]], lib_name)
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+format_library <- function(lib_name) {
+  c(
+    paste0("if (!suppressWarnings(require(", lib_name, ", quietly = TRUE))) {"),
+    paste0('  install.packages("', lib_name, '")'),
+    paste0("  library(", lib_name, ")"),
+    "}"
+  )
+}
+
+remove_library_if_exists <- function(lib_name, datatype) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    scripts[[datatype]][["libraries"]] <<- scripts[[datatype]][["libraries"]][scripts[[datatype]][["libraries"]] != lib_name]
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+add_function <- function(func_name, datatype = c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_name)
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+format_function <- function(func_name) {
+  func_lists[[func_name]]
+}
+
+# ** final script ---------------------------------------------------------
+#saveToRscript <- function(oFile, version,
+#                          filePath = file.path(tempdir(), "script_Temp.R"),
+#                          functions) {
+#  header <- c(paste("# Script generated using version", version, 
+#                    "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
+#              "# application that allows scientists to quickly download and reformat data from",
+#              "# the online repository Gene Expression Omnibus (GEO).")
+#  helper_functions <- 
+#    oFile <- c(header, helper_functions, oFile)
+#  
+#  sink(filePath)
+#  for (i in 1:length(oFile)) cat(oFile[i], fill = T)
+#  sink()
+#}
+
+save_to_rscript <- function(datatype = c("clinical", "asssay", "feature"), file_path = file.path(tempdir(), "script_temp.R")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    browser()
+    # format libraries
+    libs <- do.call("c", lapply(unique(scripts[[datatype]][["libraries"]]), format_library))
+    # format functions
+    funcs <- do.call("c", lapply(unique(scripts[[datatype]][["functions"]]), format_function))
+    # put all the sections together
+    whole_script <- c(
+      scripts[[datatype]][["header"]], 
+      libs, 
+      funcs, 
+      scripts[[datatype]][["body"]], 
+      scripts[[datatype]][["end"]]
+    )
+    # write script to file
+    sink(file_path)
+    for (i in 1:length(whole_script)) cat(whole_script[i], fill = T)
+    sink()
+    
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+# ** delete a chunk from the script ---------------------------------------
+#removeFromScript <- function(oFile, len, all = F) {
+#  length(oFile) <- if (all) len else length(oFile) - len
+#  return(oFile)
+#}
+
+undo_script <- function(datatype = c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    scripts[[datatype]] <- last_scripts[[datatype]]
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+reset_script <- function(datatype = c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    scripts[[datatype]] <- original_scripts[[datatype]]
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+set_undo_point_script <- function(datatype = c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    last_scripts[[datatype]] <- scripts[[datatype]]
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+set_reset_point_script <- function(datatype = c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+    original_scripts[[datatype]] <- scripts[[datatype]]
+  } else {
+    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+  }
+}
+
+# Graphing ----------------------------------------------------------------
+
+
+# ** histogram template ---------------------------------------------------
 base_histogram <- ggplot() +
   labs(x = "Values",
        y = "Frequency") +
   theme_bw(base_size = 18) +
   theme(plot.title = element_text(hjust = 0.5))
 
+# ** barplot template -----------------------------------------------------
 base_barplot <- ggplot() +
   labs(x = "Values",
        y = "Count") +
@@ -57,32 +252,59 @@ base_barplot <- ggplot() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         plot.title = element_text(hjust = 0.5))
 
-saveLines <- function(strings, oFile) {
-  
-  oFile <- c(oFile, strings)
-  
-  return(oFile)
+
+# ** create labels for barplot --------------------------------------------
+#shortens values that are too many characters to use as graph labels
+shorten_labels <- function(label, max_char) {
+  if (is.na(label)) {
+    "NA"
+  } else if (nchar(label) > max_char) {
+    paste0(substr(label, 1, max_char), "...")
+  } else {
+    label
+  }
 }
 
-saveToRscript <- function(oFile, version,
-                          filePath = file.path(tempdir(), "script_Temp.R"), 
-                          functions_path = 'User/clinical_helper_functions.R') {
-  header <- c(paste("# Script generated using version", version, 
-        "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
-  "# application that allows scientists to quickly download and reformat data from",
-  "# the online repository Gene Expression Omnibus (GEO).")
-  helper_functions <- read_lines(functions_path)
-  oFile <- c(header, helper_functions, oFile)
+# ** create plot to display -----------------------------------------------
+create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
-  sink(filePath)
-  for (i in 1:length(oFile)) cat(oFile[i], fill = T)
-  sink()
+  if (is_numeric) {
+    p <- base_histogram + 
+      geom_histogram(data = data.frame(value = as.numeric(as.character(value))), aes(x = value),
+                     fill = plot_color, bins = plot_binwidth) +
+      ggtitle(title)
+  }
+  else {
+    p <- base_barplot +
+      geom_bar(data = as.data.frame(table(value, useNA = "ifany")), aes(x = value, y = Freq), 
+               stat = "identity", fill = plot_color) +
+      ggtitle(title) +
+      scale_x_discrete(labels = sapply(unique(as.character(value)), shorten_labels, 10))
+  }
+  ggplotly(p) %>% config(displayModeBar = F)
 }
 
-removeFromScript <- function(oFile, len, all = F) {
-  length(oFile) <- if (all) len else length(oFile) - len
-  return(oFile)
+# ** create plot to download ----------------------------------------------
+create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
+  
+  if (is_numeric) {
+    base_histogram + 
+      geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                     binwidth = plot_binwidth, fill = plot_color) +
+      ggtitle(title)
+  }
+  else {
+    base_barplot +
+      geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
+               stat = "identity", fill = plot_color) +
+      ggtitle(title) +
+      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
+  }
 }
+
+
+# Deprecated functions ----------------------------------------------------
+
 
 saveDataRDS <- function(data, fileName) {
   token <- readRDS("droptoken.rds")
@@ -110,199 +332,5 @@ loadRdsFromDropbox <- function(geoID) {
   return(NULL)
 }
 
-getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(), 
-                    GSElimits = NULL, GSEMatrix = TRUE, AnnotGPL = FALSE, getGPL = TRUE, 
-                    parseCharacteristics = TRUE, platform = NULL) 
-{
-  con <- NULL
-  if (!is.null(GSElimits)) {
-    if (length(GSElimits) != 2) {
-      stop("GSElimits should be an integer vector of length 2, like (1,10) to include GSMs 1 through 10")
-    }
-  }
-  if (is.null(GEO) & is.null(filename)) {
-    stop("You must supply either a filename of a GEO file or a GEO accession")
-  }
-  incProgress()
-  if (is.null(filename)) {
-    GEO <- toupper(GEO)
-    geotype <- toupper(substr(GEO, 1, 3))
-    if (GSEMatrix & geotype == "GSE") {
-      return(getAndParseGSEMatrices(GEO, destdir, AnnotGPL = AnnotGPL, 
-                                    getGPL = getGPL, parseCharacteristics = parseCharacteristics, platform = platform))
-    }
-    filename <- getGEOfile(GEO, destdir = destdir, AnnotGPL = AnnotGPL)
-  }
-  ret <- parseGEO(filename, GSElimits, destdir, AnnotGPL = AnnotGPL, 
-                  getGPL = getGPL)
-  return(ret)
-}
-getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE, 
-                                    parseCharacteristics = TRUE, platform = NULL) 
-{
-  GEO <- toupper(GEO)
-  stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
-  if (is.null(platform)) {
-    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
-    b = getDirListing(sprintf(gdsurl, stub, GEO))
-    platform <- b[1]
-  }
-  incProgress()
-  destfile = file.path(destdir, platform)
-  if (file.exists(destfile)) {
-    message(sprintf("Using locally cached version: %s", 
-                    destfile))
-  }
-  else {
-    download.file(sprintf("https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/%s", 
-                          stub, GEO, platform), destfile = destfile, mode = "wb", 
-                  method = getOption("download.file.method.GEOquery"))
-  }
-  incProgress()
-  result <- GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
-                                      AnnotGPL = AnnotGPL, getGPL = getGPL)$eset
-  file.remove(destfile)
-  return(result)
-}
 
-get_platforms <- function(geoID, session = NULL) {
-  platforms <- NULL
-  status <- tryCatch({
-    GEO <- toupper(geoID)
-    stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
-    gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
-    #browser()
-    platforms = GEOquery:::getDirListing(sprintf(gdsurl, stub, GEO))
-    "pass"
-  }, error = function(e) {
-    if (str_detect(paste0(e), "open\\.connection.*HTTP error 404.")) {
-      return("File not found. Please enter a valid ID.")
-    } else {
-      return(paste(e))
-    }
-  })
-  if (status != "pass" && !is.null(session)) {
-    createAlert(session, "alert", "fileError", title = "Error",
-                content = unlist(status), append = FALSE)
-  }
-  return(platforms)
-}
 
-load_series <- function(geoID, platform, session = NULL) {
-  
-  #expressionSet <- loadRdsFromDropbox(geoID)
-  expressionSet <- NULL
-  
-  if (is.null(expressionSet)) {
-    status <- tryCatch({
-      if (!grepl("GSE", geoID, ignore.case = TRUE)) {
-        stop('Please enter an ID that begins with "GSE".', call. = FALSE)
-      }
-      #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
-      #browser()
-      incProgress()
-      expressionSet <- getGEO(geoID, platform = platform)
-      #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
-      "pass"
-    }, error = function(e){
-        if (grepl("open\\.connection", paste0(e))) {
-          return(paste0("Trouble establishing connection to GEO. Please try again later."))
-        }
-        else if (grepl("file\\.exists", paste0(e))) {
-          return(paste0("File not found. Please enter a valid ID."))
-        }
-        else {
-          return(paste(e))
-        }
-      }
-    )
-    incProgress()
-    if (!is.null(session)) {
-      if (status != "pass") {
-        title <- "Error"
-        content <- unlist(status)
-      } else {
-        title <- "Success!"
-        content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
-        to see the data."
-      }
-    createAlert(session, "alert", "fileError", title = title,
-                content = content, append = FALSE)
-    }
-  }
-  
-  return(expressionSet)
-}
-
-isAllNum <- function(metaData) {
-  #toEvaluate <- metaData[which(!is.na(metaData)),]
-  toEvaluate <- na.omit(unlist(metaData))
-  vals <- unique(toEvaluate)
-  temp <- suppressWarnings(as.numeric(as.character(toEvaluate)))
-  isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
-  return(isNum)
-}
-
-is_all_unique <- function(my_list) {
-  vals <- unique(my_list[which(!is.na(my_list))])
-  return(length(vals) == length(my_list))
-}
-
-is_all_identical <- function(my_list) {
-  vals <- unique(my_list[which(!is.na(my_list))])
-  return(length(vals) == 1)
-}
-
-replace_blank_cells <- function(values) {
-  if (any(str_detect(values, "^ *$"), na.rm = TRUE)) {
-    str_replace_all(values, "^ *$", NA_character_)
-  } else {
-    values
-  }
-}
-
-#shortens values that are too many characters to use as graph labels
-shorten_labels <- function(label, max_char) {
-  if (is.na(label)) {
-    "NA"
-  } else if (nchar(label) > max_char) {
-    paste0(substr(label, 1, max_char), "...")
-  } else {
-    label
-  }
-}
-
-create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FALSE) {
-  
-  if (is_numeric) {
-    p <- base_histogram + 
-      geom_histogram(data = data.frame(value = as.numeric(as.character(value))), aes(x = value),
-                     fill = plot_color, bins = plot_binwidth) +
-      ggtitle(title)
-  }
-  else {
-    p <- base_barplot +
-      geom_bar(data = as.data.frame(table(value, useNA = "ifany")), aes(x = value, y = Freq), 
-               stat = "identity", fill = plot_color) +
-      ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(value)), shorten_labels, 10))
-  }
-  ggplotly(p) %>% config(displayModeBar = F)
-}
-
-create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
-  
-  if (is_numeric) {
-    base_histogram + 
-      geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
-                     binwidth = plot_binwidth, fill = plot_color) +
-      ggtitle(title)
-  }
-  else {
-    base_barplot +
-      geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
-               stat = "identity", fill = plot_color) +
-      ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
-  }
-}

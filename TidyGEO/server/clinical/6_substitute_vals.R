@@ -76,19 +76,32 @@ observeEvent(input$evaluate_subs, {
                                   message = "Substituting values")
   
   #WRITING COMMANDS TO R SCRIPT
-  before <- length(clinical_vals$oFile)
-  clinical_vals$oFile <- saveLines(commentify("substitute values"), clinical_vals$oFile)
-  clinical_vals$oFile <- saveLines(paste0("sub_specs <- list()"), clinical_vals$oFile)
-  #for (i in 1:length(values$tablesList)) {
-  clinical_vals$oFile <- saveLines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
-                                   "data.frame(", colnames(clinical_vals$subs_input)[1], "=c(", 
-                                   paste(format_string(as.character(clinical_vals$subs_input[,1])), collapse = ", "), "), ",
-                                   colnames(clinical_vals$subs_input)[2], "=c(", 
-                                   paste(format_string(as.character(clinical_vals$subs_input[,2])), collapse = ", "), "))"), clinical_vals$oFile)
-  #}
-  clinical_vals$oFile <- saveLines("clinical_data <- substitute_vals(clinical_data, sub_specs)", 
-                            clinical_vals$oFile)
-  clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+  #before <- length(clinical_vals$oFile)
+  #clinical_vals$oFile <- saveLines(commentify("substitute values"), clinical_vals$oFile)
+  #clinical_vals$oFile <- saveLines(paste0("sub_specs <- list()"), clinical_vals$oFile)
+  ##for (i in 1:length(values$tablesList)) {
+  #clinical_vals$oFile <- saveLines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
+  #                                 "data.frame(", colnames(clinical_vals$subs_input)[1], "=c(", 
+  #                                 paste(format_string(as.character(clinical_vals$subs_input[,1])), collapse = ", "), "), ",
+  #                                 colnames(clinical_vals$subs_input)[2], "=c(", 
+  #                                 paste(format_string(as.character(clinical_vals$subs_input[,2])), collapse = ", "), "))"), clinical_vals$oFile)
+  ##}
+  #clinical_vals$oFile <- saveLines("clinical_data <- substitute_vals(clinical_data, sub_specs)", 
+  #                          clinical_vals$oFile)
+  #clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+  
+  set_undo_point_script("clinical")
+  save_lines(commentify("substitute values"), "clinical", "body")
+  add_function("substitute_vals", "clinical")
+  save_lines(paste0("sub_specs <- list()"), "clinical", "body")
+  save_lines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
+                                          "data.frame(", colnames(clinical_vals$subs_input)[1], "=c(", 
+                                          paste(format_string(as.character(clinical_vals$subs_input[,1])), collapse = ", "), "), ",
+                                          colnames(clinical_vals$subs_input)[2], "=c(", 
+                                          paste(format_string(as.character(clinical_vals$subs_input[,2])), collapse = ", "), "))"), 
+             "clinical", "body")
+  save_lines("clinical_data <- substitute_vals(clinical_data, sub_specs)", 
+                                   "clinical", "body")
   
   #values$tablesList <- list()
   clinical_vals$subs_display <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)

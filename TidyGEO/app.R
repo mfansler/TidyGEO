@@ -13,8 +13,7 @@ suppressPackageStartupMessages({
   source("tidygeo_functions.R")
 })
 
-func_strings <- capture.output(source(file.path("server", "formatting_helper_functions.R"), local = TRUE, echo = TRUE)$value)
-browser()
+
 #source(file.path("server", "clinical", "helper_functions.R"), local = TRUE)$value
 #source(file.path("server", "assay", "helper_functions.R"), local = TRUE)$value
 
@@ -23,8 +22,6 @@ series_list <- read_feather("www/series_list.feather")
 platform_list <- read_feather("www/platform_list.feather")
 end_time <- Sys.time()
 print(paste("Reading files", end_time - start_time))
-
-version <- suppressWarnings(readLines("VERSION"))
 
 # colored buttons of different types --------------------------------------
 
@@ -201,9 +198,9 @@ server <- function(input, output, session) {
         New_Val = "",
         stringsAsFactors = FALSE
       ),
-      oFile = commentify(" "),
-      download_chunk_len = 0,
-      current_chunk_len = 0,
+      #oFile = commentify(" "),
+      #download_chunk_len = 0,
+      #current_chunk_len = 0,
       plot_to_save = NULL,
       shift_results = list()
     )
@@ -214,9 +211,9 @@ server <- function(input, output, session) {
       orig_data = NULL,
       assay_data = NULL,
       last_data = NULL,
-      oFile = commentify(" "),
-      download_chunk_len = 0,
-      current_chunk_len = 0,
+      #oFile = commentify(" "),
+      #download_chunk_len = 0,
+      #current_chunk_len = 0,
       id_col = "ID",
       prev_id = "ID",
       plot_to_save = NULL,
@@ -230,8 +227,8 @@ server <- function(input, output, session) {
       feature_data = NULL,
       shift_results = NULL,
       last_feature = NULL,
-      oFile = commentify(" "),
-      current_chunk_len = 0,
+      #oFile = commentify(" "),
+      #current_chunk_len = 0,
       orig_feature = NULL,
       ft_default = data.frame("Please load a dataset"),
       id_col = "ID",
@@ -248,9 +245,14 @@ server <- function(input, output, session) {
     clinical_vals$clinical_data <- withProgress(process_clinical(values$allData, session))
     
     #WRITING COMMANDS TO R SCRIPT
-    clinical_vals$oFile <- saveLines(commentify("extract clinical data"), clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines("clinical_data <- process_clinical(series_data)", clinical_vals$oFile)
-    clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(commentify("extract clinical data"), clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines("clinical_data <- process_clinical(series_data)", clinical_vals$oFile)
+    #clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
+    
+    save_lines(commentify("extract clinical data"), "clinical", "body")
+    save_lines("clinical_data <- process_clinical(series_data)", "clinical", "body")
+    set_reset_point_script("clinical")
+    
   }
   
   get_assay_data <- function() {
@@ -274,12 +276,18 @@ server <- function(input, output, session) {
       assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
       
       #WRITING COMMANDS TO R SCRIPT
-      assay_vals$oFile <- saveLines(commentify("extract expression data"), assay_vals$oFile)
-      assay_vals$oFile <- saveLines(c("extracted_data <- process_expression(series_data)",
-                                      "expressionData <- extracted_data[['expressionData']]"), 
-                                    assay_vals$oFile)
+      #assay_vals$oFile <- saveLines(commentify("extract expression data"), assay_vals$oFile)
+      #assay_vals$oFile <- saveLines(c("extracted_data <- process_expression(series_data)",
+      #                                "expressionData <- extracted_data[['expressionData']]"), 
+      #                              assay_vals$oFile)
       
-      assay_vals$download_chunk_len <- length(assay_vals$oFile)
+      #assay_vals$download_chunk_len <- length(assay_vals$oFile)
+      
+      save_lines(commentify("extract expression data"), "assay", "body")
+      save_lines(c("extracted_data <- process_expression(series_data)",
+                                      "expressionData <- extracted_data[['expressionData']]"), 
+                                    "assay", "body")
+      set_reset_point_script("assay")
     }
     rm(extracted_data)
     shinyjs::toggleState("undoEvalExpr", FALSE)
@@ -299,14 +307,19 @@ server <- function(input, output, session) {
       
       feature_vals$viewing_subset <- c(2, min(6, ncol(feature_vals$feature_data)))
       
-      feature_vals$oFile <- saveLines(commentify("extract feature data"), feature_vals$oFile)
-      feature_vals$oFile <- saveLines(c("featureData <- process_feature(series_data)"), 
-                                      assay_vals$oFile)
+      #WRITING COMMANDS TO R SCRIPT
+      #feature_vals$oFile <- saveLines(commentify("extract feature data"), feature_vals$oFile)
+      #feature_vals$oFile <- saveLines(c("featureData <- process_feature(series_data)"), 
+      #                                assay_vals$oFile)
+      
+      save_lines(commentify("extract feature data"), "feature", "body")
+      save_lines(c("featureData <- process_feature(series_data)"), 
+                                      "feature", "body")
+      set_reset_point_script("feature")
     }
   }
   
   observeEvent(input$top_level, {
-    print(getDefaultReactiveDomain())
     if (!is.null(values$allData)) {
       if (input$top_level == "clinical_data" && is.null(clinical_vals$clinical_data)) {
         get_clinical_data()
@@ -324,15 +337,17 @@ server <- function(input, output, session) {
   # ** ** reset ----------------------------------------------------------------
   observeEvent(input$reset, {
     clinical_vals$clinical_data <- clinical_vals$orig_data
-    clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$download_chunk_len, all = T)
-    clinical_vals$current_chunk_len <- 0
+    reset_script("clinical")
+    #clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$download_chunk_len, all = T)
+    #clinical_vals$current_chunk_len <- 0
   })  
   
   # ** ** undo --------------------------------------------------------------------
   undo_last_action <- function() {
     clinical_vals$clinical_data <- clinical_vals$last_data
-    clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$current_chunk_len)
-    clinical_vals$current_chunk_len <- 0
+    undo_script("clinical")
+    #clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$current_chunk_len)
+    #clinical_vals$current_chunk_len <- 0
   }
 
   # ** ** side panel --------------------------------------------------------------

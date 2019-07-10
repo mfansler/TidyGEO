@@ -60,29 +60,47 @@ output$feature_downloadRscript <- downloadHandler(
   },
   content = function(file) {
     #WRITING COMMANDS TO R SCRIPT
-    before <- length(feature_vals$oFile)
-    feature_vals$oFile <- saveLines(commentify("save feature data"), feature_vals$oFile)
-    feature_vals$oFile <- saveLines(paste0("file <- ", format_string(input$feature_userFileName)), feature_vals$oFile)
+    #before <- length(feature_vals$oFile)
+    #feature_vals$oFile <- saveLines(commentify("save feature data"), feature_vals$oFile)
+    #feature_vals$oFile <- saveLines(paste0("file <- ", format_string(input$feature_userFileName)), feature_vals$oFile)
+    
+    for (lib_to_remove in c("jsonlite", "readr", "xlsx")) {
+      remove_library_if_exists(lib_to_remove, "feature")
+    }
+    save_lines(commentify("save feature data"), "feature", "end", overwrite = TRUE)
+    save_lines(paste0("file <- ", format_string(input$feature_userFileName)), "feature", "end")
     
     if (input$feature_fileType == "csv") {
-      feature_vals$oFile <- saveLines(paste0("write.csv(featureData, file, row.names = FALSE)"), feature_vals$oFile)
+      #feature_vals$oFile <- saveLines(paste0("write.csv(featureData, file, row.names = FALSE)"), feature_vals$oFile)
+      save_lines(paste0("write.csv(featureData, file, row.names = FALSE)"), "feature", "end")
     }
     else if (input$feature_fileType == "tsv") {
-      feature_vals$oFile <- saveLines("write.table(featureData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
-                                    feature_vals$oFile)
+      #feature_vals$oFile <- saveLines("write.table(featureData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+      #                              feature_vals$oFile)
+      save_lines("write.table(featureData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
+                 "feature", "end")
     }
     else if (input$feature_fileType == "JSON") {
-      feature_vals$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
-                                      "featureData %>% toJSON() %>% write_lines(file)"), 
-                                    feature_vals$oFile)
+      #feature_vals$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
+      #                                "featureData %>% toJSON() %>% write_lines(file)"), 
+      #                              feature_vals$oFile)
+      add_library("jsonlite", "feature")
+      add_library("readr", "feature")
+      save_lines("featureData %>% toJSON() %>% write_lines(file)", 
+                                      "feature", "end")
     }
     else if (input$feature_fileType == "xlsx") {
-      feature_vals$oFile <- saveLines(c("library(xlsx)", "write.xlsx(featureData, file, row.names = FALSE, showNA = FALSE)"), 
-                                    feature_vals$oFile)
+      #feature_vals$oFile <- saveLines(c("library(xlsx)", "write.xlsx(featureData, file, row.names = FALSE, showNA = FALSE)"), 
+      #                              feature_vals$oFile)
+      add_library("xlsx")
+      save_lines("write.xlsx(featureData, file, row.names = FALSE, showNA = FALSE)", 
+                 "feature", "end")
     }
     
-    saveToRscript(feature_vals$oFile, version, file, 'User/assay_helper_functions.R')
+    #saveToRscript(feature_vals$oFile, version, file, 'User/assay_helper_functions.R')
     
-    feature_vals$current_chunk_len <- feature_vals$current_chunk_len + (length(feature_vals$oFile) - before)
+    #feature_vals$current_chunk_len <- feature_vals$current_chunk_len + (length(feature_vals$oFile) - before)
+    
+    save_to_rscript("feature", file)
   }
 )

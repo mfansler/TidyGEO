@@ -16,10 +16,17 @@ observeEvent(input$rename, ({
   
   
     #WRITING COMMANDS TO R SCRIPT
-    before <- length(clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines(commentify("rename column"), clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines(paste0("clinical_data <- renameCols(clinical_data, ", format_string(input$colsToRename), ", ", format_string(input$rename_new_name), ")"), clinical_vals$oFile)
-    clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+    #before <- length(clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(commentify("rename column"), clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(paste0("clinical_data <- renameCols(clinical_data, ", format_string(input$colsToRename), ", ", format_string(input$rename_new_name), ")"), clinical_vals$oFile)
+    #clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+    
+    set_undo_point_script("clinical")
+    save_lines(commentify("rename column"), "clinical", "body")
+    add_function("renameCols")
+    save_lines(paste0("clinical_data <- renameCols(clinical_data, ", 
+                      format_string(input$colsToRename), ", ", 
+                      format_string(input$rename_new_name), ")"), "clinical", "body")
   } else {
     showModal(
       modalDialog(

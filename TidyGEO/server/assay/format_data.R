@@ -16,7 +16,7 @@ observeEvent(input$expression_transpose, {
   if (!is.null(assay_vals$assay_data)) {
     assay_vals$last_data <- assay_vals$assay_data
     
-    before <- length(assay_vals$oFile)
+    #before <- length(assay_vals$oFile)
     
     assay_vals$assay_data <- withProgress(message = "Transposing the data", 
                                      quickTranspose(assay_vals$assay_data))
@@ -25,15 +25,20 @@ observeEvent(input$expression_transpose, {
     assay_vals$id_col <- "colnames"
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
-    assay_vals$oFile <- saveLines(c(commentify("transpose data"), 
-                                           "expressionData <- quickTranspose(expressionData)"), 
-                                         assay_vals$oFile)
+    #assay_vals$oFile <- saveLines(c(commentify("transpose data"), 
+    #                                       "expressionData <- quickTranspose(expressionData)"), 
+    #                                     assay_vals$oFile)
+    set_undo_point_script("assay")
+    add_function("quickTranspose", "assay")
+    save_lines(c(commentify("transpose data"), 
+                 "expressionData <- quickTranspose(expressionData)"), 
+               "assay", "body")
     
     assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
                                                    start = 1, 
                                                    forward_distance = 5, 
                                                    previous_view = assay_vals$assay_data)
-    after <- length(assay_vals$oFile)
+    #after <- length(assay_vals$oFile)
     
     assay_vals$current_chunk_len <- after - before
     assay_vals$disable_btns <- TRUE

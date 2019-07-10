@@ -109,12 +109,19 @@ observeEvent(input$evaluate_shift, {
     clinical_vals$clinical_data <- clinical_vals$shift_results[["result"]]
     
     #WRITING COMMANDS TO R SCRIPT
-    before <- length(clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines(commentify("shift cells"), clinical_vals$oFile)
-    clinical_vals$oFile <- saveLines(paste0("clinical_data <- shift_cells(clinical_data, ", 
+    #before <- length(clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(commentify("shift cells"), clinical_vals$oFile)
+    #clinical_vals$oFile <- saveLines(paste0("clinical_data <- shift_cells(clinical_data, ", 
+    #                                        format_string(input$col_to_shift), ", ",
+    #                                        format_string(input$destination_col), ")"), clinical_vals$oFile)
+    #clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+    
+    set_undo_point_script("clinical")
+    save_lines(commentify("shift cells"), "clinical", "body")
+    add_function("shift_cells", "clinical")
+    save_lines(paste0("clinical_data <- shift_cells(clinical_data, ", 
                                             format_string(input$col_to_shift), ", ",
-                                            format_string(input$destination_col), ")"), clinical_vals$oFile)
-    clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+                                            format_string(input$destination_col), ")"), "clinical", "body")
   }
 })
 
@@ -130,14 +137,23 @@ observeEvent(input$evaluate_conflicts, {
   clinical_vals$clinical_data <- results[["result"]]
   
   #WRITING COMMANDS TO R SCRIPT
-  before <- length(clinical_vals$oFile)
-  clinical_vals$oFile <- saveLines(commentify("shift cells"), clinical_vals$oFile)
-  clinical_vals$oFile <- saveLines(paste0("clinical_data <- shift_cells(clinical_data, ", 
+  #before <- length(clinical_vals$oFile)
+  #clinical_vals$oFile <- saveLines(commentify("shift cells"), clinical_vals$oFile)
+  #clinical_vals$oFile <- saveLines(paste0("clinical_data <- shift_cells(clinical_data, ", 
+  #                                        format_string(input$col_to_shift), ", ",
+  #                                        format_string(input$destination_col), ", ",
+  #                                        format_string(if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option), ")"), 
+  #                                 clinical_vals$oFile)
+  #clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+  
+  set_undo_point_script("clinical")
+  save_lines(commentify("shift cells"), "clinical", "body")
+  add_function("shift_cells", "clinical")
+  save_lines(paste0("clinical_data <- shift_cells(clinical_data, ", 
                                           format_string(input$col_to_shift), ", ",
                                           format_string(input$destination_col), ", ",
                                           format_string(if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option), ")"), 
-                                   clinical_vals$oFile)
-  clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
+                                   "clinical", "body")
 })
 
 observeEvent(input$undo_shift, {
