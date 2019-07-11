@@ -2,7 +2,6 @@
 # Load libraries ----------------------------------------------------------
 
 
-#library(rdrop2)
 library(readr)
 library(GEOquery)
 library(stringr)
@@ -51,19 +50,7 @@ scripts <- list(
 )
 
 # ** helper functions -----------------------------------------------------
-func_strings <- capture.output(source(file.path("server", "formatting_helper_functions.R"), local = TRUE, echo = TRUE, max.deparse.length = Inf)$value)
-func_strings <- str_remove_all(func_strings, "\\+ |\\> ")
-section_indices <- which(str_detect(func_strings, "# .+-{3}"))
-func_names <- NULL
-func_lists <- lapply(1:(length(section_indices) - 1), function(i) {
-  this_section <- func_strings[section_indices[i]:(section_indices[i+1] - 1)]
-  search_str <-  " ?\\<\\- ?function\\(.*"
-  func_name <- str_remove(this_section[which(str_detect(this_section, search_str))], search_str)
-  func_names <<- c(func_names, func_name)
-  this_section
-  
-})
-names(func_lists) <- func_names
+func_lists <- readRDS("User/rscript_functions.rds")
 
 # ** variable formatting --------------------------------------------------
 format_string <- function(element) {
@@ -146,13 +133,19 @@ remove_library_if_exists <- function(lib_name, datatype) {
 add_function <- function(func_name, datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
     scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_name)
+    if (!is.na(func_lists[[func_name]][["lib_dependencies"]])) {
+      add_library(func_lists[[func_name]][["lib_dependencies"]], datatype)
+    }
+    if (!is.na(func_lists[[func_name]][["func_dependencies"]])) {
+      scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_lists[[func_name]][["func_dependencies"]])
+    }
   } else {
     stop('Please specify a valid data type ("clinical", "assay", or "feature")')
   }
 }
 
 format_function <- function(func_name) {
-  func_lists[[func_name]]
+  func_lists[[func_name]][["func_text"]]
 }
 
 # ** final script ---------------------------------------------------------
@@ -173,7 +166,6 @@ format_function <- function(func_name) {
 
 save_to_rscript <- function(datatype = c("clinical", "asssay", "feature"), file_path = file.path(tempdir(), "script_temp.R")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
-    browser()
     # format libraries
     libs <- do.call("c", lapply(unique(scripts[[datatype]][["libraries"]]), format_library))
     # format functions
@@ -181,7 +173,9 @@ save_to_rscript <- function(datatype = c("clinical", "asssay", "feature"), file_
     # put all the sections together
     whole_script <- c(
       scripts[[datatype]][["header"]], 
-      libs, 
+      libs,
+      "in_app <- FALSE",
+      "",
       funcs, 
       scripts[[datatype]][["body"]], 
       scripts[[datatype]][["end"]]
@@ -204,7 +198,7 @@ save_to_rscript <- function(datatype = c("clinical", "asssay", "feature"), file_
 
 undo_script <- function(datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
-    scripts[[datatype]] <- last_scripts[[datatype]]
+    scripts[[datatype]] <<- last_scripts[[datatype]]
   } else {
     stop('Please specify a valid data type ("clinical", "assay", or "feature")')
   }
@@ -212,7 +206,7 @@ undo_script <- function(datatype = c("clinical", "assay", "feature")) {
 
 reset_script <- function(datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
-    scripts[[datatype]] <- original_scripts[[datatype]]
+    scripts[[datatype]] <<- original_scripts[[datatype]]
   } else {
     stop('Please specify a valid data type ("clinical", "assay", or "feature")')
   }
@@ -220,7 +214,7 @@ reset_script <- function(datatype = c("clinical", "assay", "feature")) {
 
 set_undo_point_script <- function(datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
-    last_scripts[[datatype]] <- scripts[[datatype]]
+    last_scripts[[datatype]] <<- scripts[[datatype]]
   } else {
     stop('Please specify a valid data type ("clinical", "assay", or "feature")')
   }
@@ -228,7 +222,7 @@ set_undo_point_script <- function(datatype = c("clinical", "assay", "feature")) 
 
 set_reset_point_script <- function(datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
-    original_scripts[[datatype]] <- scripts[[datatype]]
+    original_scripts[[datatype]] <<- scripts[[datatype]]
   } else {
     stop('Please specify a valid data type ("clinical", "assay", or "feature")')
   }

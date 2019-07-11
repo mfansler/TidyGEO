@@ -34,15 +34,15 @@ observeEvent(input$expression_transpose, {
                  "expressionData <- quickTranspose(expressionData)"), 
                "assay", "body")
     
-    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
-                                                   start = 1, 
-                                                   forward_distance = 5, 
-                                                   previous_view = assay_vals$assay_data)
+    #assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
+    #                                               start = 1, 
+    #                                               forward_distance = 5, 
+    #                                               previous_view = assay_vals$assay_data)
     #after <- length(assay_vals$oFile)
     
-    assay_vals$current_chunk_len <- after - before
+    #assay_vals$current_chunk_len <- after - before
     assay_vals$disable_btns <- TRUE
-    shinyjs::toggleState("undoEvalExpr", TRUE)
+    shinyjs::enable("undoEvalExpr")
   }
 })
 
@@ -61,18 +61,20 @@ observeEvent(input$undoEvalExpr, {
   if (!is.null(assay_vals$assay_data)) {
     
     #if replaceID is in the last chunk, then enable the button again
-    file_len <- length(assay_vals$oFile)
-    if (any(grepl("quickTranspose", assay_vals$oFile[(file_len - (assay_vals$current_chunk_len - 1)):file_len]))) {
+    #file_len <- length(assay_vals$oFile)
+    #if (any(grepl("quickTranspose", assay_vals$oFile[(file_len - (assay_vals$current_chunk_len - 1)):file_len]))) {
       assay_vals$disable_btns <- FALSE
-    }
+    #}
     assay_vals$id_col <- assay_vals$prev_id
     assay_vals$assay_data <- assay_vals$last_data
-    assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
-                                                   start = 1, 
-                                                   forward_distance = 5, 
-                                                   previous_view = assay_vals$assay_data)
-    assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$current_chunk_len)
-    assay_vals$current_chunk_len <- 0
-    shinyjs::toggleState("undoEvalExpr", FALSE)
+    feature_vals$id_col <- feature_vals$prev_id
+    #assay_vals$assay_display <- advance_columns_view(assay_vals$assay_data, 
+    #                                               start = 1, 
+    #                                               forward_distance = 5, 
+    #                                               previous_view = assay_vals$assay_data)
+    #assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$current_chunk_len)
+    #assay_vals$current_chunk_len <- 0
+    undo_script("assay")
+    shinyjs::disable("undoEvalExpr")
   }
 })

@@ -183,6 +183,8 @@ observeEvent(input$expression_evaluate_id, {
     feature_vals$prev_id <- feature_vals$id_col
     feature_vals$id_col <- input$colForExprLabels
     
+    shinyjs::enable("undoEvalExpr")
+    
     #before <- length(assay_vals$oFile)
     
     #WRITING COMMANDS TO EXPRESSION RSCRIPT
@@ -196,7 +198,7 @@ observeEvent(input$expression_evaluate_id, {
     
     #assay_vals$current_chunk_len <- after - before
     
-    add_function("replaceID")
+    add_function("replaceID", "assay")
     save_lines(c(paste0("expressionData <- replaceID(expressionData, featureData2, ", 
                         format_string(input$colForExprLabels), ", ",
                         format_string(input$howToSummarize), ", ", 

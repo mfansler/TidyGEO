@@ -16,7 +16,7 @@ observeEvent(input$clinical_evaluate_filters, ({
   if (!is.null(clinical_vals$clinical_data)) {
     clinical_vals$last_data <- clinical_vals$clinical_data
     
-    set_undo_point("clinical")
+    set_undo_point_script("clinical")
     save_lines(commentify("exclude undesired columns"), "clinical", "body")
     #before <- length(clinical_vals$oFile)
     #clinical_vals$oFile <- saveLines(commentify("exclude undesired columns"), clinical_vals$oFile)

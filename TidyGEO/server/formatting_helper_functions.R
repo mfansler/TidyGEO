@@ -1,7 +1,7 @@
 in_app <- TRUE
 
 # Retrieve the platform information for a dataset -------------------------
-# Library dependencies: GEOquery
+# Library dependencies: GEOquery; stringr
 # Function dependencies:
 get_platforms <- function(geoID, session = NULL) {
   platforms <- NULL
@@ -27,7 +27,7 @@ get_platforms <- function(geoID, session = NULL) {
 }
 
 # A helper function for getGEO --------------------------------------------
-# Library dependencies:
+# Library dependencies: GEOquery
 # Function dependencies:
 getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE, 
                                    parseCharacteristics = TRUE, platform = NULL) 
@@ -41,7 +41,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
     b = getDirListing(sprintf(gdsurl, stub, GEO))
     platform <- b[1]
   }
-  incProgress()
+  if (in_app) incProgress()
   destfile = file.path(destdir, platform)
   if (file.exists(destfile)) {
     message(sprintf("Using locally cached version: %s", 
@@ -52,7 +52,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
                           stub, GEO, platform), destfile = destfile, mode = "wb", 
                   method = getOption("download.file.method.GEOquery"))
   }
-  incProgress()
+  if (in_app) incProgress()
   result <- GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
                                       AnnotGPL = AnnotGPL, getGPL = getGPL)$eset
   file.remove(destfile)
@@ -60,8 +60,8 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
 }
 
 # Get expressionSet object from GEO ---------------------------------------
-# Library dependencies:
-# Function dependencies:
+# Library dependencies: GEOquery
+# Function dependencies: getAndParseGSEMatrices
 getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(), 
                    GSElimits = NULL, GSEMatrix = TRUE, AnnotGPL = FALSE, getGPL = TRUE, 
                    parseCharacteristics = TRUE, platform = NULL) 
@@ -77,7 +77,7 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
   if (is.null(GEO) & is.null(filename)) {
     stop("You must supply either a filename of a GEO file or a GEO accession")
   }
-  incProgress()
+  if (in_app) incProgress()
   if (is.null(filename)) {
     GEO <- toupper(GEO)
     geotype <- toupper(substr(GEO, 1, 3))
@@ -93,8 +93,8 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
 }
 
 # Get expressionSet object for a given GSE and platform -------------------
-# Library dependencies:
-# Function dependencies:
+# Library dependencies: 
+# Function dependencies: getGEO
 load_series <- function(geoID, platform, session = NULL) {
   
   #expressionSet <- loadRdsFromDropbox(geoID)
@@ -107,7 +107,7 @@ load_series <- function(geoID, platform, session = NULL) {
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
       #browser()
-      incProgress()
+      if (in_app) incProgress()
       expressionSet <- getGEO(geoID, platform = platform)
       #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
@@ -123,7 +123,7 @@ load_series <- function(geoID, platform, session = NULL) {
       }
     }
     )
-    incProgress()
+    if (in_app) incProgress()
     if (!is.null(session)) {
       if (status != "pass") {
         title <- "Error"
@@ -135,7 +135,9 @@ load_series <- function(geoID, platform, session = NULL) {
       }
       createAlert(session, "alert", "fileError", title = title,
                   content = content, append = FALSE)
-      }
+    } else if (status != "pass") {
+        stop(unlist(status))
+    }
   }
   
   return(expressionSet)
@@ -170,8 +172,8 @@ is_all_identical <- function(my_list) {
 }
 
 # Replace empty strings with NA -------------------------------------------
-# Library dependencies:
-# Function dependencies
+# Library dependencies: stringr
+# Function dependencies:
 replace_blank_cells <- function(values) {
   if (any(str_detect(values, "^ *$"), na.rm = TRUE)) {
     str_replace_all(values, "^ *$", NA_character_)
@@ -181,8 +183,8 @@ replace_blank_cells <- function(values) {
 }
 
 # Extract clinical data from expressionSet object -------------------------
-# Library dependencies:
-# Function dependencies
+# Library dependencies: GEOquery
+# Function dependencies: replace_blank_cells; filterUninformativeCols
 process_clinical <- function(expressionSet, session = NULL) {
 
   if (in_app) incProgress(message = "Extracting data")
@@ -208,7 +210,7 @@ process_clinical <- function(expressionSet, session = NULL) {
 
 # Mark which columns in the dataset are informative -----------------------
 # Library dependencies:
-# Function dependencies
+# Function dependencies: isAllNum
 evaluate_cols_to_keep <- function(col, toFilter = list()) {
   functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
                     "url" = function(x) all(!grepl("(((https?)|(ftp)):\\/\\/)|www\\.", x)),
@@ -234,7 +236,7 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
 
 # Drop columns from the data that are not informative ---------------------
 # Library dependencies:
-# Function dependencies
+# Function dependencies: evaluate_cols_to_keep
 filterUninformativeCols <- function(metaData, toFilter = list())
 {
   metaData <- metaData[!duplicated(as.list(metaData))]
@@ -254,8 +256,8 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 }
 
 # Split key-value pairs ---------------------------------------------------
-# Library dependencies:
-# Function dependencies
+# Library dependencies: stringr; tidyr; dplyr
+# Function dependencies: shift_cells; filterUninformativeCols
 extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
   
   if (is.null(colsToSplit) || delimiter == "") {
@@ -369,8 +371,8 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
 }
 
 # Split columns that have multiple values separated by a delimiter --------
-# Library dependencies:
-# Function dependencies:
+# Library dependencies: stringr; tidyr
+# Function dependencies: filterUninformativeCols
 splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FALSE) {
   if (is.null(colsToDivide) || delimiter == "") {
     return(input_df)
@@ -440,7 +442,7 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
 
 # Keep only the specified columns -----------------------------------------
 # Library dependencies:
-# Function dependencies
+# Function dependencies:
 filterCols <- function(metaData, varsToKeep) {
   if (length(varsToKeep) == 0) {
     return(NULL)
@@ -453,7 +455,7 @@ filterCols <- function(metaData, varsToKeep) {
 
 # Change a column name ----------------------------------------------------
 # Library dependencies:
-# Function dependencies
+# Function dependencies:
 renameCols <- function(metaData, old_name, new_name) {
   
   if (old_name %in% colnames(metaData)) {
@@ -463,8 +465,8 @@ renameCols <- function(metaData, old_name, new_name) {
 }
 
 # Replace values with different values, for one column --------------------
-# Library dependencies:
-# Function dependencies
+# Library dependencies: stringr; dplyr
+# Function dependencies:
 substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 {
   col_to_sub <- names(sub_specs) 
@@ -516,8 +518,8 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 }
 
 # Filter out (or keep only) rows that match the specifications ------------
-# Library dependencies:
-# Function dependencies
+# Library dependencies: dplyr; stringr
+# Function dependencies:
 excludeVars <- function(metaData, variable, to_exclude) {
   metaData <- cbind(ID = rownames(metaData), metaData)
   tryCatch({ #for debugging purposes, take out in final product
@@ -563,7 +565,7 @@ excludeVars <- function(metaData, variable, to_exclude) {
 
 
 # Move values into the correct column -------------------------------------
-# Library dependencies:
+# Library dependencies: tidyr; stringr; dplyr
 # Function dependencies
 shift_cells <- function(data, col1, col2, conflicts = NULL) {
   results <- list()
@@ -604,6 +606,8 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
 }
 
 # Extract assay data from expressionSet object --------------------------
+# Library dependencies: GEOquery
+# Function dependencies: replace_blank_cells
 process_expression <- function(expressionSet, session = NULL) {
   
   if (in_app) incProgress(message = "Extracting expression data")
@@ -647,6 +651,8 @@ process_expression <- function(expressionSet, session = NULL) {
 }
 
 # Extract feature data from expressionSet object --------------------------
+# Library dependencies: stringr
+# Function dependencies: replace_blank_cells
 process_feature <- function(expressionSet, session = NULL) {
   if (in_app) incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))
@@ -681,13 +687,15 @@ process_feature <- function(expressionSet, session = NULL) {
 }
 
 # A faster way to transpose than t() --------------------------------------
+# Library dependencies: tidyr; dplyr
+# Function dependencies:
 quickTranspose <- function(dataToTranspose) {
   
   if (in_app) incProgress(message = "Transposing data")
   if (any(duplicated(dataToTranspose$ID, incomparables = NA))) {
     transposed <- dataToTranspose
-    
-    showNotification("Data cannot be transposed because the ID column is not all unique. Please specify a summarize option.")
+    message <- "Data cannot be transposed because the ID column is not all unique. Please specify a summarize option."
+    if (in_app) showNotification(message) else print(message)
     
   } else {
     transposed <- dataToTranspose %>%
@@ -701,6 +709,8 @@ quickTranspose <- function(dataToTranspose) {
 }
 
 # Replace the assay ID's with a different column from feature data --------
+# Library dependencies: dplyr
+# Function dependencies:
 replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   
   if (in_app) incProgress(message = "Formatting replacement")
@@ -743,6 +753,8 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
 }
 
 # Save the filters from a DT object ---------------------------------------
+# Library dependencies: stringr
+# Function dependencies
 filterExpressionData <- function(data, shinyFilterSpecs) {
   for (i in 1:length(shinyFilterSpecs)) {
     if (shinyFilterSpecs[[i]] != "") {
@@ -767,6 +779,8 @@ filterExpressionData <- function(data, shinyFilterSpecs) {
 }
 
 # Move the viewer forward to the next columns -----------------------------
+# Library dependencies:
+# Function dependencies:
 advance_columns_view <- function(data, start, forward_distance, previous_view = NULL) {
   if (class(start) == "character") {
     start <- which(colnames(data) == start)
@@ -792,6 +806,8 @@ advance_columns_view <- function(data, start, forward_distance, previous_view = 
 }
 
 # Move the viewer backward to the previous columns ------------------------
+# Library dependencies:
+# Function dependencies:
 retract_columns_view <- function(data, last_column, backward_distance, previous_view = NULL) {
   
   if (class(last_column) == "character") {
@@ -818,6 +834,8 @@ retract_columns_view <- function(data, last_column, backward_distance, previous_
 }
 
 # Line up two datasets according to an ID column --------------------------
+# Library dependencies:
+# Function dependencies:
 find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
   search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else unlist(data2[,id_col2])
   

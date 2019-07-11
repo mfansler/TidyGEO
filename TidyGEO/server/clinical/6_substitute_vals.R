@@ -100,7 +100,8 @@ observeEvent(input$evaluate_subs, {
                                           colnames(clinical_vals$subs_input)[2], "=c(", 
                                           paste(format_string(as.character(clinical_vals$subs_input[,2])), collapse = ", "), "))"), 
              "clinical", "body")
-  save_lines("clinical_data <- substitute_vals(clinical_data, sub_specs)", 
+  save_lines(paste0("use_regex <- ", input$sub_w_regex), "clinical", "body")
+  save_lines("clinical_data <- substitute_vals(clinical_data, sub_specs, use_regex)", 
                                    "clinical", "body")
   
   #values$tablesList <- list()

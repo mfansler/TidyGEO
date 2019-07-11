@@ -17,10 +17,15 @@ observeEvent(input$resetExpr, {
   if (!is.null(assay_vals$assay_data)) {
     
     assay_vals$disable_btns <- FALSE
-    assay_vals$assay_data <- assay_vals$orig_data 
+    assay_vals$assay_data <- assay_vals$orig_data
+    assay_vals$id_col <- colnames(assay_vals$assay_data)[1]
+    assay_vals$prev_id <- assay_vals$id_col
+    feature_vals$id_col <- colnames(feature_vals$feature_data)[1]
+    feature_vals$prev_id <- feature_vals$id_col
     
-    assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$download_chunk_len, all = T)
-    assay_vals$current_chunk_len <- 0
+    reset_script("assay")
+    #assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$download_chunk_len, all = T)
+    #assay_vals$current_chunk_len <- 0
   }
 })
 

@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(RColorBrewer)
   library(shinydashboard)
   source("tidygeo_functions.R")
+  source("server/formatting_helper_functions.R")
 })
 
 

@@ -23,7 +23,7 @@ observeEvent(input$rename, ({
     
     set_undo_point_script("clinical")
     save_lines(commentify("rename column"), "clinical", "body")
-    add_function("renameCols")
+    add_function("renameCols", "clinical")
     save_lines(paste0("clinical_data <- renameCols(clinical_data, ", 
                       format_string(input$colsToRename), ", ", 
                       format_string(input$rename_new_name), ")"), "clinical", "body")
