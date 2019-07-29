@@ -114,12 +114,22 @@ add_library <- function(lib_name, datatype = c("clinical", "assay", "feature")) 
 }
 
 format_library <- function(lib_name) {
-  c(
-    paste0("if (!suppressWarnings(require(", lib_name, ", quietly = TRUE))) {"),
-    paste0('  install.packages("', lib_name, '")'),
-    paste0("  library(", lib_name, ")"),
-    "}"
-  )
+  if (lib_name == "GEOquery") {
+    c(
+      paste0("if (!suppressWarnings(require(", lib_name, ", quietly = TRUE))) {"),
+      '  source("https://bioconductor.org/biocLite.R")',
+      '  BiocInstaller::biocLite("GEOquery")',
+      paste0("  library(", lib_name, ")"),
+      "}"
+    )
+  } else {
+    c(
+      paste0("if (!suppressWarnings(require(", lib_name, ", quietly = TRUE))) {"),
+      paste0('  install.packages("', lib_name, '")'),
+      paste0("  library(", lib_name, ")"),
+      "}"
+    ) 
+  }
 }
 
 remove_library_if_exists <- function(lib_name, datatype) {
@@ -132,13 +142,15 @@ remove_library_if_exists <- function(lib_name, datatype) {
 
 add_function <- function(func_name, datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
-    scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_name)
+    # add all dependencies first
     if (!is.na(func_lists[[func_name]][["lib_dependencies"]])) {
       add_library(func_lists[[func_name]][["lib_dependencies"]], datatype)
     }
     if (!is.na(func_lists[[func_name]][["func_dependencies"]])) {
-      scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_lists[[func_name]][["func_dependencies"]])
+      lapply(func_lists[[func_name]][["func_dependencies"]], add_function, datatype = datatype)
     }
+    # add function
+    scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_name)
   } else {
     stop('Please specify a valid data type ("clinical", "assay", or "feature")')
   }

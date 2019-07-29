@@ -1,6 +1,7 @@
 output$dataset <- DT::renderDT({
   if (!is.null(clinical_vals$clinical_data)) {
     datatable(clinical_vals$clinical_data, rownames = TRUE, options = list(
+      scrollX = TRUE,
       columnDefs = list(list(
         targets = "_all",
         ##Makes it so that the table will only display the first 50 chars.

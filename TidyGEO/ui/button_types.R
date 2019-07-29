@@ -40,6 +40,16 @@ tertiary_button <- function(id, label, icon = NULL, class = NULL, width = NULL) 
                       style = "color: #fff; background-color: #6baed6; border-color: #6baed6", class = class)
 }
 
+undo_button <- function(id) {
+  tipify(tertiary_button(id, label = div(icon("undo"), "Undo"), class = "right_align"), 
+         title = "Undo the last action.", placement = "bottom", trigger = "hover")
+}
+
+reset_button <- function(id) {
+  tipify(tertiary_button(id, div(icon("history"), "Reset")), 
+         title = "Reset the dataset to its original downloaded state.", placement = "bottom", trigger = "hover")
+}
+
 navigation_set <- function(prev, from, to, section_prev = NULL, section_to = NULL) {
   return(div(
     tertiary_button(id = paste0("nav_", from, "_to_", prev, "_", section_prev), label = div(icon('arrow-left'), 'Back')),

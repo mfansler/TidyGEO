@@ -38,7 +38,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
   stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
   if (is.null(platform)) {
     gdsurl <- "https://ftp.ncbi.nlm.nih.gov/geo/series/%s/%s/matrix/"
-    b = getDirListing(sprintf(gdsurl, stub, GEO))
+    b = GEOquery:::getDirListing(sprintf(gdsurl, stub, GEO))
     platform <- b[1]
   }
   if (in_app) incProgress()
@@ -93,7 +93,7 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
 }
 
 # Get expressionSet object for a given GSE and platform -------------------
-# Library dependencies: 
+# Library dependencies: GEOquery
 # Function dependencies: getGEO
 load_series <- function(geoID, platform, session = NULL) {
   

@@ -27,8 +27,7 @@ tabPanel(title = icon("edit"), value = "1",
           #              width = '200px', class = "indent"),
          #help_link(id = "evaluate_filters_help"),
          div(
-           tipify(tertiary_button(id = "undoEvalExpr", label = div(icon("undo"), "Undo"), class = "right_align"), 
-                  title = "Undo the last action.", placement = "bottom", trigger = "hover"),
+           undo_button("undoEvalExpr"),
            br()
          ),
          hr(), tertiary_button("assay_to_clinical", div(icon("arrow-left"), "Back to clinical data")),

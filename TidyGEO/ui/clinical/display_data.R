@@ -10,8 +10,7 @@ tabPanel(title = "Clinical Data",
                ),
                column(2, offset = 1, 
                       br(),
-                      tipify(tertiary_button("reset", div(icon("history"), "Reset")), 
-                             title = "Reset the dataset to its original downloaded state.", placement = "bottom", trigger = "hover")
+                      reset_button("reset")
                )
                #)
          ),

@@ -23,7 +23,7 @@ tabPanel(title = icon("columns"), value = "4",
          )), 
          div(
            primary_button(id = "feature_split_cols", label = div(icon("columns"), "Split columns")),
-           tipify(tertiary_button(id = "feature_undo_split_cols", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
+           undo_button("feature_undo_split_cols")
          ),
          hr(), navigation_set("3", "4", "5", "feature_side_panel", "feature_side_panel")
          )

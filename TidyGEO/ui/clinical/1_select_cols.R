@@ -28,7 +28,7 @@ tabPanel(title = icon("filter"), value = "1",
          ),
          div(
            primary_button(id = "clinical_evaluate_filters", label = div(icon("filter"), "Filter columns")),
-           tipify(tertiary_button(id = "undo_select", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
+           undo_button("undo_select")
          ),
          hr(), tertiary_button("clinical_to_choose_button", div(icon("arrow-left"), "Back to choose")),
          secondary_button("clinical_1_to_2_button", div("Next", icon("arrow-right")), class = "right_align")

@@ -10,6 +10,7 @@ suppressPackageStartupMessages({
   library(shinyWidgets)
   library(RColorBrewer)
   library(shinydashboard)
+  library(rmarkdown)
   source("tidygeo_functions.R")
   source("server/formatting_helper_functions.R")
 })
@@ -45,7 +46,7 @@ ui <- dashboardPage(
                menuSubItem("Clinical data", icon = icon("clipboard"), tabName = "clinical_data"),
                menuSubItem("Assay data", icon = icon("microscope"), tabName = "assay_data"),
                menuSubItem("Feature data", icon = icon("dna"), tabName = "feature_data"),
-               menuSubItem("All data", icon = icon("project-diagram"), tabName = "all_data")),
+               menuSubItem("All data", icon = icon("cubes"), tabName = "all_data")),
       menuItem("FAQ", tabName = "faq"),
       menuItem("About", tabName = "about")
     )
@@ -135,13 +136,18 @@ ui <- dashboardPage(
       tabItem("all_data",
                sidebarLayout(
                  sidebarPanel(
-                   tabsetPanel(
+                   tabsetPanel(id = "all_data_options",
                      source(file.path("ui", "all_data", "filter_rows.R"), local = TRUE)$value,
                      source(file.path("ui", "all_data", "join_dfs.R"), local = TRUE)$value#,
                      #source(file.path("ui", "all_data", "save_data.R"), local = TRUE)$value
                    )
                  ),
-                 mainPanel()
+                 mainPanel(
+                   tabsetPanel(
+                     source(file.path("ui", "all_data", "workbench.R"), local = TRUE)$value,
+                     source(file.path("ui", "all_data", "data_viewer.R"), local = TRUE)$value
+                   )
+                 )
                )),
       # ** FAQ ---------------------------------------------------------------------
       
@@ -238,7 +244,10 @@ server <- function(input, output, session) {
       viewing_subset = c(2, 6)
     )
   
-  integrate_vals <- reactiveValues()
+  all_vals <- 
+    reactiveValues(
+      all_data = NULL
+    )
   
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
 
@@ -390,6 +399,16 @@ server <- function(input, output, session) {
   source(file.path("server", "feature", "display_data.R"), local = TRUE)$value
   source(file.path("server", "feature", "graphical_summary.R"), local = TRUE)$value
   
+
+  # ** all data -------------------------------------------------------------------
+  
+  # ** ** side panel --------------------------------------------------------------
+  source(file.path("server", "all_data", "filter_rows.R"), local = TRUE)$value
+  
+  # ** ** main panel --------------------------------------------------------------
+  source(file.path("server", "all_data", "workbench.R"), local = TRUE)$value
+  source(file.path("server", "all_data", "data_viewer.R"), local = TRUE)$value
+
   
   
   

@@ -1,10 +1,8 @@
 app.html
 app.R
-reactive_preferences.js
 tidygeo_functions.R
 VERSION
-User/assay_helper_functions.R
-User/clinical_helper_functions.R
+User/rscript_functions.rds
 server/
 ui/
 www/

@@ -14,7 +14,7 @@ tabPanel(title = icon("angle-double-right"), value = "2",
   wellPanel(DTOutput("shift_preview_table_feature")),
   div(
     primary_button("evaluate_shift_feature", div(icon("angle-double-right"), "Shift cells")),
-    tipify(tertiary_button(id = "undo_shift_feature", label = div(icon("undo"), "Undo"), class = "right_align"), title = "Undo the last action.", placement = "bottom", trigger = "hover")
+    undo_button("undo_shift_feature")
   ),
   hr(), navigation_set("1", "2", "3", "feature_side_panel", "feature_side_panel")
 )

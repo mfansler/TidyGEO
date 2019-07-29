@@ -1,4 +1,4 @@
-tabPanel(title = icon(""), value = "2",
+tabPanel(title = icon("project-diagram"), value = "2",
   h4("Joining datasets"),
   p(paste0("Here is where you can join clinical, assay, and/or feature data, essentially merging the two datasets ",
            "into one. Please note that this may produce an unwieldy dataset that may not be able to be loaded into ",
@@ -10,5 +10,5 @@ tabPanel(title = icon(""), value = "2",
   radioButtons("join_behavior", paste0("Please choose the action you would like to take when items in the first dataset",
                " are not present in the second dataset (and visa versa):"), 
                choices = c("drop", "keep values from data1", "keep values from data2", "keep all")),
-  actionButton("join_columns", "Join")
+  primary_button("join_columns", div(icon("project-diagram"), "Join"))
 )
