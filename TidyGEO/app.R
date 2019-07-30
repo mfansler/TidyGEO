@@ -246,7 +246,8 @@ server <- function(input, output, session) {
   
   all_vals <- 
     reactiveValues(
-      all_data = NULL
+      all_data = NULL,
+      join_datatypes_visible = 1
     )
   
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
@@ -404,6 +405,7 @@ server <- function(input, output, session) {
   
   # ** ** side panel --------------------------------------------------------------
   source(file.path("server", "all_data", "filter_rows.R"), local = TRUE)$value
+  source(file.path("server", "all_data", "join_dfs.R"), local = TRUE)$value
   
   # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "all_data", "workbench.R"), local = TRUE)$value
