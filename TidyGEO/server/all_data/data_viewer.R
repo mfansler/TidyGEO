@@ -15,10 +15,13 @@ output$view_data <- renderUI({
 })
 
 output$data_view <- renderDT({
+  browser()
   datatable(eval(parse(
     text = paste0(input$data_to_view, "_vals$", input$data_to_view, "_data")
   )),
-  rownames = TRUE,
+  colnames = eval(parse(
+    text = paste0("colnames(", input$data_to_view, "_vals$", input$data_to_view, "_data)")
+  )),
   options = list(scrollX = TRUE,
     columnDefs = list(list(
     targets = "_all",

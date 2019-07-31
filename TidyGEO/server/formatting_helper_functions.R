@@ -836,12 +836,20 @@ retract_columns_view <- function(data, last_column, backward_distance, previous_
 # Line up two datasets according to an ID column --------------------------
 # Library dependencies:
 # Function dependencies:
-find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = "ID") {
-  search_terms <- if (id_col2 == "colnames") c(colnames(data2)) else unlist(data2[,id_col2])
+find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
+  search_terms <- if (is.null(id_col2))
+                    data2
+                  else if (grepl("col.*names", id_col2))
+                    colnames(data2)
+                  else
+                    data2[id_col2]
   
-  if (id_col1 == "colnames") {
+  if (grepl("col.*names", id_col1)) {
     data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
-  } else {
+  }# else if () {
+  #  
+  #} 
+  else {
     data1[which(data1[,id_col1] %in% search_terms),]
   }
 }

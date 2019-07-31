@@ -6,11 +6,7 @@ tabPanel(title = icon("project-diagram"), value = "2",
   selectInput("data_to_join1", "Choose the first dataset to join:", choices = c("clinical", "assay", "feature")),
   uiOutput("col_to_join1_selector"),
   primary_button("add_dataset", "Add dataset"),
-  disabled(secondary_button("remove_dataset", "Remove dataset", class = "right_align")),
-  #selectInput("data_to_join2", "Choose the second dataset to join:", choices = c("clinical", "assay", "feature")),
-  #selectInput("col_to_join2", "Choose the column from the second dataset to join:", choices = c("col1", "col2", "col3")),
-  radioButtons("join_behavior", paste0("Please choose the action you would like to take when items in the first dataset",
-               " are not present in the second dataset (and visa versa):"), 
-               choices = c("drop", "keep values from data1", "keep values from data2", "keep all")),
+  disabled(secondary_button("remove_dataset", "Remove last", class = "right_align")),
+  br(),
   primary_button("join_columns", div(icon("project-diagram"), "Join"))
 )

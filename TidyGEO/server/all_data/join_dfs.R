@@ -23,7 +23,11 @@ observeEvent(input$add_dataset, {
     where = "beforeBegin",
     ui = div(id = paste0("selector_div", all_vals$join_datatypes_visible),
       selectInput(this_id, "Choose another dataset to join:", choices = c("clinical", "assay", "feature")),
-      uiOutput(paste0(this_selector_id, "_selector"))
+      uiOutput(paste0(this_selector_id, "_selector")),
+      radioButtons(paste0("join_behavior_", all_vals$join_datatypes_visible), 
+                   paste0("Please choose the action you would like to take when items in the first dataset",
+                                           " are not present in the second dataset (and visa versa):"), 
+                   choices = c("drop", "keep values from first dataset", "keep values from second dataset", "keep all"))
     )
   )
   if (all_vals$join_datatypes_visible > 2) disable("add_dataset")
@@ -140,18 +144,21 @@ output$join_results_preview <- renderUI({
   #Keep all: add the rows up
   #keep values from data1: the number of rows in data1
   #keep values from data2: the number of rows in data2
-  resulting_rows <- if (input$join_behavior == "drop") {
-    # the minimum of 1 %in% 2 and 2 %in% 1
-  } else if (input$join_behavior == "keep values from data1") {
-    get_data_to_join_rows(input$data_to_join1)
-  } else if (input$join_behavior == "keep values from data2") {
-    get_data_to_join_rows(eval(parse(text = paste0("input$data_to_join", all_vals$join_datatypes_visible))))
-  } else {
-    get_data_to_join_rows(input$data_to_join1) + get_data_to_join_rows(input$data_to_join2) + get_data_to_join_rows(input$data_to_join3)
-  }
+  #resulting_rows <- if (input$join_behavior == "drop") {
+  #  # the minimum of 1 %in% 2 and 2 %in% 1
+  #} else if (input$join_behavior == "keep values from data1") {
+  #  get_data_to_join_rows(input$data_to_join1)
+  #} else if (input$join_behavior == "keep values from data2") {
+  #  get_data_to_join_rows(eval(parse(text = paste0("input$data_to_join", all_vals$join_datatypes_visible))))
+  #} else {
+  #  get_data_to_join_rows(input$data_to_join1) + get_data_to_join_rows(input$data_to_join2) + get_data_to_join_rows(input$data_to_join3)
+  #}
   HTML(
     paste0(
       "<p><b>Resulting number of columns: </b>", length(data_to_join1_data()) + length(data_to_join2_data()) + length(data_to_join3_data()), "</p>"
-    )
+    )#,
+    #paste0(
+    #  "<p><b>Estimated number of rows: </b>", length(data_to_join1_data()) + length(data_to_join2_data()) + length(data_to_join3_data()), "</p>"
+    #)
   )
 })
