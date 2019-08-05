@@ -30,27 +30,15 @@ output$col_to_match2_selector <- renderUI({
 observeEvent(input$match_columns, {
   data_to_match1 <- paste0(input$data_to_match1, "_vals$", input$data_to_match1, "_data")
   data_to_match2 <- paste0(input$data_to_match2, "_vals$", input$data_to_match2, "_data")
-  assign(
-    data_to_match1, 
-    find_intersection(eval(parse(text = data_to_match1)), 
-                      unlist(match_vals2()), 
-                      input$col_to_match1
-                      )
-    )
-  assign(
-    data_to_match2, 
-    find_intersection(eval(parse(text = data_to_match2)), 
-                      unlist(match_vals1()), 
-                      input$col_to_match2
-                      )
-    )
+  
+  
   # WRITING COMMANDS TO R SCRIPT
   set_undo_point_script(input$data_to_match1)
   add_function("find_intersection", input$data_to_match1)
   save_lines(
     paste0(
       input$data_to_match1, "_data <- find_intersection(", input$data_to_match1, "_data, ",
-      format_string(eval(parse(text = data_to_match2))[, input$col_to_match2]), ", ",
+      format_string(unlist(match_vals2())), ", ",
       input$col_to_match1, ")"
     ),
     input$data_to_match1,
@@ -61,12 +49,28 @@ observeEvent(input$match_columns, {
   save_lines(
     paste0(
       input$data_to_match2, "_data <- find_intersection(", input$data_to_match2, "_data, ",
-      format_string(eval(parse(text = data_to_match1))[, input$col_to_match1]), ", ",
+      format_string(unlist(match_vals1())), ", ",
       input$col_to_match2, ")"
     ),
     input$data_to_match2,
     "body"
   )
+  
+  assign(
+    data_to_match1, 
+    find_intersection(eval(parse(text = data_to_match1)), 
+                      unlist(match_vals2()), 
+                      input$col_to_match1
+                      )
+    )
+  browser()
+  assign(
+    data_to_match2, 
+    find_intersection(eval(parse(text = data_to_match2)), 
+                      unlist(match_vals1()), 
+                      input$col_to_match2
+                      )
+    )
 })
 
 

@@ -14,7 +14,7 @@ As users transform the data in various ways, TidyGEO keeps track of the changes 
 TidyGEO hopes to speed up the process of curating GEO datasets for research and enable scientists who do not have coding experience to access and manipulate the raw data.
 
 #### Looking to try out the app?
-TidyGEO is currently hosted here: https://tidygeo.shinyapps.io/tidygeo/
+TidyGEO is currently hosted here: https://byubioapps.shinyapps.io/tidygeo/
 
 To get started, look at the help documentation within the app, then load any series into the app. Series with fewer than 100 samples generally load faster. One good series to start with is GSE41.
 
