@@ -14,7 +14,7 @@ observe({
 
 observeEvent(input$feature_split_cols, ({
   if (!is.null(feature_vals$feature_data)) {
-    feature_vals$last_feature <- feature_vals$feature_data
+    feature_vals$last_data <- feature_vals$feature_data
     #before <- length(feature_vals$oFile)
     #feature_vals$oFile <- saveLines(commentify("extract values from columns with delimiter"), feature_vals$oFile)
     

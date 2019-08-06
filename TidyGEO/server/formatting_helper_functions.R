@@ -754,7 +754,7 @@ replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
 
 # Save the filters from a DT object ---------------------------------------
 # Library dependencies: stringr
-# Function dependencies
+# Function dependencies:
 filterExpressionData <- function(data, shinyFilterSpecs) {
   for (i in 1:length(shinyFilterSpecs)) {
     if (shinyFilterSpecs[[i]] != "") {

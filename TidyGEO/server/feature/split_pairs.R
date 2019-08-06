@@ -14,7 +14,7 @@ observe({
 
 observeEvent(input$split_pairs_feature, ({
   if (!is.null(feature_vals$feature_data)) {
-    feature_vals$last_feature <- feature_vals$feature_data
+    feature_vals$last_data <- feature_vals$feature_data
     #before <- length(feature_vals$oFile)
     #feature_vals$oFile <- saveLines(commentify("extract key-value pairs from columns with delimiter"), feature_vals$oFile)
     

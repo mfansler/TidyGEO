@@ -22,29 +22,9 @@ observeEvent(input$clinical_evaluate_filters, ({
     #clinical_vals$oFile <- saveLines(commentify("exclude undesired columns"), clinical_vals$oFile)
     
     if (input$filter_option == "preset_filters") {
-      clinical_vals$clinical_data <- filterUninformativeCols(clinical_vals$clinical_data, input$download_data_filter)
-      
-      #WRITING COMMANDS TO R SCRIPT
-      #clinical_vals$oFile <- saveLines(paste0("vars_to_exclude <- ", format_string(input$download_data_filter)), clinical_vals$oFile)
-      #clinical_vals$oFile <- saveLines("clinical_data <- filterUninformativeCols(clinical_data, vars_to_exclude)", 
-      #                          clinical_vals$oFile)
-      
-      add_function("filterUninformativeCols", "clinical")
-      save_lines(paste0("vars_to_exclude <- ", format_string(input$download_data_filter)), "clinical", "body")
-      save_lines("clinical_data <- filterUninformativeCols(clinical_data, vars_to_exclude)", 
-                                       "clinical", "body")
+      eval_function("clinical", "filterUninformativeCols", list(input$download_data_filter))
     } else {
-      clinical_vals$clinical_data <- filterCols(clinical_vals$clinical_data, input$varsToKeep)
-      
-      #WRITING COMMANDS TO R SCRIPT
-      #clinical_vals$oFile <- saveLines(paste0("vars_to_keep <- ", format_string(input$varsToKeep)), clinical_vals$oFile)
-      #clinical_vals$oFile <- saveLines(c("clinical_data <- filterCols(clinical_data, vars_to_keep)"), 
-      #                          clinical_vals$oFile)
-      
-      add_function("filterCols", "clinical")
-      save_lines(paste0("vars_to_keep <- ", format_string(input$varsToKeep)), "clinical", "body")
-      save_lines(c("clinical_data <- filterCols(clinical_data, vars_to_keep)"), 
-                                       "clinical", "body")
+      eval_function("clinical", "filterCols", list(input$varsToKeep))
     }
     
     

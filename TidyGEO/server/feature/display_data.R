@@ -45,7 +45,7 @@ observeEvent(input$feature_evaluate_filters, {
   
   to_filter <- input$feature_preview_search_columns
   names(to_filter) <- colnames(feature_vals$data_to_display)
-  feature_vals$last_feature <- feature_vals$feature_data
+  feature_vals$last_data <- feature_vals$feature_data
   feature_vals$feature_data <- filterExpressionData(feature_vals$feature_data, to_filter)
   
   #WRITING COMMANDS TO EXPRESSION RSCRIPT

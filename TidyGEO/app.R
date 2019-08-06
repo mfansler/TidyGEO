@@ -190,6 +190,13 @@ server <- function(input, output, session) {
       pm_id = NULL
     )
   
+  # For any of the following, if you change the variable names of 
+  # "[]_data" or "last_data", get ready for a world of pain... er, refactoring.
+  # 
+  # Also, I like to keep these all in separate lists so that they can update independently
+  # of each other. Otherwise, an update--to, for example, assay_data--might cause values from
+  # clinical_vals to update, which would be ridiculously slow. Usually best to keep reactiveValues
+  # as distinct and small as possible.
   clinical_vals <- 
     reactiveValues(
       display_default = data.frame("Please load some clinical data"),
@@ -233,7 +240,7 @@ server <- function(input, output, session) {
     reactiveValues(
       feature_data = NULL,
       shift_results = NULL,
-      last_feature = NULL,
+      last_data = NULL,
       #oFile = commentify(" "),
       #current_chunk_len = 0,
       orig_feature = NULL,
@@ -250,6 +257,46 @@ server <- function(input, output, session) {
       join_datatypes_visible = 1
     )
   
+  # ** For running a dataset through a formatting function ---------------------
+
+  # This function is not necessary if you know which datatype you're updating, but
+  # helpful since it writes the function to the script.
+  # 
+  # Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
+  eval_function <- function(datatype, func_to_eval, func_args) {
+    # WRITING COMMANDS TO R SCRIPT
+    set_undo_point_script(datatype)
+    add_function(func_to_eval, datatype)
+    save_lines(
+      paste0(
+        datatype, 
+        "_data <- ", 
+        rlang::expr_text(expr((!!func_to_eval)(!!sym(paste0(datatype, "_data")), !!!func_args)))
+      ),
+      datatype,
+      "body"
+    )
+    
+    # Get the result of the formatting function
+    result <- eval(
+      expr((!!func_to_eval)(
+        eval(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))), 
+        !!!func_args
+            )
+        )
+      )
+    
+    # Replace the last data with the current data (before formatting)
+    eval(
+      expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), `$`(!!sym(paste0(datatype, "_vals")), "last_data")))
+    )
+    
+    # Replace the data with the formatted data
+    eval(
+      expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), result))
+    )
+  }
+  
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
 
   get_clinical_data <- function() {
@@ -261,6 +308,7 @@ server <- function(input, output, session) {
     #clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
     
     save_lines(commentify("extract clinical data"), "clinical", "body")
+    add_function("process_clinical", "clinical")
     save_lines("clinical_data <- process_clinical(series_data)", "clinical", "body")
     set_reset_point_script("clinical")
     
@@ -295,6 +343,7 @@ server <- function(input, output, session) {
       #assay_vals$download_chunk_len <- length(assay_vals$oFile)
       
       save_lines(commentify("extract expression data"), "assay", "body")
+      add_function("process_expression", "assay")
       save_lines(c("extracted_data <- process_expression(series_data)",
                                       "expressionData <- extracted_data[['expressionData']]"), 
                                     "assay", "body")
@@ -313,7 +362,7 @@ server <- function(input, output, session) {
       feature_vals$prev_id <- feature_vals$id_col
       
       #feature_vals$orig_feature <- find_intersection(feature_vals$orig_feature, assay_vals$assay_data)
-      feature_vals$last_feature <- feature_vals$orig_feature
+      feature_vals$last_data <- feature_vals$orig_feature
       feature_vals$feature_data <- feature_vals$orig_feature
       
       feature_vals$viewing_subset <- c(2, min(6, ncol(feature_vals$feature_data)))
@@ -324,6 +373,7 @@ server <- function(input, output, session) {
       #                                assay_vals$oFile)
       
       save_lines(commentify("extract feature data"), "feature", "body")
+      add_function("process_feature", "feature")
       save_lines(c("featureData <- process_feature(series_data)"), 
                                       "feature", "body")
       set_reset_point_script("feature")

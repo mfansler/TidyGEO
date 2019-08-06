@@ -49,6 +49,10 @@ observeEvent(input$expression_prev_cols, {
   }
 })
 
+observe({
+  assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
+}, priority = 1)
+
 assay_in_view <- reactive({
   if (!is.null(assay_vals$assay_data)) {
     assay_vals$assay_data[c(1, assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2])]

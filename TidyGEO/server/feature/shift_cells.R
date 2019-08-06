@@ -109,7 +109,7 @@ observeEvent(input$evaluate_shift_feature, {
                            footer = primary_button("evaluate_conflicts_feature", "Resolve")
                            ))
   } else {
-    feature_vals$last_feature <- feature_vals$feature_data
+    feature_vals$last_data <- feature_vals$feature_data
     
     feature_vals$feature_data <- feature_vals$shift_results[["result"]]
     
@@ -136,7 +136,7 @@ observeEvent(input$evaluate_conflicts_feature, {
   removeModal()
   results <- shift_cells(feature_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature, 
                          conflicts = if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature)
-  feature_vals$last_feature <- feature_vals$feature_data
+  feature_vals$last_data <- feature_vals$feature_data
   feature_vals$feature_data <- results[["result"]]
   
   feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 

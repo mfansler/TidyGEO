@@ -28,7 +28,7 @@ func_lists <- lapply(1:(length(section_indices)), function(i) { # For each secti
   # Extract the function's function dependencies
   search_str <- "# Function dependencies: "
   func_dependencies <- str_remove(this_section[which(str_detect(this_section, search_str))], search_str)
-  func_dependencies <- if (identical(func_dependencies, character(0))) NA else str_split(func_dependencies, ";")[[1]]
+  func_dependencies <- if (identical(func_dependencies, character(0))) NA else str_split(func_dependencies, "; ")[[1]]
   
   # Return a list with the pieces of the function
   list(func_text = this_section, lib_dependencies = lib_dependencies, func_dependencies = func_dependencies)
