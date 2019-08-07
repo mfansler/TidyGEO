@@ -67,3 +67,13 @@
            top: calc(50% - 50px);;
            left: calc(50% - 400px);;
            }
+.vl {
+  border-left: 20px solid;
+  height: 300px;
+}
+.dataTables_scrollBody {
+  transform:rotateX(180deg);
+}
+.dataTables_scrollBody table {
+  transform:rotateX(180deg);
+}

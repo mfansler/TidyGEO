@@ -689,20 +689,33 @@ process_feature <- function(expressionSet, session = NULL) {
 # A faster way to transpose than t() --------------------------------------
 # Library dependencies: tidyr; dplyr
 # Function dependencies:
-quickTranspose <- function(dataToTranspose) {
+quickTranspose <- function(dataToTranspose, force = FALSE) {
+  # We'll take dataToTranspose and make the "ID" column the column
+  # names, and the column names the "ID" column.
+  
   
   if (in_app) incProgress(message = "Transposing data")
-  if (any(duplicated(dataToTranspose$ID, incomparables = NA))) {
-    transposed <- dataToTranspose
-    message <- "Data cannot be transposed because the ID column is not all unique. Please specify a summarize option."
-    if (in_app) showNotification(message) else print(message)
-    
-  } else {
-    transposed <- dataToTranspose %>%
-      gather(newrows, valname, -ID) %>%
-      spread(ID, valname) %>%
-      dplyr::rename(ID = "newrows")
+  # Make sure the ID column is there, and add it if not.
+  if (!"ID" %in% colnames(dataToTranspose)) {
+    dataToTranspose$ID <- rownames(dataToTranspose)
   }
+  # If any of the ID values are duplicates, we can't use them as column names
+  # (column names must be unique).
+  if (any(duplicated(dataToTranspose$ID, incomparables = NA))) {
+    if (force) { # Make the ID values unique.
+      dataToTranspose$ID <- make.unique(dataToTranspose$ID)
+    } else { # Inform the user that we didn't perform the operation.
+      message <- "Data cannot be transposed because the ID column is not all unique."
+      if (in_app) showNotification(message) else print(message)
+      return(dataToTranspose)
+    }
+  }
+  # Transpose the data.
+  transposed <- dataToTranspose %>%
+    gather(newrows, valname, -ID) %>%
+    spread(ID, valname) %>%
+    dplyr::rename(ID = "newrows")
+  
   
   if (in_app) incProgress(message = "Transposing data")
   return(transposed)
@@ -841,15 +854,60 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
                     data2
                   else if (grepl("col.*names", id_col2))
                     colnames(data2)
+                  else if (grepl("row.*names", id_col2))
+                    rownames(data2)
                   else
                     data2[id_col2]
   
   if (grepl("col.*names", id_col1)) {
     data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
-  }# else if () {
-  #  
-  #} 
+  } else if (grepl("row.*names", id_col1)) {
+    data1[which(rownames(data1)) %in% search_terms,]
+  } 
   else {
     data1[which(data1[,id_col1] %in% search_terms),]
   }
+}
+
+# Join up to three datasets -----------------------------------------------
+# Library dependencies:
+# Function dependencies:
+join_data <- function(df1, df2, join_col1, join_col2, join_behavior) {
+  if (in_app) incProgress(message = "Preparing data to join")
+  if (join_col1 == "colnames") {
+    df1 <- quickTranspose(df1, force = TRUE)
+    join_col1 <- "ID"
+  } else if (join_col1 == "rownames") {
+    df1$rownames <- rownames(df1)
+  }
+  if (in_app) incProgress()
+  if (join_col2 == "colnames") {
+    df2 <- quickTranspose(df2, force = TRUE)
+    join_col2 <- "ID"
+  } else if (join_col2 == "rownames") {
+    df2$rownames <- rownames(df2)
+  }
+  join_vars = c(join_col2)
+  names(join_vars) <- join_col1
+  
+  if (in_app) incProgress(message = "Joining data")
+  
+  join_func <- if (join_behavior == "drop") {
+    "inner_join"
+  } else if (join_behavior == "keep values from first dataset") {
+    "left_join"
+  } else if (join_behavior == "keep values from second dataset") {
+    "right_join"
+  } else {
+    "full_join"
+  }
+  result <- do.call(join_func, list(x = df1, y = df2, by = join_vars))
+  
+  if (in_app) incProgress(message = "Formatting joined data")
+  
+  if ("rownames" %in% colnames(result)) {
+    rownames(result) <- result$rownames
+    result <- result[-"rownames"]
+  }
+  return(result)
 }

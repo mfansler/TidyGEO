@@ -141,7 +141,6 @@ remove_library_if_exists <- function(lib_name, datatype) {
 }
 
 add_function <- function(func_name, datatype = c("clinical", "assay", "feature")) {
-  print(func_name)
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
     # add all dependencies first
     if (!is.na(func_lists[[func_name]][["lib_dependencies"]])) {
