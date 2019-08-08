@@ -8,52 +8,7 @@ output$expression_downloadData <- downloadHandler(
     input$expression_userFileName
   },
   content = function(file) {
-    
-    #values$exprToDisplay <- filterExpressionData(values$exprToDisplay, input$exprPreview_search_columns)
-    
-    if (input$expression_fileType == "csv") {
-      
-      #print("exprToDisplay")
-      #print(values$exprToDisplay, n = 10)
-      withProgress(message = "Writing data to file", {
-        incProgress()
-        write.csv(assay_vals$assay_data, file, row.names = FALSE)
-        incProgress()
-      })
-    }
-    else if (input$expression_fileType == "tsv") {
-      withProgress(message = "Writing data to file",
-                   write.table(assay_vals$assay_data, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-    }
-    else if (input$expression_fileType == "JSON") {
-      library(jsonlite)
-      #library(readr)
-      
-      withProgress(message = "Writing data to file", {
-        incProgress()
-        assay_vals$assay_data %>% toJSON() %>% write_lines(file)
-        incProgress()
-      })
-      
-    }
-    else if (input$expression_fileType == "xlsx") {
-      library(xlsx)
-      
-      withProgress(message = "Writing data to file", {
-        incProgress()
-        write.xlsx(assay_vals$assay_data, file, row.names = FALSE, showNA = FALSE)
-        incProgress()
-      })
-    } else {
-      #files <- c(paste0(tempfile(), input$geoID, "_Data.txt"), paste0(tempfile(), input$geoID, "_GeneAnnotations.txt"))
-      myData <- assay_vals$assay_data
-      colnames(myData) <- colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
-      withProgress(message = "Writing data to file",
-                   write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-      #withProgress(message = "Writing feature data to file",
-      #             write.table(assay_vals$feature_data, files[2], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-      #zip(file, files)
-    }
+    save_data(assay_vals$assay_data, file, input$expression_fileType)
   }
 )
 
@@ -62,46 +17,6 @@ output$expression_downloadRscript <- downloadHandler(
     paste0(input$expression_userFileName, ".R")
   },
   content = function(file) {
-    #WRITING COMMANDS TO R SCRIPT
-    #before <- length(assay_vals$oFile)
-    #assay_vals$oFile <- saveLines(commentify("save expression data"), assay_vals$oFile)
-    #assay_vals$oFile <- saveLines(paste0("file <- ", format_string(input$expression_userFileName)), assay_vals$oFile)
-    
-    for (lib_to_remove in c("jsonlite", "readr", "xlsx")) {
-      remove_library_if_exists(lib_to_remove, "assay")
-    }
-    save_lines(commentify("save expression data"), "assay", "end", overwrite = TRUE)
-    save_lines(paste0("file <- ", format_string(input$expression_userFileName)), "assay", "end")
-    
-    if (input$expression_fileType == "csv") {
-      #assay_vals$oFile <- saveLines(paste0("write.csv(expressionData, file, row.names = FALSE)"), assay_vals$oFile)
-      save_lines(paste0("write.csv(expressionData, file, row.names = FALSE)"), "assay", "end")
-    }
-    else if (input$expression_fileType == "tsv") {
-      #assay_vals$oFile <- saveLines("write.table(expressionData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
-      #                                     assay_vals$oFile)
-      save_lines("write.table(expressionData, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)", 
-                 "assay", "end")
-    }
-    else if (input$expression_fileType == "JSON") {
-      #assay_vals$oFile <- saveLines(c("library(jsonlite)", "library(readr)", 
-      #                            "expressionData %>% toJSON() %>% write_lines(file)"), 
-      #                          assay_vals$oFile)
-      add_library("jsonlite", "assay")
-      add_library("readr", "assay")
-      save_lines("expressionData %>% toJSON() %>% write_lines(file)", "assay", "end")
-    }
-    else if (input$expression_fileType == "xlsx") {
-      #assay_vals$oFile <- saveLines(c("library(xlsx)", "write.xlsx(expressionData, file, row.names = FALSE, showNA = FALSE)"), 
-      #                                     assay_vals$oFile)
-      add_library("xlsx")
-      save_lines("write.xlsx(expressionData, file, row.names = FALSE, showNA = FALSE)", 
-                  "assay", "end")
-    }
-    
-    #saveToRscript(assay_vals$oFile, version, file, 'User/assay_helper_functions.R')
-    save_to_rscript("assay", file)
-    
-    #assay_vals$current_chunk_len <- assay_vals$current_chunk_len + (length(assay_vals$oFile) - before)
+    save_rscript("assay", file, input$expression_userFileName, input$expression_fileType)
   }
 )

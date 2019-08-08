@@ -308,6 +308,115 @@ create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_n
   }
 }
 
+# Downloading data files --------------------------------------------------
+
+save_data <- function(myData, file, file_type) {
+  if (file_type == "csv") {
+    write.csv(myData, file, row.names = FALSE)
+  }
+  else if (file_type == "tsv") {
+    write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+  }
+  else if (file_type == "JSON") {
+    library(jsonlite)
+    
+    myData %>% toJSON() %>% write_lines(file)
+  }
+  else if (file_type == "xlsx") {
+    library(xlsx)
+    
+    write.xlsx(myData, file, row.names = FALSE, showNA = FALSE)
+  } else {
+    colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
+    write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+  }
+}
+
+save_rscript(datatype, file, file_name, file_type) {
+  save_lines(commentify("save data"), datatype, "end", overwrite = TRUE)
+  if (datatype == "clinical") {
+    save_lines(c("clinical_data <- cbind(rownames(clinical_data), clinical_data)", 
+                 "colnames(clinical_data)[1] <- ''", 
+                 paste0("file <- ", format_string(file_name))), 
+               "clinical", "end")
+  }
+  
+  if (file_type == "csv") {
+    save_lines(paste0("write.csv(", datatype, "_data, file, row.names = FALSE)"), datatype, "end")
+  }
+  else if (file_type == "tsv") {
+    save_lines(paste0("write.table(", datatype, "_data, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)"), 
+               datatype, "end")
+  }
+  else if (file_type == "JSON") {
+    add_library("jsonlite", datatype)
+    add_library("readr", datatype)
+    save_lines(paste0(datatype, "_data %>% toJSON() %>% write_lines(file)"), 
+               datatype, "end")
+  }
+  else if (file_type == "xlsx") {
+    add_library("xlsx", datatype)
+    save_lines(paste0("write.xlsx(", datatype, "_data, file, row.names = FALSE, showNA = FALSE)"), 
+               datatype, "end")
+  } else {
+    if (datatype == "clinical") {
+      save_lines('colnames(myData)[1] <- "ExpId"', "clinical", "end")
+    }
+    save_lines(rlang::expr_text(rlang::expr(colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_"))),
+               datatype, "end")
+    save_lines('write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)',
+               datatype, "end")
+  }
+  
+  save_to_rscript(datatype, file)
+}
+
+save_assay_data <- function(file) {
+  
+  if (input$expression_fileType == "csv") {
+    
+    #print("exprToDisplay")
+    #print(values$exprToDisplay, n = 10)
+    withProgress(message = "Writing data to file", {
+      incProgress()
+      write.csv(assay_vals$assay_data, file, row.names = FALSE)
+      incProgress()
+    })
+  }
+  else if (input$expression_fileType == "tsv") {
+    withProgress(message = "Writing data to file",
+                 write.table(assay_vals$assay_data, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+  }
+  else if (input$expression_fileType == "JSON") {
+    library(jsonlite)
+    #library(readr)
+    
+    withProgress(message = "Writing data to file", {
+      incProgress()
+      assay_vals$assay_data %>% toJSON() %>% write_lines(file)
+      incProgress()
+    })
+    
+  }
+  else if (input$expression_fileType == "xlsx") {
+    library(xlsx)
+    
+    withProgress(message = "Writing data to file", {
+      incProgress()
+      write.xlsx(assay_vals$assay_data, file, row.names = FALSE, showNA = FALSE)
+      incProgress()
+    })
+  } else {
+    #files <- c(paste0(tempfile(), input$geoID, "_Data.txt"), paste0(tempfile(), input$geoID, "_GeneAnnotations.txt"))
+    myData <- assay_vals$assay_data
+    colnames(myData) <- colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
+    withProgress(message = "Writing data to file",
+                 write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+    #withProgress(message = "Writing feature data to file",
+    #             write.table(assay_vals$feature_data, files[2], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
+    #zip(file, files)
+  }
+}
 
 # Deprecated functions ----------------------------------------------------
 

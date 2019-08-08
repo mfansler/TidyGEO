@@ -271,7 +271,7 @@ server <- function(input, output, session) {
       paste0(
         datatype, 
         "_data <- ", 
-        rlang::expr_text(expr((!!func_to_eval)(!!sym(paste0(datatype, "_data")), !!!func_args)))
+        rlang::expr_text(rlang::expr((!!func_to_eval)(!!sym(paste0(datatype, "_data")), !!!func_args)))
       ),
       datatype,
       "body"
