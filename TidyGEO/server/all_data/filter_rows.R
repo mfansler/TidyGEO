@@ -63,58 +63,62 @@ output$col_to_match1_preview <- renderDT({
 })
 
 match_vals1 <- reactive({
-  if (input$col_to_match1 == "colnames" || input$col_to_match1 == "rownames") {
-    names_df <- as.data.frame(matrix(eval(parse(
-      text = paste0(
-        input$col_to_match1, "(",
-        input$data_to_match1,
-        "_vals$",
-        input$data_to_match1,
-        '_data)'
-      )
-    ))))
-    colnames(names_df) <- paste0(toupper(substring(input$data_to_match1, 1, 1)), substring(input$data_to_match1, 2), 
-                                    if (input$col_to_match1 == "colnames") "column" else "row", " names")
-    names_df
-  } else {
-    eval(parse(text =
-      paste0(
-        input$data_to_match1,
-        "_vals$",
-        input$data_to_match1,
-        '_data["',
-        input$col_to_match1,
-        '"]'
-      )
-    ))
+  if (!is.null(input$col_to_match1)) {
+    if (input$col_to_match1 == "colnames" || input$col_to_match1 == "rownames") {
+      names_df <- as.data.frame(matrix(eval(parse(
+        text = paste0(
+          input$col_to_match1, "(",
+          input$data_to_match1,
+          "_vals$",
+          input$data_to_match1,
+          '_data)'
+        )
+      ))))
+      colnames(names_df) <- paste0(toupper(substring(input$data_to_match1, 1, 1)), substring(input$data_to_match1, 2), 
+                                   if (input$col_to_match1 == "colnames") "column" else "row", " names")
+      names_df
+    } else {
+      eval(parse(text =
+                   paste0(
+                     input$data_to_match1,
+                     "_vals$",
+                     input$data_to_match1,
+                     '_data["',
+                     input$col_to_match1,
+                     '"]'
+                   )
+      ))
+    }
   }
 })
 
 match_vals2 <- reactive({
-  if (input$col_to_match2 == "colnames" || input$col_to_match2 == "rownames") {
-    names_df <- as.data.frame(matrix(eval(parse(
-      text = paste0(
-        input$col_to_match2, "(",
-        input$data_to_match2,
-        "_vals$",
-        input$data_to_match2,
-        '_data)'
-      )
-    ))))
-    colnames(names_df) <- paste0(toupper(substring(input$data_to_match2, 1, 1)), substring(input$data_to_match2, 2), 
-                                 if (input$col_to_match2 == "colnames") " column" else " row", " names")
-    names_df
-  } else {
-    eval(parse(text =
-                 paste0(
-                   input$data_to_match2,
-                   "_vals$",
-                   input$data_to_match2,
-                   '_data["',
-                   input$col_to_match2,
-                   '"]'
-                 )
-    ))
+  if (!is.null(input$col_to_match2)) {
+    if (input$col_to_match2 == "colnames" || input$col_to_match2 == "rownames") {
+      names_df <- as.data.frame(matrix(eval(parse(
+        text = paste0(
+          input$col_to_match2, "(",
+          input$data_to_match2,
+          "_vals$",
+          input$data_to_match2,
+          '_data)'
+        )
+      ))))
+      colnames(names_df) <- paste0(toupper(substring(input$data_to_match2, 1, 1)), substring(input$data_to_match2, 2), 
+                                   if (input$col_to_match2 == "colnames") " column" else " row", " names")
+      names_df
+    } else {
+      eval(parse(text =
+                   paste0(
+                     input$data_to_match2,
+                     "_vals$",
+                     input$data_to_match2,
+                     '_data["',
+                     input$col_to_match2,
+                     '"]'
+                   )
+      ))
+    }
   }
 })
 

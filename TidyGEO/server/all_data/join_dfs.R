@@ -33,32 +33,33 @@ observeEvent(input$add_dataset, {
   if (all_vals$join_datatypes_visible > 2) disable("add_dataset")
   enable("remove_dataset")
   
-  insertUI(
-    selector = "#data_to_join_previews",
-    where = "beforeEnd",
-    ui = div(id = paste0("preview_div", all_vals$join_datatypes_visible),
-      column(1,
-             br(),
-             br(),
-             br(),
-             br(),
-             icon("expand-arrows-alt", class = "center_align")
-      ),
-      column(4,
-             DTOutput(paste0("data_to_join", all_vals$join_datatypes_visible, "_preview")),
-             uiOutput(paste0("data_to_join", all_vals$join_datatypes_visible, "_rows"))
-      )
-    )
-  )
+  #insertUI(
+  #  selector = "#data_to_join_previews",
+  #  where = "beforeEnd",
+  #  ui = div(id = paste0("preview_div", all_vals$join_datatypes_visible),
+  #    column(1,
+  #           br(),
+  #           br(),
+  #           br(),
+  #           br(),
+  #           icon("expand-arrows-alt", class = "center_align")
+  #    ),
+  #    column(4,
+  #           DTOutput(paste0("data_to_join", all_vals$join_datatypes_visible, "_preview")),
+  #           uiOutput(paste0("data_to_join", all_vals$join_datatypes_visible, "_rows"))
+  #    )
+  #  )
+  #)
 })
 
 observeEvent(input$remove_dataset, {
   removeUI(
     selector = paste0("#selector_div", all_vals$join_datatypes_visible)
   )
-  removeUI(
-    selector = paste0("#preview_div", all_vals$join_datatypes_visible)
-  )
+  #removeUI(
+  #  selector = paste0("#preview_div", all_vals$join_datatypes_visible)
+  #)
+  session$sendCustomMessage("resetValue", paste0("data_to_join", all_vals$join_datatypes_visible))
   all_vals$join_datatypes_visible <- all_vals$join_datatypes_visible - 1
   enable("add_dataset")
   if (all_vals$join_datatypes_visible < 2) disable("remove_dataset")
@@ -69,6 +70,11 @@ observeEvent(input$remove_dataset, {
 
 join_dfs_ui <- tagList(
   h4("Joining datasets"),
+  p(paste("Here is a representation of the join you are about to perform. You will notice that you can join up to two",
+          "times for a total of three joined datasets. If you have only selected one dataset, no joins will be performed",
+          "but \"all data\" will consist of the one dataset you have selected.", 
+          "Blank boxes are placeholders that will not affect the final join.")),
+  br(),
   fluidRow(
     column(4,
       box(

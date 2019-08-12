@@ -10,7 +10,7 @@ tabPanel(title = icon("edit"), value = "1",
                                  label = div(icon("exchange-alt"),
                                              "Use different ID column"),
                                  width = '200px', class = "indent"), 
-                  help_link(id = "replace_id_help"))
+                  help_link("assay", "replace_id_help"))
            
          ),
          fluidRow(
@@ -19,7 +19,7 @@ tabPanel(title = icon("edit"), value = "1",
                                  label = div(icon("retweet"),
                                              "Transpose"),
                                  width = '200px', class = "indent"),
-                  help_link(id = "transpose_help"))
+                  help_link("assay", "transpose_help"))
          ),
          #primary_button("expression_evaluate_filters", 
           #              label = div(icon("filter"),

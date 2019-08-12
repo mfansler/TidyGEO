@@ -1,20 +1,15 @@
-data_to_view <- reactive({
-  eval(parse(text = paste0(input$data_to_view, "_vals$", input$data_to_view, "_data")))
+data_to_view_is_null <- reactive({
+  eval(parse(text = paste0("is.null(", input$data_to_view, "_vals$", input$data_to_view, "_data)")))
 })
 
 output$view_data <- renderUI({
   if (!is.null(input$data_to_view)) {
-    if (!is.null(data_to_view())) {
+    if (data_to_view_is_null()) {
+      get_null_error_message(input$data_to_view)
+    } else {
       # This acts screwy if you try to use one DTOutput for all the datatypes. Don't know why.
       # Best to keep them all separate for now.
       DTOutput(paste0(input$data_to_view, "_view"))
-    } else if (input$data_to_view == "all") {
-      HTML('<p style="color:red">No datasets have been joined yet. Please join datasets to view this data.</p>')
-    } else {
-      HTML(paste0(
-        '<p style="color:red">There is no ', input$data_to_view, ' data loaded. Please load data in the "',
-        toupper(substring(input$data_to_view, 1, 1)), substring(input$data_to_view, 2, nchar(input$data_to_view)), 
-        ' data" tab.</p>'))
     }
   }
 })

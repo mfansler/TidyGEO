@@ -1,6 +1,6 @@
 output$feature_nameFile <- renderUI({
   textInput("feature_userFileName", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows what to name the data file.")), 
-            value = paste0(input$geoID, "_Features.", input$feature_fileType))
+            value = get_filename("feature", input$geoID, input$feature_fileType))
 })
 
 output$feature_downloadData <- downloadHandler(

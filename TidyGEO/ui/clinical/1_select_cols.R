@@ -5,7 +5,7 @@ tabPanel(title = icon("filter"), value = "1",
          p("Here, you can choose which columns are most important for you to keep
            and drop the rest. You may either use preset filters that will detect commonly-dropped
            columns, or select specific columns to keep."),
-         radioButtons(inputId = "filter_option", label = div("Please select an option:", help_link("filter_help")),
+         radioButtons(inputId = "filter_option", label = div("Please select an option:", help_link("clinical", "filter_help")),
                       choices = c("Use preset filters" = "preset_filters",
                                   "Select columns by column name" = "column_filters")),
          conditionalPanel(condition = "input.filter_option == 'preset_filters'",

@@ -8,7 +8,7 @@ tabPanel(title = icon("th-list"), value = "3",
           #                                               help_link(id = "split_help")
          #)),
          div(tags$b("Please select columns that contain key-value pairs:"),
-                                                            help_link(id = "split_help")),
+                                                            help_link("clinical", "split_help")),
          #conditionalPanel(condition = "input.to_split == true",
                           checkboxInput(inputId = "select_all_split", 
                                         label = tags$i("Select all")),
@@ -17,11 +17,7 @@ tabPanel(title = icon("th-list"), value = "3",
          #)
          ,
          checkboxInput("split_pairs_w_regex", div(
-           "Use regex",
-           actionLink(inputId = "regex_help_split_pairs", label = div(
-             tags$i("Help/testing"),
-             icon("question-circle")
-           ))
+           "Use regex", regex_help_link("split_pairs")
          )), 
          div(
            primary_button(id = "split_pairs", label = div(icon("th-list"), "Split pairs")),

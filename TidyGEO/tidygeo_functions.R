@@ -13,6 +13,12 @@ library(tidyr)
 
 version <- suppressWarnings(readLines("VERSION"))
 
+# Small utility functions -------------------------------------------------
+
+cap_first <- function(my_str) {
+  paste0(toupper(substring(my_str, 1, 1)), substring(my_str, 2, nchar(my_str)))
+}
+
 # R Script writing --------------------------------------------------------
 
 
@@ -75,7 +81,6 @@ format_string <- function(element) {
   }
   return(element)
 }
-
 
 # ** section headings -----------------------------------------------------
 commentify <- function(message) {
@@ -143,10 +148,10 @@ remove_library_if_exists <- function(lib_name, datatype) {
 add_function <- function(func_name, datatype = c("clinical", "assay", "feature")) {
   if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
     # add all dependencies first
-    if (!is.na(func_lists[[func_name]][["lib_dependencies"]])) {
+    if (!all(is.na(func_lists[[func_name]][["lib_dependencies"]]))) {
       add_library(func_lists[[func_name]][["lib_dependencies"]], datatype)
     }
-    if (!is.na(func_lists[[func_name]][["func_dependencies"]])) {
+    if (!all(is.na(func_lists[[func_name]][["func_dependencies"]]))) {
       lapply(func_lists[[func_name]][["func_dependencies"]], add_function, datatype = datatype)
     }
     # add function
@@ -308,31 +313,81 @@ create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_n
   }
 }
 
-# Downloading data files --------------------------------------------------
 
-save_data <- function(myData, file, file_type) {
-  if (file_type == "csv") {
-    write.csv(myData, file, row.names = FALSE)
-  }
-  else if (file_type == "tsv") {
-    write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
-  }
-  else if (file_type == "JSON") {
-    library(jsonlite)
-    
-    myData %>% toJSON() %>% write_lines(file)
-  }
-  else if (file_type == "xlsx") {
-    library(xlsx)
-    
-    write.xlsx(myData, file, row.names = FALSE, showNA = FALSE)
+# Generating error messages for missing data ------------------------------
+
+get_null_error_message <- function(datatype) {
+  if (datatype == "all") {
+    HTML('<p style="color:red">No datasets have been joined yet. Please join datasets to view this data.</p>')
   } else {
-    colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
-    write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+    HTML(paste0(
+      '<p style="color:red">There is no ', datatype, ' data loaded. Please load data in the "',
+      cap_first(datatype), 
+      ' data" tab.</p>'))
   }
 }
 
-save_rscript(datatype, file, file_name, file_type) {
+
+# Generating names for files of different types ---------------------------
+
+get_filename <- function(datatype, geoID, filetype) {
+  type_names <- list("clinical" = "Annotations", "assay" = "Data", "feature" = "Features", "all" = "Composite")
+  if (!datatype %in% names(type_names)) {
+    stop('Please specify a valid data type ("clinical", "assay", "feature", or "all)')
+  }
+  paste0(geoID, "_", type_names[[datatype]], ".", filetype)
+}
+
+# Downloading data files --------------------------------------------------
+
+save_data <- function(myData, file, file_type, filenames = NULL) {
+  myData <- if (class(myData) == "list") myData else list(myData)
+  file_dir <- tempdir()
+  files <- if (length(myData) > 1) {
+    if (is.null(filenames)) {
+      stop("For zipped files, please specify a list of file names (including the extension) to zip.")
+    } else {
+      lapply(filenames, function(filename) {
+        paste0(file_dir, "/", filename)
+      })
+    }
+  } else {
+    list(file)
+  }
+  lapply(1:length(files), function(i) {
+    if (file_type == "csv") {
+      write.csv(myData[[i]], files[[i]], row.names = FALSE)
+    }
+    else if (file_type == "tsv") {
+      write.table(myData[[i]], files[[i]], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+    }
+    else if (file_type == "JSON") {
+      library(jsonlite)
+      
+      myData[[i]] %>% toJSON() %>% write_lines(files[[i]])
+    }
+    else if (file_type == "xlsx") {
+      library(xlsx)
+      
+      write.xlsx(myData[[i]], files[[i]], row.names = FALSE, showNA = FALSE)
+    } else {
+      colnames(myData[[i]]) <- str_replace_all(colnames(myData[[i]]), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
+      write.table(myData[[i]], files[[i]], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+    }
+  })
+  if (length(myData) > 1) {
+    current_dir <- getwd()
+    setwd(file_dir)
+    if (str_detect(file, "tgz")) {
+      tar(file, filenames, compression = "gzip")
+    } else {
+      zip(file, filenames)
+    }
+    setwd(current_dir)
+  }
+}
+
+save_rscript <- function(datatype, file, file_name, file_type) {
   save_lines(commentify("save data"), datatype, "end", overwrite = TRUE)
   if (datatype == "clinical") {
     save_lines(c("clinical_data <- cbind(rownames(clinical_data), clinical_data)", 

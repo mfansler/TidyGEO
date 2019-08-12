@@ -6,7 +6,7 @@ tabPanel(title = icon("columns"), value = "4",
          #checkboxInput(inputId = "to_divide", label = div(tags$b("Modify columns with multiple values in one column"),
         #                                                  help_link(id = "divide_help"))),
          div(tags$b("Please select columns with multiple values in one column"),
-             help_link(id = "divide_help")),
+             help_link("clinical", "divide_help")),
          #conditionalPanel(condition = "input.to_divide == true",
                           checkboxInput(inputId = "select_all_divide", 
                                         label = tags$i("Select all")),
@@ -15,11 +15,7 @@ tabPanel(title = icon("columns"), value = "4",
          #)
          ,
         checkboxInput("split_cols_w_regex", div(
-          "Use regex",
-          actionLink(inputId = "regex_help_split_cols", label = div(
-            tags$i("Help/testing"),
-            icon("question-circle")
-          ))
+          "Use regex", regex_help_link("split_cols")
         )), 
          div(
            primary_button(id = "split_cols", label = div(icon("columns"), "Split columns")),

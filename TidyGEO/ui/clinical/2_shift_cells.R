@@ -5,7 +5,7 @@ tabPanel(title = icon("angle-double-right"), value = "2",
            'to be scattered across multiple columns. This makes it difficult to extract data for the single variable.'),
          p("Here, you can identify a column whose values you would like to shift to a single column. Usually it is best
            to start at the rightmost column that has shifted values and work your way to the left.",
-             help_link(id = "shift_help")),
+             help_link("clinical", "shift_help")),
          uiOutput("display_cols_to_shift"),
          uiOutput("display_destination_cols"),
          HTML('Here is a preview of the first 5 rows of the columns you have selected. Conflicts, where one value might

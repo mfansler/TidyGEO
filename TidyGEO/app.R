@@ -138,8 +138,8 @@ ui <- dashboardPage(
                  sidebarPanel(
                    tabsetPanel(id = "all_data_options",
                      source(file.path("ui", "all_data", "filter_rows.R"), local = TRUE)$value,
-                     source(file.path("ui", "all_data", "join_dfs.R"), local = TRUE)$value#,
-                     #source(file.path("ui", "all_data", "save_data.R"), local = TRUE)$value
+                     source(file.path("ui", "all_data", "join_dfs.R"), local = TRUE)$value,
+                     source(file.path("ui", "all_data", "save_data.R"), local = TRUE)$value
                    )
                  ),
                  mainPanel(
@@ -260,7 +260,7 @@ server <- function(input, output, session) {
   # ** For running a dataset through a formatting function ---------------------
 
   # This function is not necessary if you know which datatype you're updating, but
-  # helpful since it writes the function to the script.
+  # helpful since it writes the function to the script automatically.
   # 
   # Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
   eval_function <- function(datatype, func_to_eval, func_args) {
@@ -456,6 +456,7 @@ server <- function(input, output, session) {
   # ** ** side panel --------------------------------------------------------------
   source(file.path("server", "all_data", "filter_rows.R"), local = TRUE)$value
   source(file.path("server", "all_data", "join_dfs.R"), local = TRUE)$value
+  source(file.path("server", "all_data", "save_data.R"), local = TRUE)$value
   
   # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "all_data", "workbench.R"), local = TRUE)$value

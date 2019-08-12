@@ -10,7 +10,7 @@ sidebarLayout(
     ),
     br(),
     selectizeInput(inputId = "geoID", label = div("Please input a GSE ID: ", 
-                                                  help_link(id = "download_help")), choices = NULL),
+                                                  help_link("choose", "download_help")), choices = NULL),
     uiOutput("platform_options"),
     primary_button(id = "download_data_evaluate", label = div(icon("sign-in-alt"), "Import")),
     hr(), 

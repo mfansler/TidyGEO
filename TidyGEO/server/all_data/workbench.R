@@ -9,6 +9,8 @@ output$all_data_workbench <- renderUI({
     # all separated by something that indicates the join and the direction of the join
     # a preview of the results of the join (maybe include stats such as how many rows before and after,
     # how many columns before and after)
+  } else if (input$all_data_options == "3") {
+    save_data_ui
   } else {
     DTOutput("workbench_all_data_view")
   }

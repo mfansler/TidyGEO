@@ -26,7 +26,7 @@ output$display_cols_to_sub <- renderUI({
   colNames <- colnames(clinical_vals$clinical_data)
   setNames(colNames, colNames)
   selectInput(inputId = "colsToSub", label = div("Please select a column with values to substitute: ", 
-                                                 help_link(id = "substitute_help")), 
+                                                 help_link("clinical", "substitute_help")), 
               choices = colNames,
               selected = clinical_vals$last_selected_substitute)
 })

@@ -18,8 +18,15 @@ help_button <- function(message = "content", placement = "right") {
 #' @return A clickable question icon that leads to a help modal.
 #' @examples
 #' help_link("my_help_link")
-help_link <- function(id) {
-  tipify(actionLink(inputId = id, label = icon("question-circle")), title = "Click for help", placement = "right", trigger = "hover")
+help_link <- function(section, id) {
+  tipify(actionLink(inputId = paste0(section, "_", id), label = icon("question-circle"), class = id), title = "Click for help", placement = "right", trigger = "hover")
+}
+
+regex_help_link <- function(extra_tag) {
+  actionLink(
+    inputId = paste0("regex_help_", extra_tag), label = div(tags$i("Help/testing"),
+                                                   icon("question-circle")), 
+    class = "regex_help")
 }
 
 # action buttons ----------------------------------------------------------

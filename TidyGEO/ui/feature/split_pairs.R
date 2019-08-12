@@ -5,18 +5,14 @@ tabPanel(title = icon("th-list"), value = "3",
            (e.g., "treatment:control" or "sex = female"), 
            you can indicate that here and separate them.'),
          div(tags$b("Please select columns that contain key-value pairs:"),
-             help_link(id = "split_help_feature")),
+             help_link("feature", "split_help")),
          checkboxInput(inputId = "select_all_split_feature", 
                        label = tags$i("Select all")),
          uiOutput("choose_cols_to_split_feature"),
          textInput(inputId = "split_delimiter_feature", label = "Delimiter (including any spaces): ", 
                    placeholder = "Start typing..."),
          checkboxInput("split_pairs_w_regex_feature", div(
-           "Use regex",
-           actionLink(inputId = "regex_help_split_pairs_feature", label = div(
-             tags$i("Help/testing"),
-             icon("question-circle")
-           ))
+           "Use regex", regex_help_link("feature_split_pairs")
          )), 
          div(
            primary_button(id = "split_pairs_feature", label = div(icon("th-list"), "Split pairs")),

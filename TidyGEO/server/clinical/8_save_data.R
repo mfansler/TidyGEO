@@ -1,6 +1,6 @@
 output$clinical_display_filename <- renderUI({
   textInput("clinical_user_filename", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows what to name the data file.")), 
-            value = paste0(input$geoID, "_Annotations.", input$clinical_file_type))
+            value = get_filename("clinical", input$geoID, input$clinical_file_type))
 })
 
 output$clinical_evaluate_save <- downloadHandler(

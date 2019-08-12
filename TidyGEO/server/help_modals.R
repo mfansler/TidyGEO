@@ -50,101 +50,98 @@ create_image_grid <- function(images, image_names) {
 
 # listeners ---------------------------------------------------------------
 
-observeEvent(input$shift_help, {
+observeEvent(input$shift_help_clicked, {
   images <- c("shift_cells_example.gif")
   image_names <- c("Demo - Shift Cells")
   
   help_modal("help_docs/Shift_Cells_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "shift_help_clicked")
 })
 
-observeEvent(input$split_help, {
+observeEvent(input$split_help_clicked, {
   images <- c("separate_example.gif")
   image_names <- c("Demo - Separate Columns")
   
   help_modal("help_docs/Split_Vars_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "split_help_clicked")
 })
 
-observeEvent(input$divide_help, {
+observeEvent(input$divide_help_clicked, {
   images <- c("divide_example.gif")
   image_names <- c("Demo - Divide Columns")
   
   help_modal("help_docs/Divide_Vars_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "divide_help_clicked")
 })
 
-observeEvent(input$substitute_help, {
+observeEvent(input$substitute_help_clicked, {
   images <- c("substitute_example.gif", "substitute_numeric_example.gif")
   image_names <- c("Demo - Substitute Values", "Demo - Substitute Range")
   
   help_modal("help_docs/Substitute_Vals_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "substitute_help_clicked")
 })
 
-observeEvent(input$regex_help, {
+observeEvent(input$regex_help_clicked, {
   source(file.path("server", "regex_modal.R"), local = TRUE)$value
+  session$sendCustomMessage("resetValue", "regex_help_clicked")
 })
 
-observeEvent(input$exclude_help, {
+observeEvent(input$exclude_help_clicked, {
   images <- c("exclude_example.gif", "exclude_numeric_example.gif")
   image_names <- c("Demo - Exclude Values", "Demo - Exclude Range")
   
   help_modal("help_docs/Exclude_Vals_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "exclude_help_clicked")
 })
 
-observeEvent(input$download_help, {
+observeEvent(input$download_help_clicked, {
   images <- c("download_example.gif")
   image_names <- c("Demo - Load Series")
   
   help_modal("help_docs/Download_Data_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "download_help_clicked")
 })
 
-observeEvent(input$clinical_r_help, {
+observeEvent(input$r_help_clicked, {
   help_modal("help_docs/R_Help_Documentation.md")
+  session$sendCustomMessage("resetValue", "r_help_clicked")
 })
 
-observeEvent(input$replace_id_help, {
+observeEvent(input$replace_id_help_clicked, {
   images <- c("different_id_example.gif")
   image_names <- c("Demo - Replacing the ID Column")
   
   help_modal("help_docs/Different_ID_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "replace_id_help_clicked")
 })
 
-observeEvent(input$transpose_help, {
+observeEvent(input$transpose_help_clicked, {
   images <- c("transpose_example.gif")
   image_names <- c("Demo - Transpose Columns and Rows")
   
   help_modal("help_docs/Transpose_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "transpose_help_clicked")
 })
-observeEvent(input$filter_help, {
+observeEvent(input$filter_help_clicked, {
   images <- c("filter_presets_example.gif", "filter_by_name_example.gif")
   image_names <- c("Demo - Filter using Presets", "Demo - Filter by Name")
   
   help_modal("help_docs/Filter_Data_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "filter_help_clicked")
 })
 
-observeEvent(input$evaluate_filters_help, {
+observeEvent(input$evaluate_filters_help_clicked, {
   images <- c("apply_filters_example.gif")
   image_names <- c("Demo - Apply Filters")
   
   help_modal("help_docs/Apply_Filters_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "evaluate_filters_help_clicked")
 })
 
-observeEvent(input$expression_r_help, {
-  help_modal("help_docs/R_Help_Documentation.md")
-})
-
-observeEvent(input$clinical_files_help, {
+observeEvent(input$files_help_clicked, {
   help_modal("help_docs/File_Types_Documentation.md")
-})
-
-observeEvent(input$expression_files_help, {
-  help_modal("help_docs/File_Types_Documentation.md")
-})
-
-observeEvent(input$regex_help_split_pairs, {
-  source(file.path("server", "regex_modal.R"), local = TRUE)$value
-})
-
-observeEvent(input$regex_help_split_cols, {
-  source(file.path("server", "regex_modal.R"), local = TRUE)$value
+  session$sendCustomMessage("resetValue", "files_help_clicked")
 })
 
 # enlarge image listener --------------------------------------------------

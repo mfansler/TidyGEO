@@ -53,7 +53,7 @@ output$evaluate_filters_button <- renderUI({
                    label = div(icon("filter"),
                                "Apply filters"),
                    width = '200px', class = "indent"),
-    help_link(id = "evaluate_filters_help"))
+    help_link("assay", "evaluate_filters_help"))
   }
 })
 
