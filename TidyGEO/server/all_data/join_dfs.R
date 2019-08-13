@@ -60,9 +60,83 @@ observeEvent(input$remove_dataset, {
   #  selector = paste0("#preview_div", all_vals$join_datatypes_visible)
   #)
   session$sendCustomMessage("resetValue", paste0("data_to_join", all_vals$join_datatypes_visible))
+  session$sendCustomMessage("resetValue", paste0("col_to_join", all_vals$join_datatypes_visible))
   all_vals$join_datatypes_visible <- all_vals$join_datatypes_visible - 1
   enable("add_dataset")
   if (all_vals$join_datatypes_visible < 2) disable("remove_dataset")
+})
+
+observeEvent(input$join_columns, {
+  all_vals$all_data <- eval(parse(text = paste0(input$data_to_join1, "_vals$", input$data_to_join1, "_data")))
+  set_script_equal("all", input$data_to_join1)
+  
+  withProgress({
+    incProgress(message = "Performing first join")
+    if (all_vals$join_datatypes_visible > 1) {
+      knit_scripts("all", input$data_to_join2, "all")
+      join1_status <- eval_function("all", "join_data", 
+                                    list(get_datatype_expr(input$data_to_join2),
+                                         input$col_to_join1,
+                                         input$col_to_join2,
+                                         input$join_behavior2),
+                                    "Joining datasets",
+                                    c(input$data_to_join1, input$data_to_join2))
+    }
+    #join1_status <- tryCatch({
+    #  if (all_vals$join_datatypes_visible > 1) {
+    #    all_vals$all_data <- join_data(
+    #      eval(parse(text = paste0(input$data_to_join1, "_vals$", input$data_to_join1, "_data"))), 
+    #      eval(parse(text = paste0(input$data_to_join2, "_vals$", input$data_to_join2, "_data"))), 
+    #      input$col_to_join1, 
+    #      input$col_to_join2, 
+    #      input$join_behavior2
+    #    )
+    #  }
+    #}, error = function(e) {
+    #  
+    #})
+    if (join1_status == "completed") {
+      incProgress(message = "Performing second join")
+      if (all_vals$join_datatypes_visible > 2) {
+        knit_scripts("all", input$data_to_join3, "all")
+        join2_status <- eval_function("all", "join_data", 
+                                      list(paste0(input$data_to_join3, "_vals$", input$data_to_join3, "_data"),
+                                           input$col_to_join2,
+                                           input$col_to_join3,
+                                           input$join_behavior3))
+        #all_vals$all_data <- join_data(
+        #  all_vals$all_data, 
+        #  eval(parse(text = paste0(input$data_to_join3, "_vals$", input$data_to_join3, "_data"))), 
+        #  input$col_to_join2, 
+        #  input$col_to_join3, 
+        #  input$join_behavior3
+        #)
+        if (join2_status != "completed") {
+          undo_script("all")
+          showModal(
+            modalDialog(
+              title = HTML("<style = color: red>Error in second join</style>"),
+              p("Join not performed. Reason:", style = "color: red"),
+              p(join2_status, style = "color: red")
+            )
+          )
+        }
+      }
+    } else {
+      undo_script("all")
+      showModal(
+        modalDialog(
+          title = HTML("<style = color: red>Error in first join</style>"),
+          p("Join not performed. Reason:", style = "color: red"),
+          p(join1_status, style = "color: red")
+        )
+      )
+    }
+  })
+  
+  updateTabsetPanel(session, "all_data_main_panel", "2")
+  updateSelectInput(session, inputId = "data_to_view", selected = "all")
+  
 })
 
 
@@ -201,24 +275,22 @@ get_data_to_join_preview <- function(datatype, selected_col) {
                          USE.NAMES = FALSE)
   matrix(font_weights)
   }
-  this_func <- if (selected_col == "colnames") "row" else "col"
-  eval(parse(text = paste0("n", this_func, "(", datatype, "_vals$", datatype, "_data)")))
+  if (!is.null(datatype)) {
+    this_func <- if (selected_col == "colnames") "row" else "col"
+    eval(parse(text = paste0("n", this_func, "(", datatype, "_vals$", datatype, "_data)")))
+  } else {
+    0
+  }
 }
 
 data_to_join1_data <- reactive({
-  if (!is.null(input$col_to_join1)) {
-    get_data_to_join_preview(input$data_to_join1, input$col_to_join1)
-  } else 0
+  get_data_to_join_preview(input$data_to_join1, input$col_to_join1)
 })
 data_to_join2_data <- reactive({
-  if (!is.null(input$col_to_join2)) {
-    get_data_to_join_preview(input$data_to_join2, input$col_to_join2)
-  } else 0
+  get_data_to_join_preview(input$data_to_join2, input$col_to_join2)
 })
 data_to_join3_data <- reactive({
-  if (!is.null(input$col_to_join3)) {
-    get_data_to_join_preview(input$data_to_join3, input$col_to_join3)
-  } else 0
+  get_data_to_join_preview(input$data_to_join3, input$col_to_join3)
 })
 
 output$join_results_preview <- renderUI({
@@ -227,30 +299,4 @@ output$join_results_preview <- renderUI({
       "<p><b>Resulting number of columns: </b>", data_to_join1_data() + data_to_join2_data() + data_to_join3_data(), "</p>"
     )
   )
-})
-
-observeEvent(input$join_columns, {
-  all_vals$all_data <- input$data_to_join1
-  withProgress({
-    incProgress(message = "Performing first join")
-    if (all_vals$join_datatypes_visible > 1) {
-      all_vals$all_data <- join_data(
-        eval(parse(text = paste0(input$data_to_join1, "_vals$", input$data_to_join1, "_data"))), 
-        eval(parse(text = paste0(input$data_to_join2, "_vals$", input$data_to_join2, "_data"))), 
-        input$col_to_join1, 
-        input$col_to_join2, 
-        input$join_behavior2
-      )
-    }
-    incProgress(message = "Performing second join")
-    if (all_vals$join_datatypes_visible > 2) {
-      all_vals$all_data <- join_data(
-        all_vals$all_data, 
-        eval(parse(text = paste0(input$data_to_join3, "_vals$", input$data_to_join3, "_data"))), 
-        input$col_to_join2, 
-        input$col_to_join3, 
-        input$join_behavior3
-      )
-    }
-  })
 })

@@ -12,9 +12,6 @@ output$all_display_filename <- renderUI({
             value = file_name)
 })
 
-observe({
-})
-
 output$all_evaluate_save <- downloadHandler(
   contentType = if (input$which_data_to_save == "zip") "application/gzip" else paste0("text/", input$all_file_type),
   filename = function() {
@@ -48,7 +45,12 @@ output$all_save_rscript <- downloadHandler(
     paste0(input$all_user_filename, ".R")
   },
   content = function(file) {
-    save_rscript(input$which_data_to_save, file, input$all_user_filename, input_all_file_type)
+    filenames <- if (length(datatypes_selected()) > 1) {
+      unlist(lapply(datatypes_selected(), get_filename, input$geoID, input$all_file_type))
+    } else {
+      input$all_user_filename
+    }
+    save_rscript(datatypes_selected(), file, filenames, input$all_file_type)
   }
 )
 

@@ -143,7 +143,7 @@ ui <- dashboardPage(
                    )
                  ),
                  mainPanel(
-                   tabsetPanel(
+                   tabsetPanel(id = "all_data_main_panel",
                      source(file.path("ui", "all_data", "workbench.R"), local = TRUE)$value,
                      source(file.path("ui", "all_data", "data_viewer.R"), local = TRUE)$value
                    )
@@ -254,47 +254,83 @@ server <- function(input, output, session) {
   all_vals <- 
     reactiveValues(
       all_data = NULL,
+      last_data = NULL,
       join_datatypes_visible = 1
     )
   
   # ** For running a dataset through a formatting function ---------------------
 
-  # This function is not necessary if you know which datatype you're updating, but
-  # helpful since it writes the function to the script automatically.
+  # >> This function is not necessary if you know which datatype you're updating, but
+  #    helpful since it writes the function to the script automatically.
   # 
-  # Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
-  eval_function <- function(datatype, func_to_eval, func_args) {
+  # >> func_to_eval must be a string
+  # >> func_args must be a list; it can be named, for named arguments
+  # >> Leave to_knit NULL in most cases, unless you're joining datasets or using values from one
+  #    dataset to format another
+  # 
+  # >> This function must stay in app.R to have access to the reactiveValues
+  # 
+  # >> Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
+  eval_function <- function(datatype, func_to_eval, func_args, header = "", to_knit = NULL) {
+    if (!datatype %in% allowed_datatypes) {
+      stop(invalid_datatype_message)
+    }
+    
     # WRITING COMMANDS TO R SCRIPT
     set_undo_point_script(datatype)
+    if (length(to_knit) == 2) {
+      knit_scripts(to_knit[1], to_knit[2], datatype)
+    } else if (length(to_knit) > 0) {
+      stop(paste0("Please provide two datatypes to knit together. You have provided ", length(to_knit), "."))
+    }
+    save_lines(commentify(header), datatype, "body")
     add_function(func_to_eval, datatype)
+    func_args_text <- lapply(func_args, function(arg) {
+      if (class(arg) == "call") {
+        sym(get_datatype_expr_text(arg))
+      } else {
+        arg
+      }
+    })
     save_lines(
       paste0(
         datatype, 
         "_data <- ", 
-        rlang::expr_text(rlang::expr((!!func_to_eval)(!!sym(paste0(datatype, "_data")), !!!func_args)))
+        rlang::expr_text(rlang::expr((!!func_to_eval)(!!sym(paste0(datatype, "_data")), !!!func_args_text)))
       ),
       datatype,
       "body"
     )
     
-    # Get the result of the formatting function
-    result <- eval(
+    status <- tryCatch({ # Whether the formatting function evaluated successfully
+      # Get the result of the formatting function
+      result <- eval(
       expr((!!func_to_eval)(
         eval(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))), 
         !!!func_args
             )
         )
       )
+      "completed"
+    }, error = function(e) {
+      return(paste0("Error:\n", paste(e, collapse = "\n")))
+    })
     
-    # Replace the last data with the current data (before formatting)
-    eval(
-      expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), `$`(!!sym(paste0(datatype, "_vals")), "last_data")))
-    )
-    
-    # Replace the data with the formatted data
-    eval(
-      expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), result))
-    )
+    if (status != "completed") { # The formatting was not performed
+      undo_script(datatype)
+      return(status)
+    } else { # The formatting function was successful
+      # Replace the last data with the current data (before formatting)
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), `$`(!!sym(paste0(datatype, "_vals")), "last_data")))
+      )
+      
+      # Replace the data with the formatted data
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), result))
+      )
+      return(status)
+    }
   }
   
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value

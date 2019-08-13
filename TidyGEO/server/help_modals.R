@@ -144,6 +144,12 @@ observeEvent(input$files_help_clicked, {
   session$sendCustomMessage("resetValue", "files_help_clicked")
 })
 
+observeEvent(input$zip_files_help_clicked, {
+  # https://file.org/extension/gz
+  # https://www.google.com/search?q=how+to+open+tar.gz+on+windows+10&rlz=1C1SQJL_enUS777US777&oq=how+to+open+tar.gz+&aqs=chrome.3.0l2j69i57j0l3.7999j0j7&sourceid=chrome&ie=UTF-8
+  # https://stackoverflow.com/questions/20762094/how-are-zlib-gzip-and-zip-related-what-do-they-have-in-common-and-how-are-they
+})
+
 # enlarge image listener --------------------------------------------------
 
 

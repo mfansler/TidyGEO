@@ -19,18 +19,40 @@ cap_first <- function(my_str) {
   paste0(toupper(substring(my_str, 1, 1)), substring(my_str, 2, nchar(my_str)))
 }
 
+get_datatype_expr <- function(datatype) {
+  if (datatype %in% allowed_datatypes) {
+    rlang::expr(eval(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))))
+  } else {
+    stop(paste("Error in get_datatype_expr.", invalid_datatype_message))
+  }
+}
+
+get_datatype_expr_text <- function(datatype_expr) {
+  if (class(datatype_expr) != "call") {
+    stop("Error in get_datatype_expr_text. 'datatype_expr' is not an expression.")
+  }
+  expr_text <- rlang::expr_text(datatype_expr)
+  if (grepl("\\$", expr_text)) {
+    str_remove(str_split(expr_text, pattern = "\\$")[[1]][2], "\\)")
+  } else {
+    stop("Error in get_datatype_expr_text. 'datatype_expr' does not represent one of the datatype reactiveVariables.")
+  }
+}
+
 # R Script writing --------------------------------------------------------
 
 
 # ** initialize scripts ---------------------------------------------------
 
+start_message <- c(paste("# Script generated using version", version, 
+                         "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
+                   "# application that allows scientists to quickly download and reformat data from",
+                   "# the online repository Gene Expression Omnibus (GEO).",
+                   "",
+                   "")
+header <- c()
+
 script_template <- list(
-  header = c(paste("# Script generated using version", version, 
-                   "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
-             "# application that allows scientists to quickly download and reformat data from",
-             "# the online repository Gene Expression Omnibus (GEO).",
-             "",
-             ""),
   libraries = c(),
   functions = c(),
   body = c(),
@@ -40,20 +62,32 @@ script_template <- list(
 original_scripts <- list(
   clinical = script_template,
   assay = script_template,
-  feature = script_template
+  feature = script_template,
+  all = script_template
 )
 
 last_scripts <- list(
   clinical = script_template,
   assay = script_template,
-  feature = script_template
+  feature = script_template,
+  all = script_template
 )
 
 scripts <- list(
   clinical = script_template,
   assay = script_template,
-  feature = script_template
+  feature = script_template,
+  all = script_template
 )
+
+allowed_datatypes <- c("clinical", "assay", "feature", "all")
+invalid_datatype_message <- paste0('Please specify a valid data type (', 
+                                   paste(allowed_datatypes[-length(allowed_datatypes)], collapse = ", "), 
+                                   ", or ", allowed_datatypes[length(allowed_datatypes)], ")")
+allowed_sections <- c("body", "end")
+invalid_section_message <- paste0('Please specify a valid section (', 
+                                   paste(allowed_sections[-length(allowed_sections)], collapse = ", "), 
+                                   " or ", allowed_sections[length(allowed_sections)], ")")
 
 # ** helper functions -----------------------------------------------------
 func_lists <- readRDS("User/rscript_functions.rds")
@@ -92,29 +126,26 @@ commentify <- function(message) {
 }
 
 # ** storing lines in a variable ------------------------------------------
-#saveLines <- function(strings, oFile) {
-#  
-#  oFile <- c(oFile, strings)
-#  
-#  return(oFile)
-#}
 
-save_lines <- function(lines, datatype = c("clinical", "assay", "feature"), 
-                       section = c("header", "body", "end"), overwrite = F) {
-  if (length(datatype) > 1 || !datatype %in% c("clinical", "assay", "feature")) {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
-  } else if (length(section) > 1 || !section %in% c("header", "body", "end")) {
-    stop('Please specify a valid section ("header", "body", or "end")')
+write_to_header <- function(lines, overwrite = FALSE) {
+  header <<- if (overwrite) lines else c(header, lines)
+}
+
+save_lines <- function(lines, datatype, section, overwrite = FALSE) {
+  if (length(datatype) > 1 || !datatype %in% allowed_datatypes) {
+    stop(paste("Error in save_lines.", invalid_datatype_message))
+  } else if (length(section) > 1 || !section %in% allowed_sections) {
+    stop(paste("Error in save_lines.", invalid_section_message))
   } else {
-    scripts[[datatype]][[section]] <<- if (overwrite) lines else c(scripts[[datatype]][[section]], lines)
+    scripts[[datatype]][[section]] <<- if (overwrite) c(script_template[[section]], lines) else c(scripts[[datatype]][[section]], lines)
   }
 }
 
-add_library <- function(lib_name, datatype = c("clinical", "assay", "feature")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+add_library <- function(lib_name, datatype) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     scripts[[datatype]][["libraries"]] <<- c(scripts[[datatype]][["libraries"]], lib_name)
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in add_library.", invalid_datatype_message))
   }
 }
 
@@ -138,15 +169,15 @@ format_library <- function(lib_name) {
 }
 
 remove_library_if_exists <- function(lib_name, datatype) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     scripts[[datatype]][["libraries"]] <<- scripts[[datatype]][["libraries"]][scripts[[datatype]][["libraries"]] != lib_name]
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in remove_library_if_exists.", invalid_datatype_message))
   }
 }
 
-add_function <- function(func_name, datatype = c("clinical", "assay", "feature")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+add_function <- function(func_name, datatype) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     # add all dependencies first
     if (!all(is.na(func_lists[[func_name]][["lib_dependencies"]]))) {
       add_library(func_lists[[func_name]][["lib_dependencies"]], datatype)
@@ -157,7 +188,7 @@ add_function <- function(func_name, datatype = c("clinical", "assay", "feature")
     # add function
     scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_name)
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in add_function.", invalid_datatype_message))
   }
 }
 
@@ -166,34 +197,41 @@ format_function <- function(func_name) {
 }
 
 # ** final script ---------------------------------------------------------
-#saveToRscript <- function(oFile, version,
-#                          filePath = file.path(tempdir(), "script_Temp.R"),
-#                          functions) {
-#  header <- c(paste("# Script generated using version", version, 
-#                    "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
-#              "# application that allows scientists to quickly download and reformat data from",
-#              "# the online repository Gene Expression Omnibus (GEO).")
-#  helper_functions <- 
-#    oFile <- c(header, helper_functions, oFile)
-#  
-#  sink(filePath)
-#  for (i in 1:length(oFile)) cat(oFile[i], fill = T)
-#  sink()
-#}
 
-save_to_rscript <- function(datatype = c("clinical", "asssay", "feature"), file_path = file.path(tempdir(), "script_temp.R")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+set_script_equal<- function(datatype, equal_to) {
+  if (all(c(datatype, equal_to) %in% allowed_datatypes)) {
+    scripts[[datatype]] <<- scripts[[equal_to]]
+  } else {
+    stop(paste("Error in set_script_equal.", invalid_datatype_message))
+  }
+}
+
+knit_scripts <- function(datatype1, datatype2, datatype_into) {
+  if (!all(c(datatype1, datatype2, datatype_into) %in% allowed_datatypes)) {
+    stop(paste("Error in knit_scripts.", invalid_datatype_message))
+  }
+  scripts[[datatype_into]][["libraries"]] <<- union(scripts[[datatype1]][["libraries"]], scripts[[datatype2]][["libraries"]])
+  scripts[[datatype_into]][["functions"]] <<- union(scripts[[datatype1]][["functions"]], scripts[[datatype2]][["functions"]])
+  scripts[[datatype_into]][["body"]] <<- c(commentify(paste("Formatting", datatype1, "data")),
+                                           scripts[[datatype1]][["body"]],
+                                           commentify(paste("Formatting", datatype2, "data")),
+                                           scripts[[datatype2]][["body"]])
+}
+
+save_to_rscript <- function(datatype, file_path = file.path(tempdir(), "script_temp.R")) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     # format libraries
     libs <- do.call("c", lapply(unique(scripts[[datatype]][["libraries"]]), format_library))
     # format functions
     funcs <- do.call("c", lapply(unique(scripts[[datatype]][["functions"]]), format_function))
     # put all the sections together
     whole_script <- c(
-      scripts[[datatype]][["header"]], 
+      start_message, 
       libs,
       "in_app <- FALSE",
       "",
       funcs, 
+      header,
       scripts[[datatype]][["body"]], 
       scripts[[datatype]][["end"]]
     )
@@ -203,45 +241,41 @@ save_to_rscript <- function(datatype = c("clinical", "asssay", "feature"), file_
     sink()
     
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in save_to_rscript.", invalid_datatype_message))
   }
 }
 
-# ** delete a chunk from the script ---------------------------------------
-#removeFromScript <- function(oFile, len, all = F) {
-#  length(oFile) <- if (all) len else length(oFile) - len
-#  return(oFile)
-#}
+#  ** undo (for r scripts) ------------------------------------------------
 
-undo_script <- function(datatype = c("clinical", "assay", "feature")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+undo_script <- function(datatype) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     scripts[[datatype]] <<- last_scripts[[datatype]]
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in undo_script.", invalid_datatype_message))
   }
 }
 
-reset_script <- function(datatype = c("clinical", "assay", "feature")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+reset_script <- function(datatype) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     scripts[[datatype]] <<- original_scripts[[datatype]]
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in reset_script.", invalid_datatype_message))
   }
 }
 
-set_undo_point_script <- function(datatype = c("clinical", "assay", "feature")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+set_undo_point_script <- function(datatype) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     last_scripts[[datatype]] <<- scripts[[datatype]]
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in set_undo_point_script.", invalid_datatype_message))
   }
 }
 
-set_reset_point_script <- function(datatype = c("clinical", "assay", "feature")) {
-  if (length(datatype) == 1 && datatype %in% c("clinical", "assay", "feature")) {
+set_reset_point_script <- function(datatype) {
+  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
     original_scripts[[datatype]] <<- scripts[[datatype]]
   } else {
-    stop('Please specify a valid data type ("clinical", "assay", or "feature")')
+    stop(paste("Error in set_reset_point_script.", invalid_datatype_message))
   }
 }
 
@@ -333,7 +367,7 @@ get_null_error_message <- function(datatype) {
 get_filename <- function(datatype, geoID, filetype) {
   type_names <- list("clinical" = "Annotations", "assay" = "Data", "feature" = "Features", "all" = "Composite")
   if (!datatype %in% names(type_names)) {
-    stop('Please specify a valid data type ("clinical", "assay", "feature", or "all)')
+    stop(paste("Error in get_filename.", invalid_datatype_message))
   }
   paste0(geoID, "_", type_names[[datatype]], ".", filetype)
 }
@@ -345,34 +379,32 @@ save_data <- function(myData, file, file_type, filenames = NULL) {
   file_dir <- tempdir()
   files <- if (length(myData) > 1) {
     if (is.null(filenames)) {
-      stop("For zipped files, please specify a list of file names (including the extension) to zip.")
+      stop("Error in save_data. For zipped files, please specify a list of file names (including the extension) to zip.")
     } else {
-      lapply(filenames, function(filename) {
-        paste0(file_dir, "/", filename)
-      })
+      paste0(file_dir, "/", filenames)
     }
   } else {
-    list(file)
+    file
   }
   lapply(1:length(files), function(i) {
     if (file_type == "csv") {
-      write.csv(myData[[i]], files[[i]], row.names = FALSE)
+      write.csv(myData[[i]], files[i], row.names = FALSE)
     }
     else if (file_type == "tsv") {
-      write.table(myData[[i]], files[[i]], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      write.table(myData[[i]], files[i], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
     else if (file_type == "JSON") {
       library(jsonlite)
       
-      myData[[i]] %>% toJSON() %>% write_lines(files[[i]])
+      myData[[i]] %>% toJSON() %>% write_lines(files[i])
     }
     else if (file_type == "xlsx") {
       library(xlsx)
       
-      write.xlsx(myData[[i]], files[[i]], row.names = FALSE, showNA = FALSE)
+      write.xlsx(myData[[i]], files[i], row.names = FALSE, showNA = FALSE)
     } else {
       colnames(myData[[i]]) <- str_replace_all(colnames(myData[[i]]), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
-      write.table(myData[[i]], files[[i]], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+      write.table(myData[[i]], files[i], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
   })
   if (length(myData) > 1) {
@@ -388,88 +420,56 @@ save_data <- function(myData, file, file_type, filenames = NULL) {
 }
 
 save_rscript <- function(datatype, file, file_name, file_type) {
-  save_lines(commentify("save data"), datatype, "end", overwrite = TRUE)
-  if (datatype == "clinical") {
-    save_lines(c("clinical_data <- cbind(rownames(clinical_data), clinical_data)", 
-                 "colnames(clinical_data)[1] <- ''", 
-                 paste0("file <- ", format_string(file_name))), 
-               "clinical", "end")
-  }
-  
-  if (file_type == "csv") {
-    save_lines(paste0("write.csv(", datatype, "_data, file, row.names = FALSE)"), datatype, "end")
-  }
-  else if (file_type == "tsv") {
-    save_lines(paste0("write.table(", datatype, "_data, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)"), 
-               datatype, "end")
-  }
-  else if (file_type == "JSON") {
-    add_library("jsonlite", datatype)
-    add_library("readr", datatype)
-    save_lines(paste0(datatype, "_data %>% toJSON() %>% write_lines(file)"), 
-               datatype, "end")
-  }
-  else if (file_type == "xlsx") {
-    add_library("xlsx", datatype)
-    save_lines(paste0("write.xlsx(", datatype, "_data, file, row.names = FALSE, showNA = FALSE)"), 
-               datatype, "end")
-  } else {
-    if (datatype == "clinical") {
-      save_lines('colnames(myData)[1] <- "ExpId"', "clinical", "end")
+  file_dir <- tempdir()
+  file_names <- if (length(datatype) > 1) paste0(file_dir, "/", file_name, ".R") else file
+  lapply(1:length(datatype), function(i) {
+    save_lines(commentify("save data"), datatype[i], "end", overwrite = TRUE)
+    if (datatype[i] == "clinical") {
+      save_lines(c("clinical_data <- cbind(rownames(clinical_data), clinical_data)", 
+                   "colnames(clinical_data)[1] <- ''", 
+                   paste0("file <- ", format_string(file_name[i]))), 
+                 "clinical", "end")
     }
-    save_lines(rlang::expr_text(rlang::expr(colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_"))),
-               datatype, "end")
-    save_lines('write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)',
-               datatype, "end")
-  }
+    
+    if (file_type == "csv") {
+      save_lines(paste0("write.csv(", datatype[i], "_data, file, row.names = FALSE)"), datatype[i], "end")
+    }
+    else if (file_type == "tsv") {
+      save_lines(paste0("write.table(", datatype[i], "_data, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)"), 
+                 datatype[i], "end")
+    }
+    else if (file_type == "JSON") {
+      add_library("jsonlite", datatype[i])
+      add_library("readr", datatype[i])
+      save_lines(paste0(datatype[i], "_data %>% toJSON() %>% write_lines(file)"), 
+                 datatype[i], "end")
+    }
+    else if (file_type == "xlsx") {
+      add_library("xlsx", datatype[i])
+      save_lines(paste0("write.xlsx(", datatype[i], "_data, file, row.names = FALSE, showNA = FALSE)"), 
+                 datatype[i], "end")
+    } else {
+      if (datatype == "clinical") {
+        save_lines('colnames(myData)[1] <- "ExpId"', "clinical", "end")
+      }
+      save_lines(rlang::expr_text(rlang::expr(colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_"))),
+                 datatype[i], "end")
+      save_lines('write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)',
+                 datatype[i], "end")
+    }
+    
+    save_to_rscript(datatype, file_names[i])
+  })
   
-  save_to_rscript(datatype, file)
-}
-
-save_assay_data <- function(file) {
-  
-  if (input$expression_fileType == "csv") {
-    
-    #print("exprToDisplay")
-    #print(values$exprToDisplay, n = 10)
-    withProgress(message = "Writing data to file", {
-      incProgress()
-      write.csv(assay_vals$assay_data, file, row.names = FALSE)
-      incProgress()
-    })
-  }
-  else if (input$expression_fileType == "tsv") {
-    withProgress(message = "Writing data to file",
-                 write.table(assay_vals$assay_data, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-  }
-  else if (input$expression_fileType == "JSON") {
-    library(jsonlite)
-    #library(readr)
-    
-    withProgress(message = "Writing data to file", {
-      incProgress()
-      assay_vals$assay_data %>% toJSON() %>% write_lines(file)
-      incProgress()
-    })
-    
-  }
-  else if (input$expression_fileType == "xlsx") {
-    library(xlsx)
-    
-    withProgress(message = "Writing data to file", {
-      incProgress()
-      write.xlsx(assay_vals$assay_data, file, row.names = FALSE, showNA = FALSE)
-      incProgress()
-    })
-  } else {
-    #files <- c(paste0(tempfile(), input$geoID, "_Data.txt"), paste0(tempfile(), input$geoID, "_GeneAnnotations.txt"))
-    myData <- assay_vals$assay_data
-    colnames(myData) <- colnames(myData) <- str_replace_all(colnames(myData), "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
-    withProgress(message = "Writing data to file",
-                 write.table(myData, file, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-    #withProgress(message = "Writing feature data to file",
-    #             write.table(assay_vals$feature_data, files[2], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE))
-    #zip(file, files)
+  if (length(datatype) > 1) {
+    current_dir <- getwd()
+    setwd(file_dir)
+    if (str_detect(file, "tgz")) {
+      tar(file, file_names, compression = "gzip")
+    } else {
+      zip(file, file_names)
+    }
+    setwd(current_dir)
   }
 }
 

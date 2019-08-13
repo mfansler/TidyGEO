@@ -61,27 +61,17 @@ observeEvent(input$download_data_evaluate, {
     message = "Downloading series data from GEO")
   clinical_vals$clinical_data <- NULL
   assay_vals$assay_data <- NULL
+  feature_vals$feature_data <- NULL
   
-  #WRITING COMMANDS TO R SCRIPT
-  #clinical_vals$oFile <- saveLines(commentify("load series"), clinical_vals$oFile)
-  #clinical_vals$oFile <- saveLines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), clinical_vals$oFile)
-  #clinical_vals$oFile <- saveLines(c(paste0("geoID <- ", format_string(input$geoID)), "series_data <- load_series(geoID, dataSetIndex)"), clinical_vals$oFile)
-  #clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
-  
-  #assay_vals$oFile <- clinical_vals$oFile
-  #assay_vals$download_chunk_len <- clinical_vals$download_chunk_len
-  
-  #feature_vals$oFile <- clinical_vals$oFile
-  #feature_vals$download_chunk_len <- clinical_vals$download_chunk_len
-  
-  for (datatype in c("clinical", "feature", "assay")) {
+  # WRITING COMMANDS TO R SCRIPT
+  for (datatype in c("clinical", "feature", "assay", "all")) {
     add_function("load_series", datatype)
-    save_lines(commentify("load series"), datatype, "body")
-    save_lines(paste0("dataSetIndex <- ", format_string(input$platformIndex)), datatype, "body")
-    save_lines(c(paste0("geoID <- ", format_string(input$geoID)), 
-                 "series_data <- load_series(geoID, dataSetIndex)"), datatype, "body")
     set_reset_point_script(datatype)
   }
+  write_to_header(commentify("load series"), overwrite = TRUE)
+  write_to_header(paste0("dataSetIndex <- ", format_string(input$platformIndex)))
+  write_to_header(c(paste0("geoID <- ", format_string(input$geoID)), 
+               "series_data <- load_series(geoID, dataSetIndex)"))
 })
 
 observe({
