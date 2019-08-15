@@ -2,7 +2,7 @@
 # side panel --------------------------------------------------------------
 
 observe({
-  start_time <- Sys.time()
+  #start_time <- Sys.time()
   updateSelectizeInput(
     session = session, 'geoID', server = TRUE,
     choices = series_list,
@@ -20,8 +20,8 @@ observe({
       closeAfterSelect = TRUE
     )
   )
-  end_time <- Sys.time()
-  print(paste("Populating dropdown", end_time - start_time))
+  #end_time <- Sys.time()
+  #print(paste("Populating dropdown", end_time - start_time))
 })
 
 platforms <- reactive({

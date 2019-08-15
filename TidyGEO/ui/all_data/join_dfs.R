@@ -9,5 +9,6 @@ tabPanel(title = icon("project-diagram"), value = "2",
   disabled(secondary_button("remove_dataset", "Remove last", class = "right_align")),
   br(),
   br(),
-  primary_button("join_columns", div(icon("project-diagram"), "Join"))
+  primary_button("join_columns", div(icon("project-diagram"), "Join")),
+  hr(), navigation_set("1", "2", "3", "all_data_options", "all_data_options")
 )

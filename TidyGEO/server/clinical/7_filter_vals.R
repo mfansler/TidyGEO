@@ -86,5 +86,5 @@ observeEvent(input$clinical_evaluate_exclude, {
 })
 
 observeEvent(input$undo_filter, {
-  undo_last_action()
+  undo_last_action("clinical")
 })

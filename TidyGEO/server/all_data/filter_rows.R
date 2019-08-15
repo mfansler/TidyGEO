@@ -39,6 +39,7 @@ observeEvent(input$match_columns, {
       error_modal("Error in filtering first dataset", "No datasets filtered.", status)
     )
   } else {
+    all_vals$last_selected_match1 <- input$data_to_match1
     status <- eval_function(
       input$data_to_match2, "find_intersection", 
       list(data2 = get_datatype_expr(input$data_to_match1), id_col1 = input$col_to_match2, id_col2 = input$col_to_match1),
@@ -49,8 +50,20 @@ observeEvent(input$match_columns, {
       showModal(
         error_modal("Error in filtering second dataset", "Second dataset not filtered.", status)
       )
+    } else {
+      all_vals$last_selected_match2 <- input$data_to_match2
     }
-    
+  }
+})
+
+observeEvent(input$undo_match, {
+  if (!is.null(all_vals$last_selected_match1)) {
+    undo_last_action(all_vals$last_selected_match1)
+    all_vals$last_selected_match1 <- NULL
+  }
+  if (!is.null(all_vals$last_selected_match2)) {
+    undo_last_action(all_vals$last_selected_match2)
+    all_vals$last_selected_match2 <- NULL
   }
 })
 

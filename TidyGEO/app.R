@@ -1,3 +1,17 @@
+# A NOTE TO PROGRAMMERS WORKING WITH THIS APP
+# 
+# At first, you will not understand what my functions are doing and you will be tempted to do
+# things manually. I STRONGLY DISCOURAGE THIS as I have most things knit together just so.
+# Doing things manually will bypass the error checking I have set up and will likely be a
+# nightmare to debug. WHENEVER POSSIBLE, use existing functions to perform operations. These
+# functions can be found at the beginning of the server function, in tidygeo_functions.R,
+# in formatting_helper_functions.R, in help_modals.R, and in button_types.R. If you would like
+# to make a change, it would be MOST HELPFUL to change these functions rather than starting
+# from scratch.
+# 
+# Thanks,
+# A
+
 suppressPackageStartupMessages({
   library(shiny)
   library(DT)
@@ -15,15 +29,11 @@ suppressPackageStartupMessages({
   source("server/formatting_helper_functions.R")
 })
 
-
-#source(file.path("server", "clinical", "helper_functions.R"), local = TRUE)$value
-#source(file.path("server", "assay", "helper_functions.R"), local = TRUE)$value
-
-start_time <- Sys.time()
+#start_time <- Sys.time()
 series_list <- read_feather("www/series_list.feather")
 platform_list <- read_feather("www/platform_list.feather")
-end_time <- Sys.time()
-print(paste("Reading files", end_time - start_time))
+#end_time <- Sys.time()
+#print(paste("Reading files", end_time - start_time))
 
 # colored buttons of different types --------------------------------------
 
@@ -187,7 +197,8 @@ server <- function(input, output, session) {
       series_information = NULL,
       paper_info_expanded = FALSE,
       paper_information = NULL,
-      pm_id = NULL
+      pm_id = NULL,
+      regex_dt = NULL
     )
   
   # For any of the following, if you change the variable names of 
@@ -216,7 +227,10 @@ server <- function(input, output, session) {
       #download_chunk_len = 0,
       #current_chunk_len = 0,
       plot_to_save = NULL,
-      shift_results = list()
+      shift_results = list(),
+      use_viewing_subset = FALSE,
+      viewing_min = 1,
+      viewing_subset = c(1, 5)
     )
   
   assay_vals <-
@@ -233,6 +247,8 @@ server <- function(input, output, session) {
       plot_to_save = NULL,
       disable_btns = FALSE,
       expression_warning_state = FALSE,
+      use_viewing_subset = FALSE,
+      viewing_min = 2,
       viewing_subset = c(2, 6)
     )
   
@@ -248,6 +264,8 @@ server <- function(input, output, session) {
       id_col = "ID",
       prev_id = "ID",
       plot_to_save = NULL,
+      use_viewing_subset = FALSE,
+      viewing_min = 2,
       viewing_subset = c(2, 6)
     )
   
@@ -255,11 +273,18 @@ server <- function(input, output, session) {
     reactiveValues(
       all_data = NULL,
       last_data = NULL,
-      join_datatypes_visible = 1
+      last_selected_match1 = NULL,
+      last_selected_match2 = NULL,
+      join_datatypes_visible = 1,
+      use_viewing_subset = FALSE,
+      viewing_min = 1,
+      viewing_subset = c(1, 5)
     )
   
-  # ** For running a dataset through a formatting function ---------------------
+  
+  # ** General functions for all datatypes -------------------------------------
 
+  # ** ** For passing a dataset through a formatting function ---------------------
   # >> This function is not necessary if you know which datatype you're updating, but
   #    helpful since it writes the function to the script automatically.
   # 
@@ -268,7 +293,7 @@ server <- function(input, output, session) {
   # >> Leave to_knit NULL in most cases, unless you're joining datasets or using values from one
   #    dataset to format another
   # 
-  # >> This function must stay in app.R to have access to the reactiveValues
+  # >> This function must stay in the server function to have access to the reactiveValues
   # 
   # >> Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
   eval_function <- function(datatype, func_to_eval, func_args, header = "", to_knit = NULL) {
@@ -333,7 +358,98 @@ server <- function(input, output, session) {
     }
   }
   
+  # ** ** reset ----------------------------------------------------------------
+  reset_datatype <- function(datatype) {
+    if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), `$`(!!sym(paste0(datatype, "_vals")), "orig_data")))
+      )
+      reset_script(datatype)
+    } else {
+      stop(paste("Error in undo_last_action.", invalid_datatype_message))
+    }
+  }
+  
+  # ** ** undo --------------------------------------------------------------------
+  undo_last_action <- function(datatype) {
+    if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), `$`(!!sym(paste0(datatype, "_vals")), "last_data")))
+      )
+      undo_script(datatype)
+    } else {
+      stop(paste("Error in undo_last_action.", invalid_datatype_message))
+    }
+  }
+  
+  # To use these, make sure you have lines similar to the following wherever you are
+  # displaying the data:
+  # 
+  # observe({
+  #   assay_vals$use_viewing_subset <- !is.null(ncol(assay_vals$assay_data)) && ncol(assay_vals$assay_data) > 19
+  #   assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
+  # }, priority = 1)
+  #
+  # assay_in_view <- reactive({
+  #   if (assay_vals$use_viewing_subset) {
+  #     assay_vals$assay_data[c(1, assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2])]
+  #   } else {
+  #     assay_vals$assay_data
+  #   }
+  # })
+  # 
+  # output$col_nav <- renderUI({
+  #   if (assay_vals$use_viewing_subset) {
+  #     col_navigation_set("assay")
+  #   }
+  # })
+  
+  observeEvent(input$next_cols_clicked, {
+    to_move <- allowed_datatypes[which(str_detect(input$next_cols_clicked, allowed_datatypes))]
+    if (identical(to_move, character(0))) {
+      stop("Error in clicking next cols. The button that called next cols is not tagged with a valid datatype.")
+    } else {
+      ncol_data_to_move <- eval(expr(ncol(!!get_datatype_expr(to_move))))
+      move_by <- floor(ncol_data_to_move / 5)
+      current_subset <- eval(expr(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset")))[1]
+      
+      start <- min(ncol_data_to_move, current_subset + move_by)
+      end <- min(ncol_data_to_move, start + move_by)
+      
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset"), c(start, end)))
+      )
+    }
+    session$sendCustomMessage("resetValue", "next_cols_clicked")
+  })
+  
+  observeEvent(input$prev_cols_clicked, {
+    to_move <- allowed_datatypes[which(str_detect(input$prev_cols_clicked, allowed_datatypes))]
+    if (identical(to_move, character(0))) {
+      stop("Error in clicking next cols. The button that called prev cols is not tagged with a valid datatype.")
+    } else {
+      ncol_data_to_move <- eval(expr(ncol(!!get_datatype_expr(to_move))))
+      move_by <- floor(ncol_data_to_move / 5)
+      viewing_min <- eval(expr(`$`(!!sym(paste0(to_move, "_vals")), "viewing_min")))
+      current_subset <- eval(expr(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset")))[2]
+      
+      end <- max(viewing_min, current_subset - move_by)
+      start <- max(viewing_min, end - move_by)
+      
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset"), c(start, end)))
+      )
+    }
+    session$sendCustomMessage("resetValue", "prev_cols_clicked")
+  })
+
+  
+  # ** Choose dataset ----------------------------------------------------------
+
   source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
+
+  
+  # ** Data getters ------------------------------------------------------------
 
   get_clinical_data <- function() {
     clinical_vals$clinical_data <- withProgress(process_clinical(values$allData, session))
@@ -368,14 +484,6 @@ server <- function(input, output, session) {
       
       assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
       
-      #WRITING COMMANDS TO R SCRIPT
-      #assay_vals$oFile <- saveLines(commentify("extract expression data"), assay_vals$oFile)
-      #assay_vals$oFile <- saveLines(c("extracted_data <- process_expression(series_data)",
-      #                                "expressionData <- extracted_data[['expressionData']]"), 
-      #                              assay_vals$oFile)
-      
-      #assay_vals$download_chunk_len <- length(assay_vals$oFile)
-      
       save_lines(commentify("extract expression data"), "assay", "body")
       add_function("process_expression", "assay")
       save_lines(c("extracted_data <- process_expression(series_data)",
@@ -388,23 +496,20 @@ server <- function(input, output, session) {
   }
   
   get_feature_data <- function() {
-    feature_vals$orig_data <- withProgress(process_feature(values$allData, session = session), message = "Processing feature data")
-    if (is.null(feature_vals$orig_feature)) {
+    withProgress({
+      feature_vals$orig_data <- process_feature(values$allData, session = session)
+      }, message = "Processing feature data")
+    if (is.null(feature_vals$orig_data)) {
       feature_vals$ft_default <- data.frame(paste0("No feature data available for ", input$geoID))
     } else {
-      feature_vals$id_col <- colnames(feature_vals$orig_feature)[1]
+      feature_vals$id_col <- colnames(feature_vals$orig_data)[1]
       feature_vals$prev_id <- feature_vals$id_col
       
-      #feature_vals$orig_feature <- find_intersection(feature_vals$orig_feature, assay_vals$assay_data)
-      feature_vals$last_data <- feature_vals$orig_feature
-      feature_vals$feature_data <- feature_vals$orig_feature
+      #feature_vals$orig_data <- find_intersection(feature_vals$orig_data, assay_vals$assay_data)
+      feature_vals$last_data <- feature_vals$orig_data
+      feature_vals$feature_data <- feature_vals$orig_data
       
       feature_vals$viewing_subset <- c(2, min(6, ncol(feature_vals$feature_data)))
-      
-      #WRITING COMMANDS TO R SCRIPT
-      #feature_vals$oFile <- saveLines(commentify("extract feature data"), feature_vals$oFile)
-      #feature_vals$oFile <- saveLines(c("featureData <- process_feature(series_data)"), 
-      #                                assay_vals$oFile)
       
       save_lines(commentify("extract feature data"), "feature", "body")
       add_function("process_feature", "feature")
@@ -426,25 +531,8 @@ server <- function(input, output, session) {
     }
   })
   
-
   # ** clinical data -----------------------------------------------------------
-
-  # ** ** reset ----------------------------------------------------------------
-  observeEvent(input$reset, {
-    clinical_vals$clinical_data <- clinical_vals$orig_data
-    reset_script("clinical")
-    #clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$download_chunk_len, all = T)
-    #clinical_vals$current_chunk_len <- 0
-  })  
   
-  # ** ** undo --------------------------------------------------------------------
-  undo_last_action <- function() {
-    clinical_vals$clinical_data <- clinical_vals$last_data
-    undo_script("clinical")
-    #clinical_vals$oFile <- removeFromScript(clinical_vals$oFile, len = clinical_vals$current_chunk_len)
-    #clinical_vals$current_chunk_len <- 0
-  }
-
   # ** ** side panel --------------------------------------------------------------
   source(file.path("server", "clinical", "1_select_cols.R"), local = TRUE)$value
   source(file.path("server", "clinical", "2_shift_cells.R"), local = TRUE)$value
@@ -475,7 +563,6 @@ server <- function(input, output, session) {
   # ** feature data ---------------------------------------------------------------
 
   # ** ** side panel --------------------------------------------------------------
-  source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_cols.R"), local = TRUE)$value

@@ -33,5 +33,5 @@ observeEvent(input$rename, ({
 }))
 
 observeEvent(input$undo_rename, {
-  undo_last_action()
+  undo_last_action("clinical")
 })

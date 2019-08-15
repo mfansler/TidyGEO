@@ -860,7 +860,7 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
                   else if (grepl("row.*names", id_col2))
                     rownames(data2)
                   else
-                    data2[id_col2]
+                    data2[,id_col2]
   
   if (grepl("col.*names", id_col1)) {
     data1[,which(colnames(data1) %in% c(search_terms, "ID"))]

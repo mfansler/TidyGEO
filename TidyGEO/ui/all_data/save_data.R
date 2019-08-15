@@ -16,8 +16,6 @@ tabPanel(title = icon("download"), value = "3",
            column(7, offset = 3, div(downloadButton("all_save_rscript", "R script", 
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link("all", "r_help")))
-         )
-         
-         
-         
+         ),
+         hr(), tertiary_button("all_3_to_2_button", div(icon("arrow-left"), "Back"))
          )

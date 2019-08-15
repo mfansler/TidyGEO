@@ -9,6 +9,7 @@ tabPanel(title = icon("exchange-alt"), value = "1",
          selectInput("data_to_match2", "Choose the second dataset to match:", choices = c("clinical", "assay", "feature")),
          uiOutput("col_to_match2_selector"),
          primary_button("match_columns", div(icon("exchange-alt"), "Match")),
-         undo_button("undo_match")
-  
+         undo_button("undo_match"),
+         hr(), tertiary_button("all_to_assay_button", div(icon("arrow-left"), "Back to assay")),
+         secondary_button("all_1_to_2_button", div("Next", icon("arrow-right")), class = "right_align")
 )

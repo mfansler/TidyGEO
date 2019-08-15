@@ -10,10 +10,7 @@ tabPanel("Data",
            )
          ),
          br(),
-         div(
-           secondary_button(id = "expression_prev_cols", label = div(icon("arrow-left"), "Previous columns")),
-           secondary_button(id = "expression_next_cols", label = "Next columns", icon = icon("arrow-right"), class = "right_align")
-         ),
+         uiOutput("assay_vals_viewing_subset"),
          br(),
          bsAlert("alpha_alert"),
          withSpinner(dataTableOutput("exprPreview"), type = 5),

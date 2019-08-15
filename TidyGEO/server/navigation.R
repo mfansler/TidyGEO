@@ -50,9 +50,28 @@ observeEvent(input$expression_to_all, {
 navigation_set_server("1", "2", "3", "feature_side_panel", "feature_side_panel")
 navigation_set_server("2", "3", "4", "feature_side_panel", "feature_side_panel")
 navigation_set_server("3", "4", "5", "feature_side_panel", "feature_side_panel")
+observeEvent(input$start_feature_format, {
+  updateTabsetPanel(session, "feature_side_panel", selected = "2")
+})
+observeEvent(input$back_to_assay, {
+  updateTabItems(session, "top_level", "assay_data")
+})
 observeEvent(input$feature_nav_5_to_4_button, {
   updateTabsetPanel(session, "feature_side_panel", selected = "4")
 })
 observeEvent(input$feature_5_to_expression_button, {
   updateTabItems(session, "top_level", "assay_data")
+})
+
+# All side panel ----------------------------------------------------------
+
+navigation_set_server("1", "2", "3", "all_data_options", "all_data_options")
+observeEvent(input$all_to_assay_button, {
+  updateTabsetPanel(session, "top_level", "assay_data")
+})
+observeEvent(input$all_1_to_2_button, {
+  updateTabsetPanel(session, "all_data_options", selected = "2")
+})
+observeEvent(input$all_3_to_2_button, {
+  updateTabsetPanel(session, "all_data_options", selected = "2")
 })

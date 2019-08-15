@@ -12,7 +12,7 @@ tabPanel(title = icon("th-list"), value = "3",
          textInput(inputId = "split_delimiter_feature", label = "Delimiter (including any spaces): ", 
                    placeholder = "Start typing..."),
          checkboxInput("split_pairs_w_regex_feature", div(
-           "Use regex", regex_help_link("feature_split_pairs")
+           "Use regex", regex_help_link("feature", "split_pairs")
          )), 
          div(
            primary_button(id = "split_pairs_feature", label = div(icon("th-list"), "Split pairs")),

@@ -44,12 +44,11 @@ output$evaluate_filters_button <- renderUI({
 
 observeEvent(input$undoEvalExpr, {
   if (!is.null(assay_vals$assay_data)) {
+    undo_last_action("assay")
     
     assay_vals$disable_btns <- FALSE
     assay_vals$id_col <- assay_vals$prev_id
-    assay_vals$assay_data <- assay_vals$last_data
     feature_vals$id_col <- feature_vals$prev_id
-    undo_script("assay")
     shinyjs::disable("undoEvalExpr")
   }
 })

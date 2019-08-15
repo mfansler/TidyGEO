@@ -26,5 +26,5 @@ observeEvent(input$split_cols, {
 })
 
 observeEvent(input$undo_split_cols, {
-  undo_last_action()
+  undo_last_action("clinical")
 })

@@ -22,9 +22,9 @@ help_link <- function(section, id) {
   tipify(actionLink(inputId = paste0(section, "_", id), label = icon("question-circle"), class = id), title = "Click for help", placement = "right", trigger = "hover")
 }
 
-regex_help_link <- function(extra_tag) {
+regex_help_link <- function(datatype, extra_tag) {
   actionLink(
-    inputId = paste0("regex_help_", extra_tag), label = div(tags$i("Help/testing"),
+    inputId = paste0("regex_help_", datatype, "_", extra_tag), label = div(tags$i("Help/testing"),
                                                    icon("question-circle")), 
     class = "regex_help")
 }
@@ -62,4 +62,11 @@ navigation_set <- function(prev, from, to, section_prev = NULL, section_to = NUL
     tertiary_button(id = paste0("nav_", from, "_to_", prev, "_", section_prev), label = div(icon('arrow-left'), 'Back')),
     secondary_button(id = paste0("nav_", from, "_to_", to, "_", section_to), label = div('Next', icon('arrow-right')), class = "right_align")
   ))
+}
+
+col_navigation_set <- function(datatype, extra_tag = "") {
+  div(
+    secondary_button(id = paste0("prev_cols_", datatype, "_", extra_tag), label = div(icon("arrow-left"), "Previous columns"), class = "prev_cols"),
+    div(secondary_button(id = paste0("next_cols_", datatype, "_", extra_tag), label = "Next columns", icon = icon("arrow-right"), class = "next_cols"), class = "right_align")
+  )
 }

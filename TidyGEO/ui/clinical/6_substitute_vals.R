@@ -11,9 +11,9 @@ tabPanel(title = icon("exchange-alt"), value = "6",
                           uiOutput("input_sub_range"),#),
          h5(paste0('Right click to add or remove rows. To delete a word or phrase, ',
                      'enter that word or phrase into the column on the left and leave the column on the right empty.')),
+        checkboxInput("sub_w_regex", div("Use regex", regex_help_link("clinical", "substitute"))),
         rHandsontableOutput("input_subs_table"),
-        #tags$head(tags$style("#input_subs_table{display:block; width:100%;}")),
-        checkboxInput("sub_w_regex", div("Use regex", regex_help_link("substitute"))), 
+        #tags$head(tags$style("#input_subs_table{display:block; width:100%;}")), 
          div(
            primary_button("evaluate_subs", div(icon("exchange-alt"), "Substitute")),
            undo_button("undo_subs")

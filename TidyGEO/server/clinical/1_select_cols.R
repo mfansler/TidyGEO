@@ -29,5 +29,5 @@ observeEvent(input$clinical_evaluate_filters, ({
 }))
 
 observeEvent(input$undo_select, {
-  undo_last_action()
+  undo_last_action("clinical")
 })

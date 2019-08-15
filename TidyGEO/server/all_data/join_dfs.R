@@ -79,7 +79,7 @@ observeEvent(input$join_columns, {
                                          input$col_to_join2,
                                          input$join_behavior2),
                                     "Joining datasets",
-                                    knit = c("all", input$data_to_join2))
+                                    to_knit = c("all", input$data_to_join2))
     }
     if (join1_status == "completed") {
       incProgress(message = "Performing second join")
@@ -90,7 +90,7 @@ observeEvent(input$join_columns, {
                                            input$col_to_join3,
                                            input$join_behavior3),
                                       "joining datasets",
-                                      knit = c("all", input$data_to_join3))
+                                      to_knit = c("all", input$data_to_join3))
         if (join2_status != "completed") {
           showModal(
             error_modal("Error in second join", "Second join not performed.", status)
@@ -245,7 +245,7 @@ get_data_to_join_preview <- function(datatype, selected_col) {
                          USE.NAMES = FALSE)
   matrix(font_weights)
   }
-  if (!is.null(datatype)) {
+  if (!is.null(datatype) && !is.null(selected_col)) {
     this_func <- if (selected_col == "colnames") "row" else "col"
     eval(parse(text = paste0("n", this_func, "(", datatype, "_vals$", datatype, "_data)")))
   } else {

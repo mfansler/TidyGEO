@@ -1,6 +1,13 @@
 //https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
 
 $(document).ready(function() {
+  // column navigation listeners
+  $(document).on('click', '.prev_cols', function () {
+    Shiny.onInputChange('prev_cols_clicked', this.id);
+  });
+  $(document).on('click', '.next_cols', function () {
+    Shiny.onInputChange('next_cols_clicked', this.id);
+  });
   // plot listeners
   $(document).on('click', '.clinical_plot', function () {
     Shiny.onInputChange('last_btn_clinical',this.id);

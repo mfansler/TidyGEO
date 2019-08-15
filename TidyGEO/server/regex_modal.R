@@ -21,10 +21,14 @@ showModal(
   )
 )
 
+selected_regex_dt <- reactive(
+  eval(get_datatype_expr(values$regex_dt))
+)
+
 output$choose_col_to_test <- renderUI({
   selectInput("col_to_test", 
               "Please choose a column to use to test your regular expression:", 
-              choices = colnames(clinical_vals$clinical_data))
+              choices = colnames(selected_regex_dt()))
 })
 
 output$col_match_results <- renderDT({
@@ -32,10 +36,7 @@ output$col_match_results <- renderDT({
 })
 
 match_results <- eventReactive(input$test_regex, {
-  #matches <- sapply(clinical_vals$clinical_data[,input$col_to_test], function(x) {
-  #  length(str_extract_all(x, input$regex_to_test)[[1]])
-  #})
-  result <- as.data.frame(str_replace_all(clinical_vals$clinical_data[,input$col_to_test], input$regex_to_test, function(x) {
+  result <- as.data.frame(str_replace_all(selected_regex_dt()[,input$col_to_test], input$regex_to_test, function(x) {
     paste0('<span style="background-color: #FFFF00">', x, '</span>')
   }))
   colnames(result) <- c(input$col_to_test)

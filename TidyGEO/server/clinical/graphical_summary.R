@@ -1,13 +1,13 @@
-#output$metaSummary <- renderText({printVarsSummary(clinical_vals$clinical_data)})
+#output$metaSummary <- renderText({printVarsSummary(clinical_in_view())})
 
 output$choose_variable_to_view <- renderUI({
-  if (!is.null(clinical_vals$clinical_data)) {
-    choices <- 1:length(colnames(clinical_vals$clinical_data))
-    choice_names <- colnames(clinical_vals$clinical_data)
-    if (nrow(clinical_vals$clinical_data) < 50) {
+  if (!is.null(clinical_in_view())) {
+    choices <- 1:length(colnames(clinical_in_view()))
+    choice_names <- colnames(clinical_in_view())
+    #if (nrow(clinical_in_view()) < 50) {
       choices <- c(0, choices)
       choice_names <- c("(view all)", choice_names)
-    }
+    #}
     names(choices) <- choice_names
     
     selectInput("variable_to_view", label = "Choose a variable to view:", choices = choices)
@@ -17,9 +17,9 @@ output$choose_variable_to_view <- renderUI({
 if (FALSE) {
   # Create the list of plot names
   plotInput <- reactive({
-    if (!is.null(clinical_vals$clinical_data)) {
-      n_plot <- ncol(clinical_vals$clinical_data)
-      total_data <- lapply(1:n_plot, function(i){as.character(clinical_vals$clinical_data[,i])})
+    if (!is.null(clinical_in_view())) {
+      n_plot <- ncol(clinical_in_view())
+      total_data <- lapply(1:n_plot, function(i){as.character(clinical_in_view()[,i])})
       return(list("n_plot" = n_plot, "total_data" = total_data))
     }
   })
@@ -28,19 +28,19 @@ if (FALSE) {
 # Create divs
 output$plots <- renderUI({
   
-  if (!is.null(clinical_vals$clinical_data)) {
-    plot_output_list <- lapply(1:ncol(clinical_vals$clinical_data), function(i) {
-      #if (!grepl("evalSame", colnames(clinical_vals$clinical_data)[i])) {
-      if (is_all_identical(clinical_vals$clinical_data[,i])) {
+  if (!is.null(clinical_in_view())) {
+    plot_output_list <- lapply(1:ncol(clinical_in_view()), function(i) {
+      #if (!grepl("evalSame", colnames(clinical_in_view())[i])) {
+      if (is_all_identical(clinical_in_view()[,i])) {
         div(hr(), HTML(
-          paste0("<b>", colnames(clinical_vals$clinical_data)[i], "</b> consists of all the same value.")
+          paste0("<b>", colnames(clinical_in_view())[i], "</b> consists of all the same value.")
         ), hr())
-      } else if (is_all_unique(clinical_vals$clinical_data[,i]) && !isAllNum(clinical_vals$clinical_data[i])) {
+      } else if (is_all_unique(clinical_in_view()[,i]) && !isAllNum(clinical_in_view()[i])) {
         div(hr(), HTML(
-          paste0("<b>", colnames(clinical_vals$clinical_data)[i], "</b> consists of all unique values.")
+          paste0("<b>", colnames(clinical_in_view())[i], "</b> consists of all unique values.")
         ), hr())
       } else {
-        plotname <- make.names(colnames(clinical_vals$clinical_data)[i])
+        plotname <- make.names(colnames(clinical_in_view())[i])
         div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = 5), tertiary_button(paste0("savePlot", i), div(icon("download"), "Download plot"), class = "clinical_plot"))
       }
       #}
@@ -57,13 +57,13 @@ output$plots <- renderUI({
 })
 # Create the actual plots associated with the plot names
 observe({
-  if (!is.null(clinical_vals$clinical_data)) {
-    lapply(1:ncol(clinical_vals$clinical_data), function(i){
-      if (!is_all_identical(clinical_vals$clinical_data[,i])) {
-        is_all_numeric <- isAllNum(clinical_vals$clinical_data[i])
-        if (!is_all_unique(clinical_vals$clinical_data[,i]) || is_all_numeric) {
-          output[[ make.names(colnames(clinical_vals$clinical_data)[i]) ]] <- renderPlotly({
-            suppressWarnings(create_plot(as.character(clinical_vals$clinical_data[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(clinical_vals$clinical_data)[i], is_all_numeric))
+  if (!is.null(clinical_in_view())) {
+    lapply(1:ncol(clinical_in_view()), function(i){
+      if (!is_all_identical(clinical_in_view()[,i])) {
+        is_all_numeric <- isAllNum(clinical_in_view()[i])
+        if (!is_all_unique(clinical_in_view()[,i]) || is_all_numeric) {
+          output[[ make.names(colnames(clinical_in_view())[i]) ]] <- renderPlotly({
+            suppressWarnings(create_plot(as.character(clinical_in_view()[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(clinical_in_view())[i], is_all_numeric))
           })
         }
       }
@@ -88,15 +88,15 @@ observeEvent(input$last_btn_clinical, {
 
 output$clinical_plot_download <- downloadHandler(
   filename = function() {
-    paste(make.names(colnames(clinical_vals$clinical_data)[clinical_vals$plot_to_save]), input$clinical_plot_filetype, sep = ".")
+    paste(make.names(colnames(clinical_in_view())[clinical_vals$plot_to_save]), input$clinical_plot_filetype, sep = ".")
   },
   content = function(file) {
     plot_to_save <- create_plot_to_save(#plotInput()$total_data[[clinical_vals$plot_to_save]],
-      clinical_vals$clinical_data[,clinical_vals$plot_to_save], 
+      clinical_in_view()[,clinical_vals$plot_to_save], 
       input$clinical_plot_color, 
       input$clinical_binwidths, 
-      colnames(clinical_vals$clinical_data)[clinical_vals$plot_to_save], 
-      isAllNum(clinical_vals$clinical_data[clinical_vals$plot_to_save]))
+      colnames(clinical_in_view())[clinical_vals$plot_to_save], 
+      isAllNum(clinical_in_view()[clinical_vals$plot_to_save]))
     
     ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, units = "cm", device = input$clinical_plot_filetype)
     

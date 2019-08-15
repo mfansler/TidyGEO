@@ -15,7 +15,7 @@ tabPanel(title = icon("columns"), value = "4",
          #)
          ,
         checkboxInput("split_cols_w_regex", div(
-          "Use regex", regex_help_link("split_cols")
+          "Use regex", regex_help_link("clinical", "split_cols")
         )), 
          div(
            primary_button(id = "split_cols", label = div(icon("columns"), "Split columns")),

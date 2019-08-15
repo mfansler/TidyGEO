@@ -2,7 +2,7 @@ library(stringr)
 library(readr)
 
 # Read the file with the formatting functions
-func_strings <- read_lines(file.path("server", "formatting_helper_functions.R"))
+func_strings <- read_lines("~/R_Code/TidyGEO/TidyGEO/server/formatting_helper_functions.R")
 # Find the section delimiters of the file
 section_indices <- which(str_detect(func_strings, "# .+-{3}"))
 # Initialize an empty list of function names
@@ -38,4 +38,4 @@ func_lists <- lapply(1:(length(section_indices)), function(i) { # For each secti
 # Name the items in the list by their function name
 names(func_lists) <- func_names
 
-saveRDS(func_lists, file = "User/rscript_functions.rds")
+saveRDS(func_lists, file = "~/R_Code/TidyGEO/TidyGEO/User/rscript_functions.rds")

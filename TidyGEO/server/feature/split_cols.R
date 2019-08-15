@@ -14,11 +14,12 @@ observe({
 
 observeEvent(input$feature_split_cols, ({
   if (!is.null(feature_vals$feature_data)) {
-    status <- withProgress(
-      eval_function("feature", "splitCombinedVars", 
+    withProgress({
+      status <- eval_function("feature", "splitCombinedVars", 
                     list(input$feature_colsToDivide, input$feature_divide_delimiter, input$split_cols_w_regex), 
                     "extract values from columns with delimiter"
-                    ), 
+                    )
+      }, 
       "Splitting combined variables"
       )
     if (status != "completed") {
@@ -31,5 +32,5 @@ observeEvent(input$feature_split_cols, ({
 }))
 
 observeEvent(input$feature_undo_split_cols, {
-  undo_last_action_feature()
+  undo_last_action("feature")
 })

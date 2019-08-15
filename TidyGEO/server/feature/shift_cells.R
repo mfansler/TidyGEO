@@ -113,18 +113,13 @@ observeEvent(input$evaluate_shift_feature, {
     
     feature_vals$feature_data <- feature_vals$shift_results[["result"]]
     
-    feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 
-                                                       start = 1, 
-                                                       forward_distance = 4, 
-                                                       previous_view = feature_vals$feature_data)
-    
     #WRITING COMMANDS TO R SCRIPT
-    before <- length(feature_vals$oFile)
-    feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
-    feature_vals$oFile <- saveLines(paste0("feature_data <- shift_cells(feature_data, ", 
+    set_undo_point_script("feature")
+    save_lines(commentify("shift cells"), "feature", "body")
+    add_function("shift_cells", "feature")
+    save_lines(paste0("feature_data <- shift_cells(feature_data, ", 
                                             format_string(input$col_to_shift_feature), ", ",
-                                            format_string(input$destination_col_feature), ")"), feature_vals$oFile)
-    feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
+                                            format_string(input$destination_col_feature), ")"), "feature", "body")
   }
 })
 
@@ -139,11 +134,6 @@ observeEvent(input$evaluate_conflicts_feature, {
   feature_vals$last_data <- feature_vals$feature_data
   feature_vals$feature_data <- results[["result"]]
   
-  feature_vals$feature_display <- advance_columns_view(feature_vals$feature_data, 
-                                                     start = 1, 
-                                                     forward_distance = 4, 
-                                                     previous_view = feature_vals$feature_data)
-  
   set_undo_point_script("feature")
   save_lines(commentify("shift cells"), "feature", "body")
   add_function("shift_cells", "feature")
@@ -151,9 +141,9 @@ observeEvent(input$evaluate_conflicts_feature, {
                     format_string(input$col_to_shift_feature), ", ",
                     format_string(input$destination_col_feature), ", ",
                     format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
-             "feature", "end")
+             "feature", "body")
 })
 
 observeEvent(input$undo_shift_feature, {
-  undo_last_action_feature()
+  undo_last_action("feature")
 })

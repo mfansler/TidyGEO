@@ -15,54 +15,39 @@
 
 observeEvent(input$resetExpr, {
   if (!is.null(assay_vals$assay_data)) {
+    reset_datatype("assay")
     
     assay_vals$disable_btns <- FALSE
-    assay_vals$assay_data <- assay_vals$orig_data
     assay_vals$id_col <- colnames(assay_vals$assay_data)[1]
     assay_vals$prev_id <- assay_vals$id_col
     feature_vals$id_col <- colnames(feature_vals$feature_data)[1]
     feature_vals$prev_id <- feature_vals$id_col
-    
-    reset_script("assay")
-    #assay_vals$oFile <- removeFromScript(assay_vals$oFile, len = assay_vals$download_chunk_len, all = T)
-    #assay_vals$current_chunk_len <- 0
-  }
-})
-
-move_by <- reactive({
-  floor(ncol(assay_vals$assay_data) / 5)
-})
-
-observeEvent(input$expression_next_cols, {
-  if (!is.null(assay_vals$assay_data) && ncol(assay_vals$assay_data) > 6) {
-    start <- min(ncol(assay_vals$assay_data), assay_vals$viewing_subset[1] + move_by())
-    end <- min(ncol(assay_vals$assay_data), start + move_by())
-    assay_vals$viewing_subset <- c(start, end)
-  }
-})
-
-observeEvent(input$expression_prev_cols, {
-  if (!is.null(assay_vals$assay_data) && ncol(assay_vals$assay_data) > 6) {
-    end <- max(2, assay_vals$viewing_subset[2] - move_by())
-    start <- max(2, end - move_by())
-    assay_vals$viewing_subset <- c(start, end)
   }
 })
 
 observe({
-  assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
+  assay_vals$use_viewing_subset <- !is.null(ncol(assay_vals$assay_data)) && ncol(assay_vals$assay_data) > 19
+  assay_vals$viewing_subset <- c(assay_vals$viewing_min, min(assay_vals$viewing_min + 5, ncol(assay_vals$assay_data)))
 }, priority = 1)
 
 assay_in_view <- reactive({
-  if (!is.null(assay_vals$assay_data)) {
+  if (assay_vals$use_viewing_subset) {
     assay_vals$assay_data[c(1, assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2])]
+  } else {
+    assay_vals$assay_data
+  }
+})
+
+output$assay_vals_viewing_subset <- renderUI({
+  if (assay_vals$use_viewing_subset) {
+    col_navigation_set("assay")
   }
 })
 
 output$exprPreview <- DT::renderDT({
   if (!is.null(assay_vals$assay_data)) {
     datatable(assay_in_view(), filter = list(position = "top", clear = FALSE), 
-              rownames = FALSE, options = list(dom = "tp"))
+              rownames = FALSE, options = list(dom = "tp", scrollX = TRUE))
   } else {
     datatable(assay_vals$display_default, rownames = FALSE, 
               colnames = "NO DATA", options = list(dom = "tp"))

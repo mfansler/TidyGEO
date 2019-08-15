@@ -83,7 +83,12 @@ observeEvent(input$substitute_help_clicked, {
 })
 
 observeEvent(input$regex_help_clicked, {
-  source(file.path("server", "regex_modal.R"), local = TRUE)$value
+  values$regex_dt <- allowed_datatypes[which(str_detect(input$regex_help_clicked, allowed_datatypes))]
+  if (identical(values$regex_dt, character(0))) {
+    stop("Error in opening regex modal. The button that called the modal is not tagged with a valid datatype.")
+  } else {
+    source(file.path("server", "regex_modal.R"), local = TRUE)$value
+  }
   session$sendCustomMessage("resetValue", "regex_help_clicked")
 })
 

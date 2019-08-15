@@ -24,12 +24,13 @@ observeEvent(input$expression_replace_id, {
         in the assay data table unique.</p>'),
       wellPanel(
         h4("Feature data", inline = TRUE),
-        fluidRow(
-          column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
-          column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
-        ),
+        col_navigation_set("feature", "modal"),
+        #fluidRow(
+        #  column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
+        #  column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
+        #),
         withSpinner(dataTableOutput("featureData"), type = 5),
-        actionLink("link_to_feature_tab2", "How do I clean up this data?")
+        actionLink("link_to_feature2", "How do I clean up this data?")
       ),
       uiOutput("exprLabels"),
       uiOutput("summarizeOptions"),
@@ -65,31 +66,32 @@ observeEvent(input$close_feature_modal, {
   removeModal()
 })
 
-feature_move_by <- reactive({
-  ncol(feature_vals$feature_data) / 5
-})
+#feature_move_by <- reactive({
+#  ncol(feature_vals$feature_data) / 5
+#})
 
-observeEvent(input$feature_next_cols, {
-  if (!is.null(feature_vals$feature_data) && ncol(feature_vals$feature_data) > 6) {
-    start <- min(ncol(feature_vals$feature_data), feature_vals$viewing_subset[1] + feature_move_by())
-    end <- min(ncol(feature_vals$feature_data), start + feature_move_by())
-    feature_vals$viewing_subset <- c(start, end)
-  }
-})
+#observeEvent(input$feature_next_cols, {
+#  if (!is.null(feature_vals$feature_data) && ncol(feature_vals$feature_data) > 6) {
+#    start <- min(ncol(feature_vals$feature_data), feature_vals$viewing_subset[1] + feature_move_by())
+#    end <- min(ncol(feature_vals$feature_data), start + feature_move_by())
+#    feature_vals$viewing_subset <- c(start, end)
+#  }
+#})
 
-observeEvent(input$feature_prev_cols, {
-  if (!is.null(feature_vals$feature_data) && ncol(feature_vals$feature_data) > 6) {
-    end <- max(2, feature_vals$viewing_subset[2] - feature_move_by())
-    start <- max(2, end - feature_move_by())
-    feature_vals$viewing_subset <- c(start, end)
-  }
-})
+#observeEvent(input$feature_prev_cols, {
+#  if (!is.null(feature_vals$feature_data) && ncol(feature_vals$feature_data) > 6) {
+#    end <- max(2, feature_vals$viewing_subset[2] - feature_move_by())
+#    start <- max(2, end - feature_move_by())
+#    feature_vals$viewing_subset <- c(start, end)
+#  }
+#})
 
 output$featureData <- DT::renderDT({
   if (!is.null(feature_vals$feature_data)) {
-    datatable(feature_vals$feature_data[c(1, feature_vals$viewing_subset[1]:feature_vals$viewing_subset[2])], 
+    datatable(feature_in_view(), 
               filter = "top", rownames = FALSE, options = list(dom = "tp",
                                                                pageLength = 5,
+                                                               scrollX = TRUE,
                                                                columnDefs = list(list(
                                                                  targets = "_all",
                                                                  ##Makes it so that the table will only display the first 30 chars.

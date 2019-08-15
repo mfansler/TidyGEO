@@ -17,7 +17,7 @@ tabPanel(title = icon("th-list"), value = "3",
          #)
          ,
          checkboxInput("split_pairs_w_regex", div(
-           "Use regex", regex_help_link("split_pairs")
+           "Use regex", regex_help_link("clinical", "split_pairs")
          )), 
          div(
            primary_button(id = "split_pairs", label = div(icon("th-list"), "Split pairs")),

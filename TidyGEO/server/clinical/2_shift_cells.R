@@ -139,5 +139,5 @@ observeEvent(input$evaluate_conflicts, {
 })
 
 observeEvent(input$undo_shift, {
-  undo_last_action()
+  undo_last_action("clinical")
 })
