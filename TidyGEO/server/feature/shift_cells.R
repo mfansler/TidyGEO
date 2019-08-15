@@ -9,15 +9,15 @@ observeEvent(input$show_broken_cols_example_feature, {
   )
 })
 
-output$broken_cols_example <- renderDT({
-  test_data <- head(as.data.frame(HairEyeColor, stringsAsFactors = FALSE), 5)
-  test_data <- mapply(function(x, y) {
-    paste(x, y, sep = ": ")
-  }, colnames(test_data), test_data)
-  test_data[2:3,1:2] <- test_data[2:3, 3:4]
-  test_data[2:3, 3:4] <- c(NA, NA)
-  datatable(test_data, rownames = FALSE, options = list(dom = "t"))
-})
+#output$broken_cols_example <- renderDT({
+#  test_data <- head(as.data.frame(HairEyeColor, stringsAsFactors = FALSE), 5)
+#  test_data <- mapply(function(x, y) {
+#    paste(x, y, sep = ": ")
+#  }, colnames(test_data), test_data)
+#  test_data[2:3,1:2] <- test_data[2:3, 3:4]
+#  test_data[2:3, 3:4] <- c(NA, NA)
+#  datatable(test_data, rownames = FALSE, options = list(dom = "t"))
+#})
 
 current_colnames_feature <- reactive({
   if (!is.null(feature_vals$feature_data)) {
@@ -121,7 +121,7 @@ observeEvent(input$evaluate_shift_feature, {
     #WRITING COMMANDS TO R SCRIPT
     before <- length(feature_vals$oFile)
     feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
-    feature_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
+    feature_vals$oFile <- saveLines(paste0("feature_data <- shift_cells(feature_data, ", 
                                             format_string(input$col_to_shift_feature), ", ",
                                             format_string(input$destination_col_feature), ")"), feature_vals$oFile)
     feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
@@ -144,20 +144,10 @@ observeEvent(input$evaluate_conflicts_feature, {
                                                      forward_distance = 4, 
                                                      previous_view = feature_vals$feature_data)
   
-  #WRITING COMMANDS TO R SCRIPT
-  #before <- length(feature_vals$oFile)
-  #feature_vals$oFile <- saveLines(commentify("shift cells"), feature_vals$oFile)
-  #feature_vals$oFile <- saveLines(paste0("featureData <- shift_cells(featureData, ", 
-  #                                        format_string(input$col_to_shift_feature), ", ",
-  #                                        format_string(input$destination_col_feature), ", ",
-  #                                        format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
-  #                                 feature_vals$oFile)
-  #feature_vals$current_chunk_len <- length(feature_vals$oFile) - before
-  
   set_undo_point_script("feature")
   save_lines(commentify("shift cells"), "feature", "body")
   add_function("shift_cells", "feature")
-  save_lines(paste0("featureData <- shift_cells(featureData, ", 
+  save_lines(paste0("feature_data <- shift_cells(feature_data, ", 
                     format_string(input$col_to_shift_feature), ", ",
                     format_string(input$destination_col_feature), ", ",
                     format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 

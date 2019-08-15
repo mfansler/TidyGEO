@@ -243,7 +243,7 @@ server <- function(input, output, session) {
       last_data = NULL,
       #oFile = commentify(" "),
       #current_chunk_len = 0,
-      orig_feature = NULL,
+      orig_data = NULL,
       ft_default = data.frame("Please load a dataset"),
       id_col = "ID",
       prev_id = "ID",
@@ -322,7 +322,7 @@ server <- function(input, output, session) {
     } else { # The formatting function was successful
       # Replace the last data with the current data (before formatting)
       eval(
-        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), `$`(!!sym(paste0(datatype, "_vals")), "last_data")))
+        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), "last_data"), `$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))))
       )
       
       # Replace the data with the formatted data
@@ -337,12 +337,10 @@ server <- function(input, output, session) {
 
   get_clinical_data <- function() {
     clinical_vals$clinical_data <- withProgress(process_clinical(values$allData, session))
+    clinical_vals$last_data <- clinical_vals$clinical_data
+    clinical_vals$orig_data <- clinical_vals$clinical_data
     
     #WRITING COMMANDS TO R SCRIPT
-    #clinical_vals$oFile <- saveLines(commentify("extract clinical data"), clinical_vals$oFile)
-    #clinical_vals$oFile <- saveLines("clinical_data <- process_clinical(series_data)", clinical_vals$oFile)
-    #clinical_vals$download_chunk_len <- length(clinical_vals$oFile)
-    
     save_lines(commentify("extract clinical data"), "clinical", "body")
     add_function("process_clinical", "clinical")
     save_lines("clinical_data <- process_clinical(series_data)", "clinical", "body")
@@ -381,7 +379,7 @@ server <- function(input, output, session) {
       save_lines(commentify("extract expression data"), "assay", "body")
       add_function("process_expression", "assay")
       save_lines(c("extracted_data <- process_expression(series_data)",
-                                      "expressionData <- extracted_data[['expressionData']]"), 
+                                      "assay_data <- extracted_data[['expressionData']]"), 
                                     "assay", "body")
       set_reset_point_script("assay")
     }
@@ -390,7 +388,7 @@ server <- function(input, output, session) {
   }
   
   get_feature_data <- function() {
-    feature_vals$orig_feature <- withProgress(process_feature(values$allData, session = session), message = "Processing feature data")
+    feature_vals$orig_data <- withProgress(process_feature(values$allData, session = session), message = "Processing feature data")
     if (is.null(feature_vals$orig_feature)) {
       feature_vals$ft_default <- data.frame(paste0("No feature data available for ", input$geoID))
     } else {
@@ -410,7 +408,7 @@ server <- function(input, output, session) {
       
       save_lines(commentify("extract feature data"), "feature", "body")
       add_function("process_feature", "feature")
-      save_lines(c("featureData <- process_feature(series_data)"), 
+      save_lines(c("feature_data <- process_feature(series_data)"), 
                                       "feature", "body")
       set_reset_point_script("feature")
     }
@@ -480,6 +478,7 @@ server <- function(input, output, session) {
   source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
+  source(file.path("server", "feature", "split_cols.R"), local = TRUE)$value
   source(file.path("server", "feature", "save_data.R"), local = TRUE)$value
 
   # ** ** main panel --------------------------------------------------------------

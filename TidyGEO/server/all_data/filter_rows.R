@@ -28,8 +28,30 @@ output$col_to_match2_selector <- renderUI({
 })
 
 observeEvent(input$match_columns, {
-  eval_function(input$data_to_match1, "find_intersection", list(data2 = unlist(match_vals2()), id_col1 = input$col_to_match1))
-  eval_function(input$data_to_match2, "find_intersection", list(data2 = unlist(match_vals1()), id_col1 = input$col_to_match2))
+  status <- eval_function(
+    input$data_to_match1, "find_intersection", 
+    list(data2 = get_datatype_expr(input$data_to_match2), id_col1 = input$col_to_match1, id_col2 = input$col_to_match2),
+    "matching rows from two columns", 
+    to_knit = c(input$data_to_match1, input$data_to_match2)
+    )
+  if (status != "completed") {
+    showModal(
+      error_modal("Error in filtering first dataset", "No datasets filtered.", status)
+    )
+  } else {
+    status <- eval_function(
+      input$data_to_match2, "find_intersection", 
+      list(data2 = get_datatype_expr(input$data_to_match1), id_col1 = input$col_to_match2, id_col2 = input$col_to_match1),
+      "matching rows from two columns",
+      to_knit = c(input$data_to_match2, input$data_to_match1)
+    )
+    if (status != "completed") {
+      showModal(
+        error_modal("Error in filtering second dataset", "Second dataset not filtered.", status)
+      )
+    }
+    
+  }
 })
 
 

@@ -142,26 +142,17 @@ observeEvent(input$expression_evaluate_id, {
     
     feature_data <- feature_vals$feature_data
     
-    #assay_vals$oFile <- saveLines(c(commentify("replace ID column"),
-    #                                "featureData2 <- featureData"), assay_vals$oFile)
-    
     set_undo_point_script("assay")
+    knit_scripts("assay", "feature", "assay")
     save_lines(c(commentify("replace ID column"),
-                 "featureData2 <- featureData"), "assay", "body")
+                 "feature_data2 <- feature_data"), "assay", "body")
     
     if (feature_vals$id_col != "ID") {
       
-      #assay_vals$oFile <- saveLines(
-      #  c(paste0("colnames(featureData2)[which(colnames(featureData2) == 'ID')] <- ", 
-      #           format_string(colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")]))),
-      #    paste0("colnames(featureData2)[which(colnames(featureData2) == ", 
-      #           format_string(feature_vals$id_col), ")] <- 'ID'")), 
-      #  assay_vals$oFile)
-      
       save_lines(
-        c(paste0("colnames(featureData2)[which(colnames(featureData2) == 'ID')] <- ", 
+        c(paste0("colnames(feature_data2)[which(colnames(feature_data2) == 'ID')] <- ", 
                  format_string(colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")]))),
-          paste0("colnames(featureData2)[which(colnames(featureData2) == ", 
+          paste0("colnames(feature_data2)[which(colnames(feature_data2) == ", 
                  format_string(feature_vals$id_col), ")] <- 'ID'")), 
         "assay", "body")
       
@@ -170,8 +161,7 @@ observeEvent(input$expression_evaluate_id, {
       colnames(feature_data)[which(colnames(feature_data) == feature_vals$id_col)] <- "ID"
       
       if (length(which(colnames(feature_data) == "ID")) > 1) {
-        #assay_vals$oFile <- saveLines("featureData2 <- featureData2[,-1]", assay_vals$oFile)
-        save_lines("featureData2 <- featureData2[,-1]", "assay", "body")
+        save_lines("feature_data2 <- feature_data2[,-1]", "assay", "body")
         
         #You probably shouldn't be doing this every time
         feature_data <- feature_data[,-1]
@@ -180,35 +170,19 @@ observeEvent(input$expression_evaluate_id, {
     
     assay_vals$assay_data <- withProgress(message = "Replacing the ID column", 
                                           replaceID(assay_vals$assay_data, feature_data, input$colForExprLabels, input$howToSummarize, input$feature_dropNA))
+    
     feature_vals$prev_id <- feature_vals$id_col
     feature_vals$id_col <- input$colForExprLabels
     
     shinyjs::enable("undoEvalExpr")
     
-    #before <- length(assay_vals$oFile)
-    
-    #WRITING COMMANDS TO EXPRESSION RSCRIPT
-    #assay_vals$oFile <- saveLines(c(paste0("expressionData <- replaceID(expressionData, featureData2, ", 
-    #                                       format_string(input$colForExprLabels), ", ",
-    #                                       format_string(input$howToSummarize), ", ", 
-    #                                       format_string(input$feature_dropNA), ")")), 
-    #                              assay_vals$oFile)
-    
-    #after <- length(assay_vals$oFile)
-    
-    #assay_vals$current_chunk_len <- after - before
-    
     add_function("replaceID", "assay")
-    save_lines(c(paste0("expressionData <- replaceID(expressionData, featureData2, ", 
+    save_lines(c(paste0("assay_data <- replaceID(assay_data, feature_data2, ", 
                         format_string(input$colForExprLabels), ", ",
                         format_string(input$howToSummarize), ", ", 
                         format_string(input$feature_dropNA), ")")
                  ), 
                "assay", "body")
   }
-  
-  #updateSelectInput(session, "howToSummarize", selected = "keep all")
-  
-  #shinyjs::disable("expression_replace_id")
   
 })

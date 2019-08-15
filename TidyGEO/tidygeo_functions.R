@@ -39,6 +39,14 @@ get_datatype_expr_text <- function(datatype_expr) {
   }
 }
 
+error_modal <- function(title, subtitle, error_message) {
+  modalDialog(
+    title = HTML(paste0('<font color="red">', title, '</font>')),
+    p(paste(subtitle, "Reason:"), style = "color:red"),
+    p(error_message, style = "color:red")
+  )
+}
+
 # R Script writing --------------------------------------------------------
 
 

@@ -73,63 +73,33 @@ observeEvent(input$join_columns, {
   withProgress({
     incProgress(message = "Performing first join")
     if (all_vals$join_datatypes_visible > 1) {
-      knit_scripts("all", input$data_to_join2, "all")
       join1_status <- eval_function("all", "join_data", 
                                     list(get_datatype_expr(input$data_to_join2),
                                          input$col_to_join1,
                                          input$col_to_join2,
                                          input$join_behavior2),
                                     "Joining datasets",
-                                    c(input$data_to_join1, input$data_to_join2))
+                                    knit = c("all", input$data_to_join2))
     }
-    #join1_status <- tryCatch({
-    #  if (all_vals$join_datatypes_visible > 1) {
-    #    all_vals$all_data <- join_data(
-    #      eval(parse(text = paste0(input$data_to_join1, "_vals$", input$data_to_join1, "_data"))), 
-    #      eval(parse(text = paste0(input$data_to_join2, "_vals$", input$data_to_join2, "_data"))), 
-    #      input$col_to_join1, 
-    #      input$col_to_join2, 
-    #      input$join_behavior2
-    #    )
-    #  }
-    #}, error = function(e) {
-    #  
-    #})
     if (join1_status == "completed") {
       incProgress(message = "Performing second join")
       if (all_vals$join_datatypes_visible > 2) {
-        knit_scripts("all", input$data_to_join3, "all")
         join2_status <- eval_function("all", "join_data", 
-                                      list(paste0(input$data_to_join3, "_vals$", input$data_to_join3, "_data"),
+                                      list(get_datatype_expr(input$data_to_join3),
                                            input$col_to_join2,
                                            input$col_to_join3,
-                                           input$join_behavior3))
-        #all_vals$all_data <- join_data(
-        #  all_vals$all_data, 
-        #  eval(parse(text = paste0(input$data_to_join3, "_vals$", input$data_to_join3, "_data"))), 
-        #  input$col_to_join2, 
-        #  input$col_to_join3, 
-        #  input$join_behavior3
-        #)
+                                           input$join_behavior3),
+                                      "joining datasets",
+                                      knit = c("all", input$data_to_join3))
         if (join2_status != "completed") {
-          undo_script("all")
           showModal(
-            modalDialog(
-              title = HTML("<style = color: red>Error in second join</style>"),
-              p("Join not performed. Reason:", style = "color: red"),
-              p(join2_status, style = "color: red")
-            )
+            error_modal("Error in second join", "Second join not performed.", status)
           )
         }
       }
     } else {
-      undo_script("all")
       showModal(
-        modalDialog(
-          title = HTML("<style = color: red>Error in first join</style>"),
-          p("Join not performed. Reason:", style = "color: red"),
-          p(join1_status, style = "color: red")
-        )
+        error_modal("Error in first join", "First join not performed.", status)
       )
     }
   })

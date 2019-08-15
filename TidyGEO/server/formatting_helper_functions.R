@@ -386,17 +386,20 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
       numElements <- max(sapply(metaData[,colName], function(x) {
         len <- length(str_extract_all(x, regex_delimiter)[[1]]) + 1
         if (!is.na(x) && len > nchar(x)) {
-          stop("You have made a mistake.")
+          stop("Error in splitCombinedVars.")
         } else {
           len
         }
       }), na.rm = TRUE)
       if (numElements > 1) {
-        
-        colNames <- NULL
-        for (i in 1:numElements) {
-          colNames <- c(colNames, paste(colName, i, sep = "."))
-        }
+        colNames <- make.unique(c(colnames(metaData), rep(colName, numElements)))
+        colNames <- colNames[(length(colnames(metaData)) + 1):length(colNames)]
+        #if (any(colNames %in% colnames(metaData))) {
+        #  colNames[which(colNames %in% colnames(metaData))] <- paste(colNames[which(colNames %in% colnames(metaData))], 2, sep = ".")
+        #}
+        #for (i in 1:numElements) {
+        #  colNames <- c(colNames, paste(colName, i, sep = "."))
+        #}
         metaData <- separate(metaData, col = colName, into = colNames, sep = regex_delimiter)
         
         num_split <- num_split + 1

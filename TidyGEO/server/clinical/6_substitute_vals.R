@@ -63,51 +63,18 @@ observeEvent(input$add_val_to_sub, {
 })
 
 observeEvent(input$evaluate_subs, {
-  #if (!identical(values$tablesList, list())) {
-  #print("tablesList")
-  #print(values$tablesList)
   clinical_vals$last_selected_substitute <- input$colsToSub
   sub_specs <- list(clinical_vals$subs_input)
   names(sub_specs) <- input$colsToSub
-  #print("DFIn")
-  #print(sub_specs)
-  clinical_vals$last_data <- clinical_vals$clinical_data
-  clinical_vals$clinical_data <- withProgress(substitute_vals(clinical_vals$clinical_data, sub_specs, input$sub_w_regex), 
-                                  message = "Substituting values")
-  
-  #WRITING COMMANDS TO R SCRIPT
-  #before <- length(clinical_vals$oFile)
-  #clinical_vals$oFile <- saveLines(commentify("substitute values"), clinical_vals$oFile)
-  #clinical_vals$oFile <- saveLines(paste0("sub_specs <- list()"), clinical_vals$oFile)
-  ##for (i in 1:length(values$tablesList)) {
-  #clinical_vals$oFile <- saveLines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
-  #                                 "data.frame(", colnames(clinical_vals$subs_input)[1], "=c(", 
-  #                                 paste(format_string(as.character(clinical_vals$subs_input[,1])), collapse = ", "), "), ",
-  #                                 colnames(clinical_vals$subs_input)[2], "=c(", 
-  #                                 paste(format_string(as.character(clinical_vals$subs_input[,2])), collapse = ", "), "))"), clinical_vals$oFile)
-  ##}
-  #clinical_vals$oFile <- saveLines("clinical_data <- substitute_vals(clinical_data, sub_specs)", 
-  #                          clinical_vals$oFile)
-  #clinical_vals$current_chunk_len <- length(clinical_vals$oFile) - before
-  
-  set_undo_point_script("clinical")
-  save_lines(commentify("substitute values"), "clinical", "body")
-  add_function("substitute_vals", "clinical")
-  save_lines(paste0("sub_specs <- list()"), "clinical", "body")
-  save_lines(paste0("sub_specs[[", format_string(input$colsToSub), "]] <- ",
-                                          "data.frame(", colnames(clinical_vals$subs_input)[1], "=c(", 
-                                          paste(format_string(as.character(clinical_vals$subs_input[,1])), collapse = ", "), "), ",
-                                          colnames(clinical_vals$subs_input)[2], "=c(", 
-                                          paste(format_string(as.character(clinical_vals$subs_input[,2])), collapse = ", "), "))"), 
-             "clinical", "body")
-  save_lines(paste0("use_regex <- ", input$sub_w_regex), "clinical", "body")
-  save_lines("clinical_data <- substitute_vals(clinical_data, sub_specs, use_regex)", 
-                                   "clinical", "body")
-  
-  #values$tablesList <- list()
+  status <- withProgress(
+    eval_function("clinical", "substitute_vals", list(sub_specs, input$sub_w_regex), "substitute values"), 
+    message = "Substituting values")
+  if (status != "completed") {
+    showModal(
+      error_modal("Error in substitute values", "No values substituted.", status)
+    )
+  }
   clinical_vals$subs_display <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
-  
-  #}
 })
 
 observeEvent(input$undo_subs, {
