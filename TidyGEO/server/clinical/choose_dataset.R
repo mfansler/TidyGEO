@@ -62,9 +62,15 @@ observeEvent(input$download_data_evaluate, {
   clinical_vals$clinical_data <- NULL
   assay_vals$assay_data <- NULL
   feature_vals$feature_data <- NULL
-  
   # WRITING COMMANDS TO R SCRIPT
   for (datatype in c("clinical", "feature", "assay", "all")) {
+    message <- if (datatype == "all") {
+      "No datasets have been joined. Please join some datasets." 
+    } else {
+      paste("Please load some", datatype, "data.")
+    }
+    set_x_equalto_y("display_default", data.frame(message), datatype)
+    
     add_function("load_series", datatype)
     set_reset_point_script(datatype)
   }

@@ -201,16 +201,24 @@ server <- function(input, output, session) {
       regex_dt = NULL
     )
   
-  # For any of the following, if you change the variable names of 
-  # "[]_data" or "last_data", get ready for a world of pain... er, refactoring.
+  # The following variables, if changed, will cause need for extensive refactoring:
+  # display_default
+  # []_data
+  # last_data
+  # use_viewing_subset
+  # viewing_min
+  # viewing_subset
+  # user_pagelen
   # 
-  # Also, I like to keep these all in separate lists so that they can update independently
+  # Most refactoring will probably take place in tidygeo_functions.R.
+  # 
+  # Reactive values reside here in separate lists so that they can update independently
   # of each other. Otherwise, an update--to, for example, assay_data--might cause values from
   # clinical_vals to update, which would be ridiculously slow. Usually best to keep reactiveValues
   # as distinct and small as possible.
   clinical_vals <- 
     reactiveValues(
-      display_default = data.frame("Please load some clinical data"),
+      display_default = data.frame("Please load a dataset."),
       clinical_data = NULL,
       orig_data = NULL,
       last_data = NULL,
@@ -230,12 +238,13 @@ server <- function(input, output, session) {
       shift_results = list(),
       use_viewing_subset = FALSE,
       viewing_min = 1,
-      viewing_subset = c(1, 5)
+      viewing_subset = c(1, 5),
+      user_pagelen = 10
     )
   
   assay_vals <-
     reactiveValues(
-      display_default = data.frame("Please load a dataset"),
+      display_default = data.frame("Please load a dataset."),
       orig_data = NULL,
       assay_data = NULL,
       last_data = NULL,
@@ -249,7 +258,8 @@ server <- function(input, output, session) {
       expression_warning_state = FALSE,
       use_viewing_subset = FALSE,
       viewing_min = 2,
-      viewing_subset = c(2, 6)
+      viewing_subset = c(2, 6),
+      user_pagelen = 10
     )
   
   feature_vals <-
@@ -260,17 +270,19 @@ server <- function(input, output, session) {
       #oFile = commentify(" "),
       #current_chunk_len = 0,
       orig_data = NULL,
-      ft_default = data.frame("Please load a dataset"),
+      display_default = data.frame("Please load a dataset."),
       id_col = "ID",
       prev_id = "ID",
       plot_to_save = NULL,
       use_viewing_subset = FALSE,
       viewing_min = 2,
-      viewing_subset = c(2, 6)
+      viewing_subset = c(2, 6),
+      user_pagelen = 10
     )
   
   all_vals <- 
     reactiveValues(
+      display_default = data.frame("Please load a dataset."),
       all_data = NULL,
       last_data = NULL,
       last_selected_match1 = NULL,
@@ -278,24 +290,39 @@ server <- function(input, output, session) {
       join_datatypes_visible = 1,
       use_viewing_subset = FALSE,
       viewing_min = 1,
-      viewing_subset = c(1, 5)
+      viewing_subset = c(1, 5),
+      user_pagelen = 10
     )
   
   
   # ** General functions for all datatypes -------------------------------------
 
-  # ** ** For passing a dataset through a formatting function ---------------------
-  # >> This function is not necessary if you know which datatype you're updating, but
-  #    helpful since it writes the function to the script automatically.
-  # 
-  # >> func_to_eval must be a string
-  # >> func_args must be a list; it can be named, for named arguments
-  # >> Leave to_knit NULL in most cases, unless you're joining datasets or using values from one
-  #    dataset to format another
-  # 
-  # >> This function must stay in the server function to have access to the reactiveValues
-  # 
-  # >> Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
+  # ** ** evaluate a function --------------------------------------------------
+  
+  #' Perform some function on the "data" variable from one of the four lists (clinical, assay, feature, all)
+  #' 
+  #' This function is not necessary if you know which datatype you're updating, but
+  #' helpful since it writes the function to the script automatically.
+  #' 
+  #' This function must stay in the server function to have access to the reactiveValues.
+  #' 
+  #' Please see https://adv-r.hadley.nz/quasiquotation.html (section 9.4) for details about '!!'
+  #' 
+  #' @param datatype A string corresponding to one of the datatypes ("clinical", "assay", "feature", or "all")
+  #' @param func_to_eval A string corresponding to the name of a function in formatting_helper_functions.R.
+  #' @param func_args A (named) list corresponding to the arguments to the function (after the "data" variable)
+  #' @param header Text to use as the header for this section of the R script.
+  #' @param to_knit If the function involves two different "data" variables, a list of the string names 
+  #' (e.g. "clinical", "assay") of those variables so we know which scripts to knit together.
+  #' @examples 
+  #' # The following sections of code are equivalent.
+  #' # Section 1:
+  #' set_undo_point_script("clinical")
+  #' commentify("filter columns", "clinical", "body")
+  #' clinical_vals$clinical_data <- filterUninformativeColumns(clinical_vals$clinical_data, c("same_vals"))
+  #' write_to_script("clinical_data <- filterUninformativeColumns(clinical_data, c('same_vals')))
+  #' # Section 2:
+  #' eval_function("clinical", "filterUninformativeColumns", list(c("same_vals")), "filter columns")
   eval_function <- function(datatype, func_to_eval, func_args, header = "", to_knit = NULL) {
     if (!datatype %in% allowed_datatypes) {
       stop(invalid_datatype_message)
@@ -326,14 +353,19 @@ server <- function(input, output, session) {
       datatype,
       "body"
     )
-    
     status <- tryCatch({ # Whether the formatting function evaluated successfully
       # Get the result of the formatting function
       result <- eval(
-      expr((!!func_to_eval)(
-        eval(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))), 
-        !!!func_args
-            )
+        #expr((!!func_to_eval)(
+        #  eval(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))), 
+        #  !!!func_args
+        #      )
+        #  )
+        #)
+        expr((!!func_to_eval)(
+          get_data_member(datatype, paste0(datatype, "_data")), 
+          !!!func_args
+        )
         )
       )
       "completed"
@@ -346,14 +378,19 @@ server <- function(input, output, session) {
       return(status)
     } else { # The formatting function was successful
       # Replace the last data with the current data (before formatting)
-      eval(
-        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), "last_data"), `$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))))
-      )
+      #eval(
+      #  expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), "last_data"), !!get_datatype_expr(datatype)))
+      #  #expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), "last_data"), `$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))))
+      #)
+      set_x_equalto_y("last_data", get_data_member(datatype, paste0(datatype, "_data")), datatype)
       
       # Replace the data with the formatted data
-      eval(
-        expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), result))
-      )
+      #eval(
+      #  expr(`<-`(!!get_datatype_expr(datatype), result))
+      #  #expr(`<-`(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data")), result))
+      #)
+      set_x_equalto_y(paste0(datatype, "_data"), result, datatype)
+      
       return(status)
     }
   }
@@ -381,28 +418,10 @@ server <- function(input, output, session) {
       stop(paste("Error in undo_last_action.", invalid_datatype_message))
     }
   }
+
+  # ** navigation --------------------------------------------------------------
   
-  # To use these, make sure you have lines similar to the following wherever you are
-  # displaying the data:
-  # 
-  # observe({
-  #   assay_vals$use_viewing_subset <- !is.null(ncol(assay_vals$assay_data)) && ncol(assay_vals$assay_data) > 19
-  #   assay_vals$viewing_subset <- c(2, min(6, ncol(assay_vals$assay_data)))
-  # }, priority = 1)
-  #
-  # assay_in_view <- reactive({
-  #   if (assay_vals$use_viewing_subset) {
-  #     assay_vals$assay_data[c(1, assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2])]
-  #   } else {
-  #     assay_vals$assay_data
-  #   }
-  # })
-  # 
-  # output$col_nav <- renderUI({
-  #   if (assay_vals$use_viewing_subset) {
-  #     col_navigation_set("assay")
-  #   }
-  # })
+  source(file.path("server", "navigation.R"), local = TRUE)$value
   
   observeEvent(input$next_cols_clicked, {
     to_move <- allowed_datatypes[which(str_detect(input$next_cols_clicked, allowed_datatypes))]
@@ -415,6 +434,15 @@ server <- function(input, output, session) {
       
       start <- min(ncol_data_to_move, current_subset + move_by)
       end <- min(ncol_data_to_move, start + move_by)
+      
+      eval(
+        expr(
+          `<-`(
+            `$`(!!sym(paste0(to_move, "_vals")), "user_pagelen"), 
+            input[[paste0(to_move, "_display_state")]][["length"]]
+            )
+          )
+      )
       
       eval(
         expr(`<-`(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset"), c(start, end)))
@@ -435,6 +463,10 @@ server <- function(input, output, session) {
       
       end <- max(viewing_min, current_subset - move_by)
       start <- max(viewing_min, end - move_by)
+      
+      eval(
+        expr(`<-`(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset"), c(start, end)))
+      )
       
       eval(
         expr(`<-`(`$`(!!sym(paste0(to_move, "_vals")), "viewing_subset"), c(start, end)))
@@ -500,7 +532,7 @@ server <- function(input, output, session) {
       feature_vals$orig_data <- process_feature(values$allData, session = session)
       }, message = "Processing feature data")
     if (is.null(feature_vals$orig_data)) {
-      feature_vals$ft_default <- data.frame(paste0("No feature data available for ", input$geoID))
+      feature_vals$display_default <- data.frame(paste0("No feature data available for ", input$geoID))
     } else {
       feature_vals$id_col <- colnames(feature_vals$orig_data)[1]
       feature_vals$prev_id <- feature_vals$id_col
@@ -583,13 +615,6 @@ server <- function(input, output, session) {
   # ** ** main panel --------------------------------------------------------------
   source(file.path("server", "all_data", "workbench.R"), local = TRUE)$value
   source(file.path("server", "all_data", "data_viewer.R"), local = TRUE)$value
-
-  
-  
-  
-  # ** navigation --------------------------------------------------------------
-  
-  source(file.path("server", "navigation.R"), local = TRUE)$value
   
   
   # ** help modals -------------------------------------------------------------

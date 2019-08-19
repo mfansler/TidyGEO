@@ -18,5 +18,5 @@ tabPanel(title = "Clinical Data",
          uiOutput("clinical_vals_viewing_subset"),
          br(),
          bsAlert("parseError"),
-         withSpinner(DTOutput("dataset"), type = 5)
+         withSpinner(DTOutput("clinical_display"), type = 5)
 )

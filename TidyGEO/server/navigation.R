@@ -8,6 +8,36 @@ navigation_set_server <- function(prev, from, to, section_prev = NULL, section_t
   })
 }
 
+col_navigation_set_server <- function(datatype, extra_tag = "") {
+  observe({
+    n_cols <- ncol(get_data_member(datatype, paste0(datatype, "_data")))
+    this_viewing_min <- get_data_member(datatype, "viewing_min")
+    set_x_equalto_y("use_viewing_subset", !is.null(n_cols) && n_cols > 19, datatype)
+    set_x_equalto_y("viewing_subset", c(this_viewing_min, min(this_viewing_min + 5, n_cols)), datatype)
+  }, priority = 1)
+  
+  assign(paste0(datatype, "_in_view"), reactive({
+    if (get_data_member(datatype, "use_viewing_subset")) {
+      this_viewing_subset <- get_data_member(datatype, "viewing_subset")
+      cols_to_view <- this_viewing_subset[1]:this_viewing_subset[2]
+      if (get_data_member(datatype, "viewing_min") == 2) {
+        cols_to_view <- c(1, cols_to_view)
+      }
+      get_data_member(datatype, paste0(datatype, "_data"))[cols_to_view]
+    } else {
+      get_data_member(datatype, paste0(datatype, "_data"))
+    }
+  }), pos = parent.frame())
+  
+  output[[paste0("cols_visible_", datatype, "_", extra_tag)]] <- renderText({
+    paste("Showing", 
+          get_data_member(datatype, "viewing_subset")[1], "to", 
+          get_data_member(datatype, "viewing_subset")[2], "of", 
+          ncol(get_data_member(datatype, paste0(datatype, "_data"))), 
+          "columns")
+  })
+}
+
 
 # Clinical side panel -----------------------------------------------------
 

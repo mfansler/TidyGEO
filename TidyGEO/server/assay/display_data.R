@@ -25,18 +25,7 @@ observeEvent(input$resetExpr, {
   }
 })
 
-observe({
-  assay_vals$use_viewing_subset <- !is.null(ncol(assay_vals$assay_data)) && ncol(assay_vals$assay_data) > 19
-  assay_vals$viewing_subset <- c(assay_vals$viewing_min, min(assay_vals$viewing_min + 5, ncol(assay_vals$assay_data)))
-}, priority = 1)
-
-assay_in_view <- reactive({
-  if (assay_vals$use_viewing_subset) {
-    assay_vals$assay_data[c(1, assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2])]
-  } else {
-    assay_vals$assay_data
-  }
-})
+col_navigation_set_server("assay")
 
 output$assay_vals_viewing_subset <- renderUI({
   if (assay_vals$use_viewing_subset) {
@@ -44,13 +33,23 @@ output$assay_vals_viewing_subset <- renderUI({
   }
 })
 
-output$exprPreview <- DT::renderDT({
+output$assay_display <- DT::renderDT({
   if (!is.null(assay_vals$assay_data)) {
     datatable(assay_in_view(), filter = list(position = "top", clear = FALSE), 
-              rownames = FALSE, options = list(dom = "tp", scrollX = TRUE))
+              rownames = FALSE, 
+              options = c(basic_table_options, pageLength = assay_vals$user_pagelen))
   } else {
-    datatable(assay_vals$display_default, rownames = FALSE, 
-              colnames = "NO DATA", options = list(dom = "tp"))
+    empty_table(assay_vals$display_default)
+  }
+})
+output$evaluate_filters_button <- renderUI({
+  if (!is.null(input$assay_display_search_columns) && !all(input$assay_display_search_columns == "")) {
+    div(
+      primary_button("expression_evaluate_filters", 
+                     label = div(icon("filter"),
+                                 "Apply filters"),
+                     width = '200px', class = "indent"),
+      help_link("assay", "evaluate_filters_help"))
   }
 })
 
@@ -58,7 +57,7 @@ observeEvent(input$expression_evaluate_filters, {
   #TODO: debug filtering when the data is transposed
   
   
-  to_filter <- input$exprPreview_search_columns
+  to_filter <- input$assay_display_search_columns
   names(to_filter) <- colnames(assay_vals$assay_data)[assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2]]
   status <- eval_function("assay", "filterExpressiondata", list(to_filter), "filter data")
   if (status != "completed") {

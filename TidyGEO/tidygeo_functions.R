@@ -15,18 +15,100 @@ version <- suppressWarnings(readLines("VERSION"))
 
 # Small utility functions -------------------------------------------------
 
+#' Capitalizes the first letter of a string.
+#' 
+#' @param my_str A string.
+#' @return A string with the first letter capitalized.
+#' 
+#' @examples 
+#' cap_first("carrots")
 cap_first <- function(my_str) {
   paste0(toupper(substring(my_str, 1, 1)), substring(my_str, 2, nchar(my_str)))
 }
 
-get_datatype_expr <- function(datatype) {
-  if (datatype %in% allowed_datatypes) {
-    rlang::expr(eval(`$`(!!sym(paste0(datatype, "_vals")), !!paste0(datatype, "_data"))))
-  } else {
-    stop(paste("Error in get_datatype_expr.", invalid_datatype_message))
+#' Get the expression to get a reactive variable from one of the four lists: 
+#' clinical_vals, assay_vals, feature_vals, or all_vals.
+#'
+#' @param datatype The name of the list to grab from ("clinical", "assay", "feature", "all").
+#' @param member_name The name of the reactive variable within the list.
+#' @return An expression to get a variable.
+#' @examples
+#' # To get the expression to get the variable called "clinical_data" from the "clinical_vals" list
+#' get_data_member_expr("clinical", "clinical_data")
+get_data_member_expr <- function(datatype, member_name) {
+  if (!datatype %in% allowed_datatypes) {
+    stop(paste("Error in get_data_member_expr", invalid_datatype_message))
   }
+  expr(`$`(!!sym(paste0(datatype, "_vals")), !!member_name))
 }
 
+#' Get a reactive variable from one of the four lists: 
+#' clinical_vals, assay_vals, feature_vals, or all_vals.
+#' 
+#' @param datatype The name of the list to grab from (clinical, assay, feature, all)
+#' @param member_name The name of the reactive variable within the list.
+#' @return An object from the list specified by datatype.
+#' @examples 
+#' # To get the variable called "clinical_data" from the "clinical_vals" list
+#' get_data_member("clinical", "clinical_data")
+get_data_member <- function(datatype, member_name) {
+  envir <- parent.frame()
+  eval(get_data_member_expr(datatype, member_name), envir)
+}
+
+#' Get the expression to set a variable (which may be a reactive variable
+#' from one of the four lists: clinical_vals, assay_vals, feature_vals, or all_vals)
+#' equal to some object.
+#' 
+#' @param x The variable to set equal to the object.
+#' @param y The object to be stored in the variable.
+#' @param x_datatype If x is a reactive variable from one of the four lists
+#' (clinical_vals, assay_vals, feature_vals, or all_vals), then this must equal
+#' the string name of the list ("clinical", "assay", "feature", or "all).
+#' Otherwise, this must remain NULL.
+#' @return The expression to set a variable equal to some object.
+#' @examples
+#' # The following line is equivalent to `expr(clinical_vals$clinical_data <- data.frame())`:
+#' get_x_equalto_y_expr("clinical_data", data.frame(), "clinical")
+#' # The following lines are equivalent to `expr(result <- clinical_vals$clinical_data)`
+#' get_x_equalto_y_expr(result, clinical_vals$clinical_data)
+#' get_x_equalto_y_expr(result, get_data_member("clinical", "clinical_data"))
+get_x_equalto_y_expr <- function(x, y, x_datatype = NULL) {
+  x_name <- if (is.null(x_datatype)) x else get_data_member_expr(x_datatype, x)
+  expr(`<-`(!!x_name, !!y))
+}
+
+#' Set a variable (which may be a reactive variable from one of the four lists: 
+#' clinical_vals, assay_vals, feature_vals, or all_vals) equal to some object.
+#' 
+#' @param x The variable to set equal to the object.
+#' @param y The object to be stored in the variable.
+#' @param x_datatype If x is a reactive variable from one of the four lists
+#' (clinical_vals, assay_vals, feature_vals, or all_vals), then this must equal
+#' the string name of the list ("clinical", "assay", "feature", or "all).
+#' Otherwise, this must remain NULL.
+#' @return The expression to set a variable equal to some object.
+#' @examples
+#' # The following line is equivalent to `clinical_vals$clinical_data <- data.frame()`:
+#' get_x_equalto_y_expr("clinical_data", data.frame(), "clinical")
+#' # The following lines are equivalent to `result <- clinical_vals$clinical_data`
+#' get_x_equalto_y_expr(result, clinical_vals$clinical_data)
+#' get_x_equalto_y_expr(result, get_data_member("clinical", "clinical_data"))
+set_x_equalto_y <- function(x, y, x_datatype = NULL) {
+  envir <- parent.frame()
+  eval(get_x_equalto_y_expr(x, y, x_datatype), envir)
+}
+
+#' Get the name associated with the "data" variable from one of the four lists:
+#' clinical_vals, assay_vals, feature_vals, or all_vals.
+#' 
+#' @param datatype_expr An expression object corresponding to the "data" variable
+#' from one of the four lists, i.e., clinical_vals$clinical_data, assay_vals$assay_data,
+#' feature_vals$feature_data, all_vals$all_data
+#' @return A string corresponding to the "data" variable from one of the four reactive lists,
+#' i.e., "clinical", "assay", "feature", or "all"
+#' @examples 
+#' get_datatype_expr_text(expr(clinical_vals$clinical_data))
 get_datatype_expr_text <- function(datatype_expr) {
   if (class(datatype_expr) != "call") {
     stop("Error in get_datatype_expr_text. 'datatype_expr' is not an expression.")
@@ -286,6 +368,31 @@ set_reset_point_script <- function(datatype) {
     stop(paste("Error in set_reset_point_script.", invalid_datatype_message))
   }
 }
+
+# Tables ------------------------------------------------------------------
+
+empty_table <- function(this_data) {
+  datatable(this_data, rownames = FALSE, colnames = "NO DATA", options = list(dom = "t"))
+}
+
+basic_table_options <- list(
+  dom = "ltip",
+  scrollX = TRUE,
+  stateSave = TRUE,
+  columnDefs = list(
+    list(
+      targets = "_all",
+      ##Makes it so that the table will only display the first 50 chars.
+      ####See https://rstudio.github.io/DT/options.html
+      render = JS(
+        "function(data, type, row, meta) {",
+        "return type === 'display' && typeof data === 'string' && data.length > 50 ?",
+        "'<span title=\"' + data + '\">' + data.substr(0, 50) + '...</span>' : data;",
+        "}"
+      )
+    )
+  )
+)
 
 # Graphing ----------------------------------------------------------------
 

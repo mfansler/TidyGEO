@@ -65,8 +65,15 @@ navigation_set <- function(prev, from, to, section_prev = NULL, section_to = NUL
 }
 
 col_navigation_set <- function(datatype, extra_tag = "") {
-  div(
-    secondary_button(id = paste0("prev_cols_", datatype, "_", extra_tag), label = div(icon("arrow-left"), "Previous columns"), class = "prev_cols"),
-    div(secondary_button(id = paste0("next_cols_", datatype, "_", extra_tag), label = "Next columns", icon = icon("arrow-right"), class = "next_cols"), class = "right_align")
+  fluidRow(
+    column(4,
+      secondary_button(id = paste0("prev_cols_", datatype, "_", extra_tag), label = div(icon("arrow-left"), "Previous columns"), class = "prev_cols")
+    ),
+    column(4,
+      div(textOutput(paste0("cols_visible_", datatype, "_", extra_tag)), class = "center_align")
+    ),
+    column(4,
+      div(secondary_button(id = paste0("next_cols_", datatype, "_", extra_tag), label = "Next columns", icon = icon("arrow-right"), class = "next_cols"), class = "right_align")
+    )
   )
 }

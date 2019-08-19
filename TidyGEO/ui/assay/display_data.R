@@ -13,6 +13,6 @@ tabPanel("Data",
          uiOutput("assay_vals_viewing_subset"),
          br(),
          bsAlert("alpha_alert"),
-         withSpinner(dataTableOutput("exprPreview"), type = 5),
+         withSpinner(dataTableOutput("assay_display"), type = 5),
          uiOutput("evaluate_filters_button")
 )
