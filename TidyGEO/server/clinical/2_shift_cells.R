@@ -19,7 +19,7 @@ output$broken_cols_example <- renderDT({
   datatable(test_data, rownames = FALSE, options = list(dom = "t"))
 })
 
-current_colnames <- reactive({ colnames(clinical_vals$clinical_data) })
+current_colnames <- reactive({ colnames(clinical_vals[[dataname("clinical")]]) })
 
 output$display_cols_to_shift <- renderUI({
   selectInput(inputId = "col_to_shift", label = div("Shift the values from:"), choices = current_colnames(), 
@@ -33,13 +33,13 @@ output$display_destination_cols <- renderUI({
 })
 
 shift_preview <- reactive({ 
-  if (!is.null(clinical_vals$clinical_data) &&
+  if (!is.null(clinical_vals[[dataname("clinical")]]) &&
       !is.null(input$col_to_shift) &&
       !is.null(input$destination_col) &&
       input$col_to_shift != "" && 
       input$destination_col != "") {
-    #shift_cells(head(clinical_vals$clinical_data, 5), input$col_to_shift, input$destination_col)
-    preview_data <- head(clinical_vals$clinical_data, 5)
+    #shift_cells(head(clinical_vals[[dataname("clinical")]], 5), input$col_to_shift, input$destination_col)
+    preview_data <- head(clinical_vals[[dataname("clinical")]], 5)
     preview_data <- cbind(sapply(preview_data[,input$col_to_shift], shorten_labels, 20), 
                           rep(as.character(icon("arrow-right")), nrow(preview_data)), 
                           sapply(preview_data[,input$destination_col], shorten_labels, 20),
@@ -50,7 +50,7 @@ shift_preview <- reactive({
 })
 
 output$shift_preview_table <- DT::renderDT({
-  if (!is.null(clinical_vals$clinical_data) &&
+  if (!is.null(clinical_vals[[dataname("clinical")]]) &&
       !is.null(input$col_to_shift) &&
       !is.null(input$destination_col) &&
       input$col_to_shift != "" && 
@@ -90,7 +90,7 @@ output$shift_conflicts_table <- DT::renderDT({
 })
 
 observeEvent(input$evaluate_shift, {
-  clinical_vals$shift_results <- shift_cells(clinical_vals$clinical_data, input$col_to_shift, input$destination_col)
+  clinical_vals$shift_results <- shift_cells(clinical_vals[[dataname("clinical")]], input$col_to_shift, input$destination_col)
   if (!is.null(clinical_vals$shift_results[["conflicts"]])) {
     showModal(modalDialog( title = div(HTML('<font color="red">Whoops!</font>'), 
                                        tertiary_button("cancel_shift", "Cancel", class = "right_align")),
@@ -104,9 +104,9 @@ observeEvent(input$evaluate_shift, {
       footer = primary_button("evaluate_conflicts", "Resolve")
     ))
   } else {
-    clinical_vals$last_data <- clinical_vals$clinical_data
+    clinical_vals$last_data <- clinical_vals[[dataname("clinical")]]
     
-    clinical_vals$clinical_data <- clinical_vals$shift_results[["result"]]
+    clinical_vals[[dataname("clinical")]] <- clinical_vals$shift_results[["result"]]
     
     set_undo_point_script("clinical")
     save_lines(commentify("shift cells"), "clinical", "body")
@@ -123,10 +123,10 @@ observeEvent(input$cancel_shift, {
 
 observeEvent(input$evaluate_conflicts, {
   removeModal()
-  results <- shift_cells(clinical_vals$clinical_data, input$col_to_shift, input$destination_col, 
+  results <- shift_cells(clinical_vals[[dataname("clinical")]], input$col_to_shift, input$destination_col, 
                          conflicts = if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option)
-  clinical_vals$last_data <- clinical_vals$clinical_data
-  clinical_vals$clinical_data <- results[["result"]]
+  clinical_vals$last_data <- clinical_vals[[dataname("clinical")]]
+  clinical_vals[[dataname("clinical")]] <- results[["result"]]
   
   set_undo_point_script("clinical")
   save_lines(commentify("shift cells"), "clinical", "body")

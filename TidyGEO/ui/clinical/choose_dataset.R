@@ -16,11 +16,10 @@ sidebarLayout(
     hr(), 
     
     div(
-      secondary_button('nav_choose_to_clinical_button', div(icon("clipboard"), HTML('Process <br/> clinical data'))),
-      tertiary_button('nav_choose_to_assay_button', div(icon("microscope"), HTML('Process <br/> assay data')), class = "right_align"),
+      secondary_button(nav("choose", "clinical"), div(CLINICAL_ICON, HTML('Process <br/> clinical data'))),
+      tertiary_button(nav("choose", "assay"), div(ASSAY_ICON, HTML('Process <br/> assay data')), class = "right_align"),
       br()
-    )#,
-    #uiOutput("start_clinical_nav_ui")
+    )
   ),
   mainPanel(
     bsAlert("alert"),

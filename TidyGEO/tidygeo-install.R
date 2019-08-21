@@ -53,5 +53,7 @@ install.packages("rJava")
 install.packages("rdrop2")
 install.packages("splitstackshape")
 install.packages("shinyWidgets")
+install.packages("rlang")
+install.packages("xml2")
 #install.packages("colourpicker")
 }

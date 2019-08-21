@@ -22,7 +22,7 @@ observeEvent(input$feature_split_cols, ({
       }, 
       "Splitting combined variables"
       )
-    if (status != "completed") {
+    if (status != SUCCESS) {
       showModal(
         errorModal("Error in split columns", "Columns not split.", status)
       )

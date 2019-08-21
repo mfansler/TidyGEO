@@ -67,31 +67,31 @@ observeEvent(input$remove_dataset, {
 })
 
 observeEvent(input$join_columns, {
-  all_vals$all_data <- eval(parse(text = paste0(input$data_to_join1, "_vals$", input$data_to_join1, "_data")))
+  all_vals$all_data <- eval(parse(text = paste0(input$data_to_join1, "_vals$", dataname(input$data_to_join1))))
   set_script_equal("all", input$data_to_join1)
   
   withProgress({
     incProgress(message = "Performing first join")
     if (all_vals$join_datatypes_visible > 1) {
       join1_status <- eval_function("all", "join_data", 
-                                    list(get_datatype_expr(input$data_to_join2),
+                                    list(get_data_member_expr(input$data_to_join2, dataname(input$data_to_join2)),
                                          input$col_to_join1,
                                          input$col_to_join2,
                                          input$join_behavior2),
                                     "Joining datasets",
                                     to_knit = c("all", input$data_to_join2))
     }
-    if (join1_status == "completed") {
+    if (join1_status == SUCCESS) {
       incProgress(message = "Performing second join")
       if (all_vals$join_datatypes_visible > 2) {
         join2_status <- eval_function("all", "join_data", 
-                                      list(get_datatype_expr(input$data_to_join3),
+                                      list(get_data_member_expr(input$data_to_join3, dataname(input$data_to_join3)),
                                            input$col_to_join2,
                                            input$col_to_join3,
                                            input$join_behavior3),
                                       "joining datasets",
                                       to_knit = c("all", input$data_to_join3))
-        if (join2_status != "completed") {
+        if (join2_status != SUCCESS) {
           showModal(
             error_modal("Error in second join", "Second join not performed.", status)
           )
@@ -195,7 +195,7 @@ if (FALSE) {
 
 get_data_to_join_rows <- function(datatype) {
   eval(parse(
-    text = paste0("nrow(", datatype, "_vals$", datatype, '_data)')
+    text = paste0("nrow(", datatype, "_vals$", dataname(datatype), ')')
   ))
 }
 
@@ -235,10 +235,10 @@ get_data_to_join_preview <- function(datatype, selected_col) {
   if (FALSE) {
   this_data <- if (selected_col %in% "colnames") {
     selected_col <- "ID"
-    eval(parse(text = paste0("withProgress(colnames(quickTranspose(", datatype, "_vals$", datatype, "_data)))")))
+    eval(parse(text = paste0("withProgress(colnames(quickTranspose(", datatype, "_vals$", dataname(datatype), ")))")))
   } else {
     eval(parse(
-      text = paste0("colnames(", datatype, "_vals$", datatype, '_data)')
+      text = paste0("colnames(", datatype, "_vals$", dataname(datatype), ')')
     ))
   }
   font_weights <- sapply(this_data, function(x) if (x == selected_col) paste0("<b>", x, "</b>") else x,
@@ -247,7 +247,7 @@ get_data_to_join_preview <- function(datatype, selected_col) {
   }
   if (!is.null(datatype) && !is.null(selected_col)) {
     this_func <- if (selected_col == "colnames") "row" else "col"
-    eval(parse(text = paste0("n", this_func, "(", datatype, "_vals$", datatype, "_data)")))
+    eval(parse(text = paste0("n", this_func, "(", datatype, "_vals$", dataname(datatype), ")")))
   } else {
     0
   }

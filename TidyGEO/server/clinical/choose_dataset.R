@@ -5,7 +5,7 @@ observe({
   #start_time <- Sys.time()
   updateSelectizeInput(
     session = session, 'geoID', server = TRUE,
-    choices = series_list,
+    choices = SERIES_LIST,
     options = list(render = I(
       '{
       option: function(item, escape) {
@@ -40,10 +40,10 @@ output$platform_options <- renderUI({
     for (i in 1:length(platforms())) {
       id <- str_remove(platforms()[i], "GSE\\d+-")
       id <- str_remove(id, "_series_matrix.txt.gz")
-      platform_description <- if (any(str_detect(platform_list$Accession, id)))
-        platform_list$description[which(platform_list$Accession == id)] else ""
+      platform_description <- if (any(str_detect(PLATFORM_LIST$Accession, id)))
+        PLATFORM_LIST$description[which(PLATFORM_LIST$Accession == id)] else ""
       platform_links[[i]] <- div(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", id), 
-                                   id), icon("external-link"), 
+                                   id), LINK_OUT_ICON, 
                                  em(platform_description))
     }
     radioButtons(inputId = "platformIndex", label = "Which platform file would you like to use?", 
@@ -59,11 +59,11 @@ observeEvent(input$download_data_evaluate, {
   values$allData <- withProgress(
     load_series(input$geoID, platform_index, session = session), 
     message = "Downloading series data from GEO")
-  clinical_vals$clinical_data <- NULL
-  assay_vals$assay_data <- NULL
-  feature_vals$feature_data <- NULL
+  clinical_vals[[dataname("clinical")]] <- NULL
+  assay_vals[[dataname("assay")]] <- NULL
+  feature_vals[[dataname("feature")]] <- NULL
   # WRITING COMMANDS TO R SCRIPT
-  for (datatype in c("clinical", "feature", "assay", "all")) {
+  for (datatype in ALLOWED_DATATYPES) {
     message <- if (datatype == "all") {
       "No datasets have been joined. Please join some datasets." 
     } else {
@@ -140,7 +140,7 @@ observeEvent(input$geoID, {
           HTML(paste0("<p><b>Experiment type:</b> ", str_match(summ2, "!Series_type = ([^\\r]+)")[2], "</p>")),
           HTML(paste0("<p><b>Summary:</b> ", str_match(summ2, "!Series_summary = ([^\\r]+)")[2], "</p>")),
           p(a(target = "_blank", href = paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", input$geoID), 
-              paste("View", input$geoID, "on GEO")), icon("external-link")),
+              paste("View", input$geoID, "on GEO")), LINK_OUT_ICON),
           hr(),
           tertiary_button("expand_paper_information", div(icon("caret-right"), "View publication information")))
     }, message = "Loading series summary")
@@ -154,7 +154,7 @@ output$paper_information <- renderUI({
 observeEvent(input$expand_paper_information, {
   if (values$paper_info_expanded) { # close
     values$paper_information <- NULL
-    updateButton(session, inputId = "expand_paper_information", label = "View publication information", icon = icon("caret-right"))
+    updateButton(session, inputId = "expand_paper_information", icon = icon("caret-right"))
     values$paper_info_expanded <- FALSE
   } else { # open
     values$paper_information <- withProgress({
@@ -179,7 +179,7 @@ observeEvent(input$expand_paper_information, {
         )
       }
     }, message = "Loading paper information")
-    updateButton(session, inputId = "expand_paper_information", label = "View publication information", icon = icon("caret-down"))
+    updateButton(session, inputId = "expand_paper_information", label = icon = icon("caret-down"))
     values$paper_info_expanded <- TRUE
   }
 }, ignoreInit = TRUE, ignoreNULL = TRUE)

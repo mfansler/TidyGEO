@@ -8,10 +8,10 @@ output$clinical_evaluate_save <- downloadHandler(
     input$clinical_user_filename
   },
   content = function(file) {
-    myData <- clinical_vals$clinical_data
+    myData <- clinical_vals[[dataname("clinical")]]
     myData <- cbind(rownames(myData), myData)
     colnames(myData)[1] <- if (input$clinical_file_type == "txt") "ExpId" else ""
-    save_data(clinical_vals$clinical_data, file, input$clinical_file_type)
+    save_data(clinical_vals[[dataname("clinical")]], file, input$clinical_file_type)
   }
 )
 

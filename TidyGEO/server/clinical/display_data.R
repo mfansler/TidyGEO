@@ -10,12 +10,4 @@ output$clinical_vals_viewing_subset <- renderUI({
   }
 })
 
-output$clinical_display <- DT::renderDT({
-  if (!is.null(clinical_vals$clinical_data)) {
-    datatable(clinical_in_view(), rownames = TRUE, 
-              options = c(basic_table_options, pageLength = clinical_vals$user_pagelen))
-  }
-  else {
-    empty_table(clinical_vals$display_default)
-  }
-})
+table_for_col_navigation("clinical", show_rownames = TRUE)

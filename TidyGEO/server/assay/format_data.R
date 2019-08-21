@@ -18,7 +18,7 @@ observeEvent(input$expression_transpose, {
       eval_function("assay", "quickTranspose", list(), "transpose data"), 
       message = "Transposing the data"
       )
-    if (status != "completed") {
+    if (status != SUCCESS) {
       showModal(
         error_modal("Error in transpose", "Data not transposed.", status)
       )

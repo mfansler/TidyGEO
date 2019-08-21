@@ -22,7 +22,7 @@ observeEvent(input$split_pairs_feature, {
       }, 
       message = "Extracting column names"
       )
-    if (status != "completed") {
+    if (status != SUCCESS) {
       showModal(
         error_modal("Error in extract column names", "Column names not extracted.", status)
       )

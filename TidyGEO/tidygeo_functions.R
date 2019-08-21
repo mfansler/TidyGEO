@@ -8,11 +8,6 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 
-# Version -----------------------------------------------------------------
-
-
-version <- suppressWarnings(readLines("VERSION"))
-
 # Small utility functions -------------------------------------------------
 
 #' Capitalizes the first letter of a string.
@@ -26,6 +21,25 @@ cap_first <- function(my_str) {
   paste0(toupper(substring(my_str, 1, 1)), substring(my_str, 2, nchar(my_str)))
 }
 
+#' Gets the input associated with an ID
+#' 
+#' @param id A string indicating the ID for the input
+#' @return The object stored in that input
+#' 
+#' @examples 
+#' my_id <- "My_ID"
+#' `ui <- fluidPage(actionButton(my_id, "Click me!"))
+#' server <- function(input, output, session) {
+#'   observeEvent(get_input(my_id), {
+#'     print("clicked")
+#'   })
+#' }
+#' runApp(shinyApp(ui, server))
+get_input <- function(id) {
+  env <- parent.frame()
+  eval(parse(text = paste0("input$", id)), envir = env)
+}
+
 #' Get the expression to get a reactive variable from one of the four lists: 
 #' clinical_vals, assay_vals, feature_vals, or all_vals.
 #'
@@ -36,10 +50,10 @@ cap_first <- function(my_str) {
 #' # To get the expression to get the variable called "clinical_data" from the "clinical_vals" list
 #' get_data_member_expr("clinical", "clinical_data")
 get_data_member_expr <- function(datatype, member_name) {
-  if (!datatype %in% allowed_datatypes) {
-    stop(paste("Error in get_data_member_expr", invalid_datatype_message))
+  if (!datatype %in% ALLOWED_DATATYPES) {
+    stop(paste("Error in get_data_member_expr", INVALID_DATATYPE_MESSAGE))
   }
-  expr(`$`(!!sym(paste0(datatype, "_vals")), !!member_name))
+  expr(`$`(!!sym(varname(datatype)), !!member_name))
 }
 
 #' Get a reactive variable from one of the four lists: 
@@ -134,12 +148,6 @@ error_modal <- function(title, subtitle, error_message) {
 
 # ** initialize scripts ---------------------------------------------------
 
-start_message <- c(paste("# Script generated using version", version, 
-                         "of TidyGEO (https://tidygeo.shinyapps.io/tidygeo/), an"),
-                   "# application that allows scientists to quickly download and reformat data from",
-                   "# the online repository Gene Expression Omnibus (GEO).",
-                   "",
-                   "")
 header <- c()
 
 script_template <- list(
@@ -170,18 +178,6 @@ scripts <- list(
   all = script_template
 )
 
-allowed_datatypes <- c("clinical", "assay", "feature", "all")
-invalid_datatype_message <- paste0('Please specify a valid data type (', 
-                                   paste(allowed_datatypes[-length(allowed_datatypes)], collapse = ", "), 
-                                   ", or ", allowed_datatypes[length(allowed_datatypes)], ")")
-allowed_sections <- c("body", "end")
-invalid_section_message <- paste0('Please specify a valid section (', 
-                                   paste(allowed_sections[-length(allowed_sections)], collapse = ", "), 
-                                   " or ", allowed_sections[length(allowed_sections)], ")")
-
-# ** helper functions -----------------------------------------------------
-func_lists <- readRDS("User/rscript_functions.rds")
-
 # ** variable formatting --------------------------------------------------
 format_string <- function(element) {
   suppressWarnings(if (is.null(element)) {
@@ -209,9 +205,8 @@ format_string <- function(element) {
 # ** section headings -----------------------------------------------------
 commentify <- function(message) {
   
-  num_chars <- 75
   comment <- paste0("# ", message, " ")
-  comment <- paste0(comment, paste(rep("-", num_chars - nchar(comment)), collapse = ""))
+  comment <- paste0(comment, paste(rep("-", COMMENT_LENGTH - nchar(comment)), collapse = ""))
   c("", "", comment, "")
 }
 
@@ -222,20 +217,20 @@ write_to_header <- function(lines, overwrite = FALSE) {
 }
 
 save_lines <- function(lines, datatype, section, overwrite = FALSE) {
-  if (length(datatype) > 1 || !datatype %in% allowed_datatypes) {
-    stop(paste("Error in save_lines.", invalid_datatype_message))
-  } else if (length(section) > 1 || !section %in% allowed_sections) {
-    stop(paste("Error in save_lines.", invalid_section_message))
+  if (length(datatype) > 1 || !datatype %in% ALLOWED_DATATYPES) {
+    stop(paste("Error in save_lines.", INVALID_DATATYPE_MESSAGE))
+  } else if (length(section) > 1 || !section %in% ALLOWED_SECTIONS) {
+    stop(paste("Error in save_lines.", INVALID_SECTION_MESSAGE))
   } else {
     scripts[[datatype]][[section]] <<- if (overwrite) c(script_template[[section]], lines) else c(scripts[[datatype]][[section]], lines)
   }
 }
 
 add_library <- function(lib_name, datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     scripts[[datatype]][["libraries"]] <<- c(scripts[[datatype]][["libraries"]], lib_name)
   } else {
-    stop(paste("Error in add_library.", invalid_datatype_message))
+    stop(paste("Error in add_library.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
@@ -259,46 +254,46 @@ format_library <- function(lib_name) {
 }
 
 remove_library_if_exists <- function(lib_name, datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     scripts[[datatype]][["libraries"]] <<- scripts[[datatype]][["libraries"]][scripts[[datatype]][["libraries"]] != lib_name]
   } else {
-    stop(paste("Error in remove_library_if_exists.", invalid_datatype_message))
+    stop(paste("Error in remove_library_if_exists.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 add_function <- function(func_name, datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     # add all dependencies first
-    if (!all(is.na(func_lists[[func_name]][["lib_dependencies"]]))) {
-      add_library(func_lists[[func_name]][["lib_dependencies"]], datatype)
+    if (!all(is.na(FUNC_LISTS[[func_name]][["lib_dependencies"]]))) {
+      add_library(FUNC_LISTS[[func_name]][["lib_dependencies"]], datatype)
     }
-    if (!all(is.na(func_lists[[func_name]][["func_dependencies"]]))) {
-      lapply(func_lists[[func_name]][["func_dependencies"]], add_function, datatype = datatype)
+    if (!all(is.na(FUNC_LISTS[[func_name]][["func_dependencies"]]))) {
+      lapply(FUNC_LISTS[[func_name]][["func_dependencies"]], add_function, datatype = datatype)
     }
     # add function
     scripts[[datatype]][["functions"]] <<- c(scripts[[datatype]][["functions"]], func_name)
   } else {
-    stop(paste("Error in add_function.", invalid_datatype_message))
+    stop(paste("Error in add_function.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 format_function <- function(func_name) {
-  func_lists[[func_name]][["func_text"]]
+  FUNC_LISTS[[func_name]][["func_text"]]
 }
 
 # ** final script ---------------------------------------------------------
 
-set_script_equal<- function(datatype, equal_to) {
-  if (all(c(datatype, equal_to) %in% allowed_datatypes)) {
+set_script_equal <- function(datatype, equal_to) {
+  if (all(c(datatype, equal_to) %in% ALLOWED_DATATYPES)) {
     scripts[[datatype]] <<- scripts[[equal_to]]
   } else {
-    stop(paste("Error in set_script_equal.", invalid_datatype_message))
+    stop(paste("Error in set_script_equal.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 knit_scripts <- function(datatype1, datatype2, datatype_into) {
-  if (!all(c(datatype1, datatype2, datatype_into) %in% allowed_datatypes)) {
-    stop(paste("Error in knit_scripts.", invalid_datatype_message))
+  if (!all(c(datatype1, datatype2, datatype_into) %in% ALLOWED_DATATYPES)) {
+    stop(paste("Error in knit_scripts.", INVALID_DATATYPE_MESSAGE))
   }
   scripts[[datatype_into]][["libraries"]] <<- union(scripts[[datatype1]][["libraries"]], scripts[[datatype2]][["libraries"]])
   scripts[[datatype_into]][["functions"]] <<- union(scripts[[datatype1]][["functions"]], scripts[[datatype2]][["functions"]])
@@ -309,14 +304,14 @@ knit_scripts <- function(datatype1, datatype2, datatype_into) {
 }
 
 save_to_rscript <- function(datatype, file_path = file.path(tempdir(), "script_temp.R")) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     # format libraries
     libs <- do.call("c", lapply(unique(scripts[[datatype]][["libraries"]]), format_library))
     # format functions
     funcs <- do.call("c", lapply(unique(scripts[[datatype]][["functions"]]), format_function))
     # put all the sections together
     whole_script <- c(
-      start_message, 
+      START_MESSAGE, 
       libs,
       "in_app <- FALSE",
       "",
@@ -331,41 +326,41 @@ save_to_rscript <- function(datatype, file_path = file.path(tempdir(), "script_t
     sink()
     
   } else {
-    stop(paste("Error in save_to_rscript.", invalid_datatype_message))
+    stop(paste("Error in save_to_rscript.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 #  ** undo (for r scripts) ------------------------------------------------
 
 undo_script <- function(datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     scripts[[datatype]] <<- last_scripts[[datatype]]
   } else {
-    stop(paste("Error in undo_script.", invalid_datatype_message))
+    stop(paste("Error in undo_script.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 reset_script <- function(datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     scripts[[datatype]] <<- original_scripts[[datatype]]
   } else {
-    stop(paste("Error in reset_script.", invalid_datatype_message))
+    stop(paste("Error in reset_script.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 set_undo_point_script <- function(datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     last_scripts[[datatype]] <<- scripts[[datatype]]
   } else {
-    stop(paste("Error in set_undo_point_script.", invalid_datatype_message))
+    stop(paste("Error in set_undo_point_script.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
 set_reset_point_script <- function(datatype) {
-  if (length(datatype) == 1 && datatype %in% allowed_datatypes) {
+  if (length(datatype) == 1 && datatype %in% ALLOWED_DATATYPES) {
     original_scripts[[datatype]] <<- scripts[[datatype]]
   } else {
-    stop(paste("Error in set_reset_point_script.", invalid_datatype_message))
+    stop(paste("Error in set_reset_point_script.", INVALID_DATATYPE_MESSAGE))
   }
 }
 
@@ -375,43 +370,7 @@ empty_table <- function(this_data) {
   datatable(this_data, rownames = FALSE, colnames = "NO DATA", options = list(dom = "t"))
 }
 
-basic_table_options <- list(
-  dom = "ltip",
-  scrollX = TRUE,
-  stateSave = TRUE,
-  columnDefs = list(
-    list(
-      targets = "_all",
-      ##Makes it so that the table will only display the first 50 chars.
-      ####See https://rstudio.github.io/DT/options.html
-      render = JS(
-        "function(data, type, row, meta) {",
-        "return type === 'display' && typeof data === 'string' && data.length > 50 ?",
-        "'<span title=\"' + data + '\">' + data.substr(0, 50) + '...</span>' : data;",
-        "}"
-      )
-    )
-  )
-)
-
 # Graphing ----------------------------------------------------------------
-
-
-# ** histogram template ---------------------------------------------------
-base_histogram <- ggplot() +
-  labs(x = "Values",
-       y = "Frequency") +
-  theme_bw(base_size = 18) +
-  theme(plot.title = element_text(hjust = 0.5))
-
-# ** barplot template -----------------------------------------------------
-base_barplot <- ggplot() +
-  labs(x = "Values",
-       y = "Count") +
-  theme_bw(base_size = 18) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-        plot.title = element_text(hjust = 0.5))
-
 
 # ** create labels for barplot --------------------------------------------
 #shortens values that are too many characters to use as graph labels
@@ -429,13 +388,13 @@ shorten_labels <- function(label, max_char) {
 create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
   if (is_numeric) {
-    p <- base_histogram + 
+    p <- BASE_HISTOGRAM + 
       geom_histogram(data = data.frame(value = as.numeric(as.character(value))), aes(x = value),
                      fill = plot_color, bins = plot_binwidth) +
       ggtitle(title)
   }
   else {
-    p <- base_barplot +
+    p <- BASE_BARPLOT +
       geom_bar(data = as.data.frame(table(value, useNA = "ifany")), aes(x = value, y = Freq), 
                stat = "identity", fill = plot_color) +
       ggtitle(title) +
@@ -448,13 +407,13 @@ create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FA
 create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
   
   if (is_numeric) {
-    base_histogram + 
+    BASE_HISTOGRAM + 
       geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
                      binwidth = plot_binwidth, fill = plot_color) +
       ggtitle(title)
   }
   else {
-    base_barplot +
+    BASE_BARPLOT +
       geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
                stat = "identity", fill = plot_color) +
       ggtitle(title) +
@@ -482,7 +441,7 @@ get_null_error_message <- function(datatype) {
 get_filename <- function(datatype, geoID, filetype) {
   type_names <- list("clinical" = "Annotations", "assay" = "Data", "feature" = "Features", "all" = "Composite")
   if (!datatype %in% names(type_names)) {
-    stop(paste("Error in get_filename.", invalid_datatype_message))
+    stop(paste("Error in get_filename.", INVALID_DATATYPE_MESSAGE))
   }
   paste0(geoID, "_", type_names[[datatype]], ".", filetype)
 }

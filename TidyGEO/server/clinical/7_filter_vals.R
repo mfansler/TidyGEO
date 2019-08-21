@@ -2,9 +2,9 @@ output$sliderExclude <- renderUI({
   
   output <- tagList()
   #browser()
-  if (!is.null(input$col_valsToExclude) && input$col_valsToExclude %in% colnames(clinical_vals$clinical_data)) {
-        if (isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
-          currCol <- as.numeric(as.character(clinical_vals$clinical_data[!is.na(clinical_vals$clinical_data[,input$col_valsToExclude]),input$col_valsToExclude]))
+  if (!is.null(input$col_valsToExclude) && input$col_valsToExclude %in% colnames(clinical_vals[[dataname("clinical")]])) {
+        if (isAllNum(clinical_vals[[dataname("clinical")]][input$col_valsToExclude])) {
+          currCol <- as.numeric(as.character(clinical_vals[[dataname("clinical")]][!is.na(clinical_vals[[dataname("clinical")]][,input$col_valsToExclude]),input$col_valsToExclude]))
           output[[1]] <- radioButtons("excludeToKeep", label = "I would like to:", 
                                       choices = list("exclude the values within the range." = "exclude", 
                                                      "include the values within the range." = "keep"))
@@ -17,7 +17,7 @@ output$sliderExclude <- renderUI({
           output[[2]] <- checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all"))
           #browser()
           #if (!is.null(input$col_valsToExclude)) {
-            #valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
+            #valNames <- unique(as.character(clinical_vals[[dataname("clinical")]][,input$col_valsToExclude]))
             #valNames[which(is.na(valNames))] <- "NA"
           output[[3]] <- checkboxGroupInput(inputId = "valsToExclude", 
                                             label = NULL,
@@ -30,8 +30,8 @@ output$sliderExclude <- renderUI({
 })
 
 output$display_cols_for_exclude <- renderUI({
-  #colNames <- colnames(clinical_vals$clinical_data[-which(colnames(clinical_vals$clinical_data) == "evalSame")])
-  colNames <- colnames(clinical_vals$clinical_data)
+  #colNames <- colnames(clinical_vals[[dataname("clinical")]][-which(colnames(clinical_vals[[dataname("clinical")]]) == "evalSame")])
+  colNames <- colnames(clinical_vals[[dataname("clinical")]])
   setNames(colNames, colNames)
   selectInput(inputId = "col_valsToExclude", label = div("Column to use as filtering criteria: ", 
                                                          help_link("clinical", "exclude_help")), 
@@ -40,8 +40,8 @@ output$display_cols_for_exclude <- renderUI({
 })
 
 to_exclude_options <- reactive({
-  if (!is.null(input$col_valsToExclude) && input$col_valsToExclude %in% colnames(clinical_vals$clinical_data)) {
-    valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
+  if (!is.null(input$col_valsToExclude) && input$col_valsToExclude %in% colnames(clinical_vals[[dataname("clinical")]])) {
+    valNames <- unique(as.character(clinical_vals[[dataname("clinical")]][,input$col_valsToExclude]))
     valNames[which(is.na(valNames))] <- "NA"
     valNames
     
@@ -59,7 +59,7 @@ observe({
 
 #output$display_vals_to_exclude <- renderUI({
 #  if (!is.null(input$col_valsToExclude)) {
-#    valNames <- unique(as.character(clinical_vals$clinical_data[,input$col_valsToExclude]))
+#    valNames <- unique(as.character(clinical_vals[[dataname("clinical")]][,input$col_valsToExclude]))
 #    valNames[which(is.na(valNames))] <- "NA"
 #    checkboxGroupInput(inputId = "valsToExclude", 
 #                       label = NULL,
@@ -70,9 +70,9 @@ observe({
 observeEvent(input$clinical_evaluate_exclude, {
   
   if (!is.null(input$col_valsToExclude) && (!is.null(input$valsToExclude) || !is.null(input$sliderExclude))) {
-    #if (input$exclude_isrange && isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
-    if (isAllNum(clinical_vals$clinical_data[input$col_valsToExclude])) {
-      to_exclude <-  paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
+    #if (input$exclude_isrange && isAllNum(clinical_vals[[dataname("clinical")]][input$col_valsToExclude])) {
+    if (isAllNum(clinical_vals[[dataname("clinical")]][input$col_valsToExclude])) {
+      to_exclude <- paste(input$excludeToKeep, paste(input$sliderExclude, collapse = " - "), sep = ": ")
     } 
     else {
       to_exclude <- input$valsToExclude
@@ -82,6 +82,11 @@ observeEvent(input$clinical_evaluate_exclude, {
       eval_function("clinical", "excludeVars", list(input$col_valsToExclude, to_exclude), "exclude undesired samples"), 
       message = "Filtering rows"
       )
+    if (status != SUCCESS) {
+      showModal(
+        error_modal("Error in exclude values", "No values excluded.", status)
+      )
+    }
   }
 })
 

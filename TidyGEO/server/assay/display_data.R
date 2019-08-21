@@ -14,11 +14,11 @@
 #})
 
 observeEvent(input$resetExpr, {
-  if (!is.null(assay_vals$assay_data)) {
+  if (!is.null(assay_vals[[dataname("assay")]])) {
     reset_datatype("assay")
     
     assay_vals$disable_btns <- FALSE
-    assay_vals$id_col <- colnames(assay_vals$assay_data)[1]
+    assay_vals$id_col <- colnames(assay_vals[[dataname("assay")]])[1]
     assay_vals$prev_id <- assay_vals$id_col
     feature_vals$id_col <- colnames(feature_vals$feature_data)[1]
     feature_vals$prev_id <- feature_vals$id_col
@@ -33,15 +33,8 @@ output$assay_vals_viewing_subset <- renderUI({
   }
 })
 
-output$assay_display <- DT::renderDT({
-  if (!is.null(assay_vals$assay_data)) {
-    datatable(assay_in_view(), filter = list(position = "top", clear = FALSE), 
-              rownames = FALSE, 
-              options = c(basic_table_options, pageLength = assay_vals$user_pagelen))
-  } else {
-    empty_table(assay_vals$display_default)
-  }
-})
+table_for_col_navigation("assay", show_filters = TRUE)
+
 output$evaluate_filters_button <- renderUI({
   if (!is.null(input$assay_display_search_columns) && !all(input$assay_display_search_columns == "")) {
     div(
@@ -58,9 +51,9 @@ observeEvent(input$expression_evaluate_filters, {
   
   
   to_filter <- input$assay_display_search_columns
-  names(to_filter) <- colnames(assay_vals$assay_data)[assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2]]
+  names(to_filter) <- colnames(assay_vals[[dataname("assay")]])[assay_vals$viewing_subset[1]:assay_vals$viewing_subset[2]]
   status <- eval_function("assay", "filterExpressiondata", list(to_filter), "filter data")
-  if (status != "completed") {
+  if (status != SUCCESS) {
     showModal(
       error_modal("Error in filter assay data", "Filters not saved.", status)
     )

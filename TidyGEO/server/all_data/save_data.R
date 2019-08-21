@@ -28,7 +28,7 @@ output$all_evaluate_save <- downloadHandler(
         }
         myData
       } else {
-        eval(parse(text = paste0(dt, "_vals$", dt, "_data")))
+        eval(parse(text = paste0(dt, "_vals$", dataname(dt))))
       }
     })
     filenames <- if (length(datatypes_selected()) > 1) {
@@ -69,7 +69,7 @@ datatypes_selected <- reactive({
 data_to_save_is_null <- reactive({
   
   null_dts <- unlist(lapply(datatypes_selected(), function(dt) {
-    eval(parse(text = paste0("is.null(", dt, "_vals$", dt, "_data)")))
+    eval(parse(text = paste0("is.null(", dt, "_vals$", dataname(dt), ")")))
   }))
   if (any(null_dts)) {
     disable("all_evaluate_save")

@@ -1,6 +1,6 @@
 output$display_cols_to_rename <- renderUI({
-  #colNames <- colnames(clinical_vals$clinical_data[-which(colnames(clinical_vals$clinical_data) == "evalSame")])
-  colNames <- colnames(clinical_vals$clinical_data)
+  #colNames <- colnames(clinical_vals[[dataname("clinical")]][-which(colnames(clinical_vals[[dataname("clinical")]]) == "evalSame")])
+  colNames <- colnames(clinical_vals[[dataname("clinical")]])
   setNames(colNames, colNames)
   selectInput(inputId = "colsToRename", 
               label = "Which column would you like to rename?", 
@@ -9,10 +9,10 @@ output$display_cols_to_rename <- renderUI({
 })
 
 observeEvent(input$rename, ({
-  if (!input$rename_new_name %in% colnames(clinical_vals$clinical_data)) {
+  if (!input$rename_new_name %in% colnames(clinical_vals[[dataname("clinical")]])) {
     clinical_vals$last_selected_rename <- input$rename_new_name
     status <- eval_function("clinical", "renameCols", list(input$colsToRename, input$rename_new_name), "rename column")
-    if (status != "completed") {
+    if (status != SUCCESS) {
       showModal(
         error_modal("Error in rename column", "Column not renamed.", status)
       )

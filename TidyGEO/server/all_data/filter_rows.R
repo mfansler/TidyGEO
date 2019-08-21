@@ -1,7 +1,7 @@
 col_selector_ui <- function(input_id, selector_id) {
   this_input <- parse(text = paste0("input$", input_id))
   if (!is.null(eval(this_input))) {
-    data_to_join <- paste0(eval(this_input), "_vals$", eval(this_input), "_data")
+    data_to_join <- paste0(eval(this_input), "_vals$", dataname(eval(this_input)))
     if (!is.null(eval(parse(text = data_to_join)))) {
       selectInput(selector_id, 
                   paste("Choose a column from the", eval(this_input), "data to match:"), 
@@ -34,7 +34,7 @@ observeEvent(input$match_columns, {
     "matching rows from two columns", 
     to_knit = c(input$data_to_match1, input$data_to_match2)
     )
-  if (status != "completed") {
+  if (status != SUCCESS) {
     showModal(
       error_modal("Error in filtering first dataset", "No datasets filtered.", status)
     )
@@ -46,7 +46,7 @@ observeEvent(input$match_columns, {
       "matching rows from two columns",
       to_knit = c(input$data_to_match2, input$data_to_match1)
     )
-    if (status != "completed") {
+    if (status != SUCCESS) {
       showModal(
         error_modal("Error in filtering second dataset", "Second dataset not filtered.", status)
       )
@@ -105,8 +105,8 @@ match_vals1 <- reactive({
           input$col_to_match1, "(",
           input$data_to_match1,
           "_vals$",
-          input$data_to_match1,
-          '_data)'
+          dataname(input$data_to_match1),
+          ')'
         )
       ))))
       colnames(names_df) <- paste0(toupper(substring(input$data_to_match1, 1, 1)), substring(input$data_to_match1, 2), 
@@ -117,8 +117,8 @@ match_vals1 <- reactive({
                    paste0(
                      input$data_to_match1,
                      "_vals$",
-                     input$data_to_match1,
-                     '_data["',
+                     dataname(input$data_to_match1),
+                     '["',
                      input$col_to_match1,
                      '"]'
                    )
@@ -135,8 +135,8 @@ match_vals2 <- reactive({
           input$col_to_match2, "(",
           input$data_to_match2,
           "_vals$",
-          input$data_to_match2,
-          '_data)'
+          dataname(input$data_to_match2),
+          ')'
         )
       ))))
       colnames(names_df) <- paste0(toupper(substring(input$data_to_match2, 1, 1)), substring(input$data_to_match2, 2), 
@@ -147,8 +147,8 @@ match_vals2 <- reactive({
                    paste0(
                      input$data_to_match2,
                      "_vals$",
-                     input$data_to_match2,
-                     '_data["',
+                     dataname(input$data_to_match2),
+                     '["',
                      input$col_to_match2,
                      '"]'
                    )

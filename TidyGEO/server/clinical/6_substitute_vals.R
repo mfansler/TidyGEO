@@ -1,8 +1,8 @@
 output$input_sub_range <- renderUI({
   
-  if (isAllNum(clinical_vals$clinical_data[input$colsToSub])) {
+  if (isAllNum(clinical_vals[[dataname("clinical")]][input$colsToSub])) {
     output = tagList()
-    currCol <- as.numeric(as.character(clinical_vals$clinical_data[!is.na(clinical_vals$clinical_data[,input$colsToSub]),input$colsToSub]))
+    currCol <- as.numeric(as.character(clinical_vals[[dataname("clinical")]][!is.na(clinical_vals[[dataname("clinical")]][,input$colsToSub]),input$colsToSub]))
     this_min <- min(currCol)
     this_max <- max(currCol)
     this_quantiles <- c(quantile(currCol)[2], quantile(currCol)[3])
@@ -22,8 +22,8 @@ output$input_sub_range <- renderUI({
 })
 
 output$display_cols_to_sub <- renderUI({
-  #colNames <- colnames(clinical_vals$clinical_data[-which(colnames(clinical_vals$clinical_data) == "evalSame")])
-  colNames <- colnames(clinical_vals$clinical_data)
+  #colNames <- colnames(clinical_vals[[dataname("clinical")]][-which(colnames(clinical_vals[[dataname("clinical")]]) == "evalSame")])
+  colNames <- colnames(clinical_vals[[dataname("clinical")]])
   setNames(colNames, colNames)
   selectInput(inputId = "colsToSub", label = div("Please select a column with values to substitute: ", 
                                                  help_link("clinical", "substitute_help")), 
@@ -33,8 +33,8 @@ output$display_cols_to_sub <- renderUI({
 
 
 suggestions <- reactive({ 
-  if (!is.null(clinical_vals$clinical_data) && !is.null(input$colsToSub)) {
-    unique(as.character(clinical_vals$clinical_data[,input$colsToSub]))
+  if (!is.null(clinical_vals[[dataname("clinical")]]) && !is.null(input$colsToSub)) {
+    unique(as.character(clinical_vals[[dataname("clinical")]][,input$colsToSub]))
   }
 })
 
@@ -69,7 +69,7 @@ observeEvent(input$evaluate_subs, {
   status <- withProgress(
     eval_function("clinical", "substitute_vals", list(sub_specs, input$sub_w_regex), "substitute values"), 
     message = "Substituting values")
-  if (status != "completed") {
+  if (status != SUCCESS) {
     showModal(
       error_modal("Error in substitute values", "No values substituted.", status)
     )
