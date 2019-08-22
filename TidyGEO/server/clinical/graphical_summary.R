@@ -1,9 +1,11 @@
 #output$metaSummary <- renderText({printVarsSummary(clinical_in_view())})
 
+data_expr <- expr(do.call(VIEW("clinical"), list()))
+
 output$choose_variable_to_view <- renderUI({
-  if (!is.null(clinical_in_view())) {
-    choices <- 1:length(colnames(clinical_in_view()))
-    choice_names <- colnames(clinical_in_view())
+  if (data_loaded("clinical")) {
+    choices <- 1:length(colnames(eval(data_expr)))
+    choice_names <- colnames(eval(data_expr))
     #if (nrow(clinical_in_view()) < 50) {
       choices <- c(0, choices)
       choice_names <- c("(view all)", choice_names)
@@ -14,21 +16,10 @@ output$choose_variable_to_view <- renderUI({
   }
 })
 
-if (FALSE) {
-  # Create the list of plot names
-  plotInput <- reactive({
-    if (!is.null(clinical_in_view())) {
-      n_plot <- ncol(clinical_in_view())
-      total_data <- lapply(1:n_plot, function(i){as.character(clinical_in_view()[,i])})
-      return(list("n_plot" = n_plot, "total_data" = total_data))
-    }
-  })
-}
-
 # Create divs
 output$plots <- renderUI({
   
-  if (!is.null(clinical_in_view())) {
+  if (data_loaded("clinical")) {
     plot_output_list <- lapply(1:ncol(clinical_in_view()), function(i) {
       #if (!grepl("evalSame", colnames(clinical_in_view())[i])) {
       if (is_all_identical(clinical_in_view()[,i])) {

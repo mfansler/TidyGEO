@@ -1,4 +1,4 @@
-tabPanel(title = icon("download"), value = "8",
+tabPanel(title = SAVE_ICON, value = "8",
          h4("Saving the data"),
          p("Here is where you can download the clinical data to your computer."),
          p("You can also download the R script that produced this data. The R script allows you
@@ -15,6 +15,6 @@ tabPanel(title = icon("download"), value = "8",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link("clinical", "r_help")))
          ),
-         hr(), tertiary_button("clinical_8_to_7_button", div(icon("arrow-left"), "Back")),
-         secondary_button("clinical_to_assay_data", div("Continue to assay data", icon("arrow-right")), class = "right_align")
+         hr(), tertiary_button(nav("8", "7", "clinical"), div(PREV_ICON, "Back")),
+         secondary_button(nav("clinical", "assay"), div("Continue to assay data", NEXT_ICON), class = "right_align")
 )

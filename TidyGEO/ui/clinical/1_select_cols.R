@@ -1,4 +1,4 @@
-tabPanel(title = icon("filter"), value = "1",
+tabPanel(title = FILTER_ICON, value = "1",
          h4("Selecting informative columns"),
          p("It can be helpful to filter out unneeded columns for better storage capacity and improved
            human readability."), 
@@ -27,9 +27,9 @@ tabPanel(title = icon("filter"), value = "1",
                           uiOutput("display_vars_to_keep")
          ),
          div(
-           primary_button(id = "clinical_evaluate_filters", label = div(icon("filter"), "Filter columns")),
+           primary_button(id = "clinical_evaluate_filters", label = div(FILTER_ICON, "Filter columns")),
            undo_button("undo_select")
          ),
-         hr(), tertiary_button("clinical_to_choose_button", div(icon("arrow-left"), "Back to choose")),
-         secondary_button("clinical_1_to_2_button", div("Next", icon("arrow-right")), class = "right_align")
+         hr(), tertiary_button(nav("clinical", "choose"), div(PREV_ICON, "Back to choose")),
+         secondary_button(nav("1", "2", "clinical"), div("Next", NEXT_ICON), class = "right_align")
 )

@@ -93,3 +93,5 @@ observeEvent(input$clinical_evaluate_exclude, {
 observeEvent(input$undo_filter, {
   undo_last_action("clinical")
 })
+
+navigation_set_server("6", "7", "8", "clinical_side_panel", "clinical_side_panel")

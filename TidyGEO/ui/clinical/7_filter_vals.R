@@ -1,22 +1,12 @@
-tabPanel(title = icon("cut"), value = "7",
+tabPanel(title = EXCLUDE_ICON, value = "7",
          h4("Filtering samples"),
          p("You may want to remove some of the samples in the data, for example, if you have samples with missing (NA) values."), 
          p("Here, you can specify values to use as filtering criteria.
            Rows that match the filtering criteria for the specified column will be removed."),
          uiOutput("display_cols_for_exclude"),
-         #checkboxInput("exclude_isrange", 
-        #               label = div("Select a range (for numeric data)", 
-        #                           help_button("Excludes/keeps all numeric values in a range."))),
-        # conditionalPanel(condition = "input.exclude_isrange == true",
-                          uiOutput("sliderExclude"),#),
-         #conditionalPanel(condition = "input.exclude_isrange == false",
-        #                  div(tags$b("Which values would you like to exclude?"), 
-        #                      help_button("Excluding a value will remove the entire row that contains that value.")),
-        #                  checkboxInput(inputId = "select_all_exclude", label = tags$i("Select all")),
-        #                  uiOutput("display_vals_to_exclude")),
-         
+         uiOutput("sliderExclude"),
          div(
-           primary_button("clinical_evaluate_exclude", div(icon("cut"), "Exclude")),
+           primary_button("clinical_evaluate_exclude", div(EXCLUDE_ICON, "Exclude")),
            undo_button("undo_filter")
          ),
          hr(), navigation_set("6", "7", "8", "clinical_side_panel", "clinical_side_panel")

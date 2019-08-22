@@ -8,10 +8,10 @@ output$clinical_evaluate_save <- downloadHandler(
     input$clinical_user_filename
   },
   content = function(file) {
-    myData <- clinical_vals[[dataname("clinical")]]
+    myData <- get_data_member("clinical", dataname("clinical"))
     myData <- cbind(rownames(myData), myData)
     colnames(myData)[1] <- if (input$clinical_file_type == "txt") "ExpId" else ""
-    save_data(clinical_vals[[dataname("clinical")]], file, input$clinical_file_type)
+    save_data(myData, file, input$clinical_file_type)
   }
 )
 
@@ -23,3 +23,10 @@ output$clinical_save_rscript <- downloadHandler(
     save_rscript("clinical", file, input$clinical_user_filename, input$clinical_file_type)
   }
 )
+
+observeEvent(get_input(nav("8", "7", "clinical")), {
+  updateTabsetPanel(session, "clinical_side_panel", selected = "7")
+})
+observeEvent(get_input(nav("clinical", "assay")), {
+  updateTabItems(session, "top_level", "assay_data")
+})

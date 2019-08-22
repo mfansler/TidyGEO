@@ -70,7 +70,7 @@ col_navigation_set <- function(datatype, extra_tag = NULL) {
       secondary_button(id = prev_col(datatype, extra_tag), label = div(PREV_ICON, "Previous columns"), class = "prev_cols")
     ),
     column(4,
-      div(textOutput(visible(label)), class = "center_align")
+      div(textOutput(visible(datatype, extra_tag)), class = "center_align")
     ),
     column(4,
       div(secondary_button(id = next_col(datatype, extra_tag), label = "Next columns", icon = NEXT_ICON, class = "next_cols"), class = "right_align")

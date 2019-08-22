@@ -15,19 +15,6 @@
 source("tidygeo_variables.R")
 
 suppressPackageStartupMessages({
-  library(shiny)
-  library(DT)
-  library(shinycssloaders)
-  library(shinyBS)
-  library(plotly)
-  library(feather)
-  library(shinyjs)
-  library(rhandsontable)
-  library(shinyWidgets)
-  library(RColorBrewer)
-  library(shinydashboard)
-  library(rmarkdown)
-  library(rlang)
   source("tidygeo_functions.R")
   source("server/formatting_helper_functions.R")
 })
@@ -51,7 +38,7 @@ ui <- dashboardPage(
                menuSubItem("Clinical data", icon = CLINICAL_ICON, tabName = "clinical_data"),
                menuSubItem("Assay data", icon = ASSAY_ICON, tabName = "assay_data"),
                menuSubItem("Feature data", icon = FEATURE_ICON, tabName = "feature_data"),
-               menuSubItem("All data", icon = , tabName = "all_data")),
+               menuSubItem("All data", icon = ALL_ICON, tabName = "all_data")),
       menuItem("FAQ", tabName = "faq"),
       menuItem("About", tabName = "about")
     )
@@ -213,23 +200,6 @@ server <- function(input, output, session) {
       pm_id = NULL,
       regex_dt = NULL
     )
-  
-  # The following variables, if changed, will cause need for extensive refactoring:
-  # display_default
-  # []_data
-  # orig_data
-  # last_data
-  # use_viewing_subset
-  # viewing_min
-  # viewing_subset
-  # user_pagelen
-  # 
-  # Most refactoring will probably take place in tidygeo_functions.R.
-  # 
-  # Reactive values reside here in separate lists so that they can update independently
-  # of each other. Otherwise, an update--to, for example, assay_data--might cause values from
-  # clinical_vals to update, which would be ridiculously slow. Usually best to keep reactiveValues
-  # as distinct and small as possible.
   assign(
     varname("clinical"),
     DataType("clinical",
@@ -244,32 +214,6 @@ server <- function(input, output, session) {
              )
     )
   )
-  # clinical_vals <- 
-  #  reactiveValues(
-  #    display_default = data.frame("Please load a dataset."),
-  #    clinical_data = NULL,
-  #    orig_data = NULL,
-  #    last_data = NULL,
-  #    last_selected_rename = NULL,
-  #    last_selected_substitute = NULL,
-  #    last_selected_exclude = NULL,
-  #    subs_input = data.frame(),
-  #    subs_display = data.frame(
-  #      To_Replace = "",
-  #      New_Val = "",
-  #      stringsAsFactors = FALSE
-  #    ),
-  #    #oFile = commentify(" "),
-  #    #download_chunk_len = 0,
-  #    #current_chunk_len = 0,
-  #    plot_to_save = NULL,
-  #    shift_results = list(),
-  #    use_viewing_subset = FALSE,
-  #    viewing_min = 1,
-  #    viewing_subset = c(1, 5),
-  #    user_pagelen = 10
-  #  )
-  
   assign(
     varname("assay"),
     DataType("assay",
@@ -279,25 +223,6 @@ server <- function(input, output, session) {
              expression_warning_state = FALSE
     )
   )
-  # assay_vals <- 
-  #  reactiveValues(
-  #    display_default = data.frame("Please load a dataset."),
-  #    orig_data = NULL,
-  #    assay_data = NULL,
-  #    last_data = NULL,
-  #    #oFile = commentify(" "),
-  #    #download_chunk_len = 0,
-  #    #current_chunk_len = 0,
-  #    id_col = "ID",
-  #    prev_id = "ID",
-  #    plot_to_save = NULL,
-  #    disable_btns = FALSE,
-  #    expression_warning_state = FALSE,
-  #    use_viewing_subset = FALSE,
-  #    viewing_min = 2,
-  #    viewing_subset = c(2, 6),
-  #    user_pagelen = 10
-  #  )
   assign(
     varname("feature"),
     DataType("feature",
@@ -306,24 +231,6 @@ server <- function(input, output, session) {
              prev_id = "ID"
     )
   )
-  # feature_vals <-
-  #  reactiveValues(
-  #    feature_data = NULL,
-  #    shift_results = NULL,
-  #    last_data = NULL,
-  #    #oFile = commentify(" "),
-  #    #current_chunk_len = 0,
-  #    orig_data = NULL,
-  #    display_default = data.frame("Please load a dataset."),
-  #    id_col = "ID",
-  #    prev_id = "ID",
-  #    plot_to_save = NULL,
-  #    use_viewing_subset = FALSE,
-  #    viewing_min = 2,
-  #    viewing_subset = c(2, 6),
-  #    user_pagelen = 10
-  #  )
-  
   assign(
     varname("all"),
     DataType("all",
@@ -332,19 +239,6 @@ server <- function(input, output, session) {
              join_datatypes_visible = 1
     )
   )
-  # all_vals <- 
-  #  reactiveValues(
-  #    display_default = data.frame("Please load a dataset."),
-  #    all_data = NULL,
-  #    last_data = NULL,
-  #    last_selected_match1 = NULL,
-  #    last_selected_match2 = NULL,
-  #    join_datatypes_visible = 1,
-  #    use_viewing_subset = FALSE,
-  #    viewing_min = 1,
-  #    viewing_subset = c(1, 5),
-  #    user_pagelen = 10
-  #  )
   
   
   # ** General functions for all datatypes -------------------------------------
@@ -501,7 +395,7 @@ server <- function(input, output, session) {
     set_x_equalto_y("warning_state", extracted_data[["status"]], "assay")
     set_x_equalto_y("orig_data", extracted_data[["expressionData"]], "assay")
     
-    if (is.null(get_data_member("assay", dataname("assay")))) {
+    if (is.null(get_data_member("assay", "orig_data"))) {
       set_x_equalto_y("display_default", data.frame(paste0("No assay data available for ", input$geoID)), "assay")
     } else {
       set_x_equalto_y("id_col", colnames(get_data_member("assay", "orig_data"))[1], "assay")
@@ -559,8 +453,12 @@ server <- function(input, output, session) {
   
   observeEvent(input$top_level, {
     if (!is.null(values$allData)) {
-      if (top_level != dataname("all") && is.null(get_data_member(top_level, dataname(top_level)))) {
-        do.call(paste("get", top_level, "data", sep = "_"), list())
+      if (input$top_level == dataname("clinical") && !data_loaded("clinical")) {
+        get_clinical_data()
+      } else if (input$top_level == dataname("assay") && !data_loaded("assay")) {
+        get_assay_data()
+      } else if (input$top_level == dataname("feature") && !data_loaded("feature")) {
+        get_feature_data()
       }
     }
   })

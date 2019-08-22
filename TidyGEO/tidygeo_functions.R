@@ -1,13 +1,4 @@
 
-# Load libraries ----------------------------------------------------------
-
-
-library(readr)
-library(GEOquery)
-library(stringr)
-library(dplyr)
-library(tidyr)
-
 # Small utility functions -------------------------------------------------
 
 #' Capitalizes the first letter of a string.
@@ -50,9 +41,6 @@ get_input <- function(id) {
 #' # To get the expression to get the variable called "clinical_data" from the "clinical_vals" list
 #' get_data_member_expr("clinical", "clinical_data")
 get_data_member_expr <- function(datatype, member_name) {
-  if (!datatype %in% ALLOWED_DATATYPES) {
-    stop(paste("Error in get_data_member_expr", INVALID_DATATYPE_MESSAGE))
-  }
   expr(`$`(!!sym(varname(datatype)), !!member_name))
 }
 
@@ -67,7 +55,8 @@ get_data_member_expr <- function(datatype, member_name) {
 #' get_data_member("clinical", "clinical_data")
 get_data_member <- function(datatype, member_name) {
   envir <- parent.frame()
-  eval(get_data_member_expr(datatype, member_name), envir)
+  #eval(get_data_member_expr(datatype, member_name), envir)
+  eval(get_data_member_expr(datatype, member_name), envir = envir)
 }
 
 #' Get the expression to set a variable (which may be a reactive variable
@@ -104,10 +93,10 @@ get_x_equalto_y_expr <- function(x, y, x_datatype = NULL) {
 #' @return The expression to set a variable equal to some object.
 #' @examples
 #' # The following line is equivalent to `clinical_vals$clinical_data <- data.frame()`:
-#' get_x_equalto_y_expr("clinical_data", data.frame(), "clinical")
+#' set_x_equalto_y("clinical_data", data.frame(), "clinical")
 #' # The following lines are equivalent to `result <- clinical_vals$clinical_data`
-#' get_x_equalto_y_expr(result, clinical_vals$clinical_data)
-#' get_x_equalto_y_expr(result, get_data_member("clinical", "clinical_data"))
+#' set_x_equalto_y(result, clinical_vals$clinical_data)
+#' set_x_equalto_y(result, get_data_member("clinical", "clinical_data"))
 set_x_equalto_y <- function(x, y, x_datatype = NULL) {
   envir <- parent.frame()
   eval(get_x_equalto_y_expr(x, y, x_datatype), envir)
@@ -133,6 +122,11 @@ get_datatype_expr_text <- function(datatype_expr) {
   } else {
     stop("Error in get_datatype_expr_text. 'datatype_expr' does not represent one of the datatype reactiveVariables.")
   }
+}
+
+data_loaded <- function(datatype) {
+  envir <- parent.frame()
+  !is.null(eval(get_data_member_expr(datatype, dataname(datatype)), envir = envir))
 }
 
 error_modal <- function(title, subtitle, error_message) {
@@ -236,20 +230,9 @@ add_library <- function(lib_name, datatype) {
 
 format_library <- function(lib_name) {
   if (lib_name == "GEOquery") {
-    c(
-      paste0("if (!suppressWarnings(require(", lib_name, ", quietly = TRUE))) {"),
-      '  source("https://bioconductor.org/biocLite.R")',
-      '  BiocInstaller::biocLite("GEOquery")',
-      paste0("  library(", lib_name, ")"),
-      "}"
-    )
+    expr_text(substituteDirect(load_geoquery_if_exists, list(lib_name = lib_name)))
   } else {
-    c(
-      paste0("if (!suppressWarnings(require(", lib_name, ", quietly = TRUE))) {"),
-      paste0('  install.packages("', lib_name, '")'),
-      paste0("  library(", lib_name, ")"),
-      "}"
-    ) 
+    expr_text(substituteDirect(load_library_if_exists, list(lib_name = lib_name)))
   }
 }
 
@@ -419,6 +402,98 @@ create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_n
       ggtitle(title) +
       scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
   }
+}
+
+graphical_summary_server <- function(datatype, extra_tag = NULL) {
+  data_expr <- expr(do.call(view(datatype), list()))
+  output[[paste0("choose_", var_to_view(datatype, extra_tag))]] <- renderUI({
+    if (data_loaded(datatype)) {
+      choices <- 1:length(colnames(eval(data_expr)))
+      choice_names <- colnames(eval(data_expr))
+      choices <- c(0, choices)
+      choice_names <- c("(view all)", choice_names)
+      names(choices) <- choice_names
+      
+      selectInput(var_to_view(datatype, extra_tag), label = "Choose a variable to view:", choices = choices)
+    }
+  })
+  
+  # Create divs
+  output$plots <- renderUI({
+    
+    if (data_loaded("clinical")) {
+      plot_output_list <- lapply(1:ncol(eval(data_expr)), function(i) {
+        #if (!grepl("evalSame", colnames(clinical_in_view())[i])) {
+        if (is_all_identical(eval(data_expr)[,i])) {
+          div(hr(), HTML(
+            paste0("<b>", colnames(eval(data_expr))[i], "</b> consists of all the same value.")
+          ), hr())
+        } else if (is_all_unique(eval(data_expr)[,i]) && !isAllNum(eval(data_expr)[i])) {
+          div(hr(), HTML(
+            paste0("<b>", colnames(eval(data_expr))[i], "</b> consists of all unique values.")
+          ), hr())
+        } else {
+          plotname <- make.names(colnames(eval(data_expr))[i])
+          div(withSpinner(plotlyOutput(plotname, height = 700, width = "auto"), type = SPINNER_TYPE), tertiary_button(paste0(datatype, "_savePlot", i), div(SAVE_ICON, "Download plot"), class = paste0(datatype, "_plot")))
+        }
+        #}
+      })
+      if (!is.null(get_input(var_to_view(datatype, extra_tag)))) {
+        if (as.numeric(get_input(var_to_view(datatype, extra_tag))) == 0) {
+          do.call(tagList, plot_output_list)
+        } else {
+          plot_output_list[as.numeric(get_input(var_to_view(datatype, extra_tag)))][[1]]
+        }
+      }
+    }
+  })
+  # Create the actual plots associated with the plot names
+  observe({
+    if (!is.null(clinical_in_view())) {
+      lapply(1:ncol(clinical_in_view()), function(i){
+        if (!is_all_identical(clinical_in_view()[,i])) {
+          is_all_numeric <- isAllNum(clinical_in_view()[i])
+          if (!is_all_unique(clinical_in_view()[,i]) || is_all_numeric) {
+            output[[ make.names(colnames(clinical_in_view())[i]) ]] <- renderPlotly({
+              suppressWarnings(create_plot(as.character(clinical_in_view()[,i]), input$clinical_plot_color, input$clinical_binwidths, colnames(clinical_in_view())[i], is_all_numeric))
+            })
+          }
+        }
+      })
+    }
+  })
+  
+  observeEvent(input$last_btn_clinical, {
+    if (!is.null(input$last_btn_clinical)) {
+      clinical_vals$plot_to_save <- as.numeric(as.character(str_remove(input$last_btn_clinical, "savePlot")))
+      showModal(
+        modalDialog(
+          sliderInput("clinical_plot_width", label = "Image width (cm):", min = 20, max = 100, value = 60),
+          sliderInput("clinical_plot_height", label = "Image height (cm):", min = 20, max = 100, value = 60),
+          radioButtons("clinical_plot_filetype", label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
+          downloadButton("clinical_plot_download"),
+          footer = modalButton("Close")
+        ))
+      session$sendCustomMessage(type = "resetValue", "last_btn_clinical")
+    }
+  })
+  
+  output$clinical_plot_download <- downloadHandler(
+    filename = function() {
+      paste(make.names(colnames(clinical_in_view())[clinical_vals$plot_to_save]), input$clinical_plot_filetype, sep = ".")
+    },
+    content = function(file) {
+      plot_to_save <- create_plot_to_save(#plotInput()$total_data[[clinical_vals$plot_to_save]],
+        clinical_in_view()[,clinical_vals$plot_to_save], 
+        input$clinical_plot_color, 
+        input$clinical_binwidths, 
+        colnames(clinical_in_view())[clinical_vals$plot_to_save], 
+        isAllNum(clinical_in_view()[clinical_vals$plot_to_save]))
+      
+      ggsave(file, plot_to_save, width = input$clinical_plot_width, height = input$clinical_plot_height, units = "cm", device = input$clinical_plot_filetype)
+      
+    }
+  )
 }
 
 

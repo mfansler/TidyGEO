@@ -1,8 +1,8 @@
 output$input_sub_range <- renderUI({
-  
-  if (isAllNum(clinical_vals[[dataname("clinical")]][input$colsToSub])) {
+  this_data <- get_data_member("clinical", dataname("clinical"))
+  if (isAllNum(this_data[input$colsToSub])) {
     output = tagList()
-    currCol <- as.numeric(as.character(clinical_vals[[dataname("clinical")]][!is.na(clinical_vals[[dataname("clinical")]][,input$colsToSub]),input$colsToSub]))
+    currCol <- as.numeric(as.character(this_data[!is.na(this_data[,input$colsToSub]),input$colsToSub]))
     this_min <- min(currCol)
     this_max <- max(currCol)
     this_quantiles <- c(quantile(currCol)[2], quantile(currCol)[3])
@@ -18,53 +18,51 @@ output$input_sub_range <- renderUI({
   else {
     tags$b("Please enter a value and its replacement in the table below.")
   }
-  
 })
 
 output$display_cols_to_sub <- renderUI({
-  #colNames <- colnames(clinical_vals[[dataname("clinical")]][-which(colnames(clinical_vals[[dataname("clinical")]]) == "evalSame")])
-  colNames <- colnames(clinical_vals[[dataname("clinical")]])
-  setNames(colNames, colNames)
   selectInput(inputId = "colsToSub", label = div("Please select a column with values to substitute: ", 
                                                  help_link("clinical", "substitute_help")), 
-              choices = colNames,
-              selected = clinical_vals$last_selected_substitute)
+              choices = clinical_colnames(),
+              selected = get_data_member("clinical", "last_selected_substitute"))
 })
 
 
 suggestions <- reactive({ 
-  if (!is.null(clinical_vals[[dataname("clinical")]]) && !is.null(input$colsToSub)) {
-    unique(as.character(clinical_vals[[dataname("clinical")]][,input$colsToSub]))
+  if (data_loaded("clinical") && !is.null(input$colsToSub)) {
+    unique(as.character(get_data_member("clinical", dataname("clinical"))[,input$colsToSub]))
   }
 })
 
 output$input_subs_table <- renderRHandsontable({
-  rhandsontable(clinical_vals$subs_display, height = 250, rowHeaders = FALSE, stretchH = "all") %>% 
+  rhandsontable(get_data_member("clinical", "subs_display"), height = 250, rowHeaders = FALSE, stretchH = "all") %>% 
     hot_col(col = "To_Replace", type = "autocomplete", source = suggestions(), strict = FALSE) #%>%
   #hot_col(col = "New_Val", type = "autocomplete", source = values$thes_suggest_vals, strict = FALSE)
 })
 
 observeEvent(input$input_subs_table, {
-  clinical_vals$subs_input <- hot_to_r(input$input_subs_table)
+  set_x_equalto_y("subs_input", hot_to_r(input$input_subs_table), "clinical")
 })
 
 observeEvent(input$add_val_to_sub, {
   if (!is.null(input$colsToSub) && input$colsToSub != "") {
+    this_subs <- get_data_member("clinical", "subs_input")
     if (
-      is.na(clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"]) |
-      clinical_vals$subs_input[nrow(clinical_vals$subs_input), "To_Replace"] == ""
+      is.na(this_subs[nrow(this_subs), "To_Replace"]) |
+      this_subs[nrow(this_subs), "To_Replace"] == ""
       ) {
-      clinical_vals$subs_input[nrow(clinical_vals$subs_input),] <- c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal)
+      this_subs[nrow(clinical_vals$subs_input),] <- c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal)
     } else {
-      clinical_vals$subs_input <- rbind(clinical_vals$subs_input, c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal))
+      this_subs <- rbind(this_subs, c(paste("RANGE:", paste(input$slideInSub, collapse = " - ")), input$newRangeVal))
     }
-    clinical_vals$subs_display <- clinical_vals$subs_input
+    set_x_equalto_y("subs_input", this_subs, "clinical")
+    set_x_equalto_y("subs_display", this_subs, "clinical")
   }
 })
 
 observeEvent(input$evaluate_subs, {
-  clinical_vals$last_selected_substitute <- input$colsToSub
-  sub_specs <- list(clinical_vals$subs_input)
+  set_x_equalto_y("last_selected_substitute", input$colsToSub, "clinical")
+  sub_specs <- list(get_data_member("clinical", "subs_input"))
   names(sub_specs) <- input$colsToSub
   status <- withProgress(
     eval_function("clinical", "substitute_vals", list(sub_specs, input$sub_w_regex), "substitute values"), 
@@ -74,9 +72,11 @@ observeEvent(input$evaluate_subs, {
       error_modal("Error in substitute values", "No values substituted.", status)
     )
   }
-  clinical_vals$subs_display <- data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE)
+  set_x_equalto_y("subs_display", data.frame(To_Replace = "", New_Val = "", stringsAsFactors = FALSE), "clinical")
 })
 
 observeEvent(input$undo_subs, {
   undo_last_action("clinical")
 })
+
+navigation_set_server("5", "6", "7", "clinical_side_panel", "clinical_side_panel")

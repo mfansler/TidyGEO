@@ -1,4 +1,4 @@
-tabPanel(title = icon("columns"), value = "4",
+tabPanel(title = SPLIT_COLS_ICON, value = "4",
          h4("Splitting columns"),
          p('Sometimes a single column contains multiple values in each cell. This makes it more difficult to analyze the data.'),
          p('If you see any columns in your data that contain multiple values in a column (e.g., "control;geneA;female" or "time 0, treatment1"), 
@@ -18,7 +18,7 @@ tabPanel(title = icon("columns"), value = "4",
           "Use regex", regex_help_link("clinical", "split_cols")
         )), 
          div(
-           primary_button(id = "split_cols", label = div(icon("columns"), "Split columns")),
+           primary_button(id = "split_cols", label = div(SPLIT_COLS_ICON, "Split columns")),
            undo_button("undo_split_cols")
          ),
          hr(), navigation_set("3", "4", "5", "clinical_side_panel", "clinical_side_panel")

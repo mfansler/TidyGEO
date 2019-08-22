@@ -1,12 +1,10 @@
-#data_to_view_is_null <- reactive({
-#  eval(parse(text = paste0("is.null(", input$data_to_view, "_vals$", input$data_to_view, "_data)")))
-#})
+data_viewer_tag <- "data_viewer"
 
-col_navigation_set_server("all", "data_viewer")
+col_navigation_set_server("all", data_viewer_tag)
 
 output$all_vals_viewing_subset <- renderUI({
   if (get_data_member(input$data_to_view, "use_viewing_subset")) {
-    col_navigation_set(input$data_to_view, "data_viewer")
+    col_navigation_set(input$data_to_view, data_viewer_tag)
   }
 })
 
@@ -21,13 +19,13 @@ text_expr <- rlang::expr(paste("Showing",
                                get_data_member(datatype, "viewing_subset")[2], "of", 
                                ncol(get_data_member(datatype, dataname(datatype))), 
                                "columns"))
-output$cols_visible_clinical_data_viewer <- renderText({
+output[[visible("clinical", data_viewer_tag)]] <- renderText({
   eval(expr(!!text_expr), list(datatype = "clinical"))
 })
-output$cols_visible_assay_data_viewer <- renderText({
+output[[visible("assay", data_viewer_tag)]] <- renderText({
   eval(expr(!!text_expr), list(datatype = "assay"))
 })
-output$cols_visible_feature_data_viewer <- renderText({
+output[[visible("feature", data_viewer_tag)]] <- renderText({
   eval(expr(!!text_expr), list(datatype = "feature"))
 })
 
@@ -35,32 +33,14 @@ output$view_data <- renderUI({
   if (!is.null(input$data_to_view)) {
     # This acts screwy if you try to use one DTOutput for all the datatypes. Don't know why.
     # Best to keep them all separate for now.
-    DTOutput(paste0(input$data_to_view, "_data_viewer"))
+    DTOutput(display(input$data_to_view, data_viewer_tag))
   }
 })
 
-viewer_text_expr <- rlang::expr(
-  if (!is.null(get_data_member(datatype, dataname(datatype)))) {
-    datatable(do.call(view(datatype), list()), rownames = show_rownames, 
-              options = c(BASIC_TABLE_OPTIONS, pageLength = get_data_member(datatype, "user_pagelen")))
-  }
-  else {
-    empty_table(get_data_member(datatype, "display_default"))
-  }
-)
+table_for_col_navigation("clinical", data_viewer_tag, show_rownames = TRUE)
 
-output$clinical_data_viewer <- renderDT({
-  eval(expr(!!viewer_text_expr), list(datatype = "clinical", show_rownames = TRUE))
-})
+table_for_col_navigation("assay", data_viewer_tag)
 
-output$assay_data_viewer <- renderDT({
-  eval(expr(!!viewer_text_expr), list(datatype = "assay", show_rownames = FALSE))
-})
+table_for_col_navigation("feature", data_viewer_tag)
 
-output$feature_data_viewer <- renderDT({
-  eval(expr(!!viewer_text_expr), list(datatype = "feature", show_rownames = FALSE))
-})
-
-output$all_data_viewer <- renderDT({
-  eval(expr(!!viewer_text_expr), list(datatype = "all", show_rownames = TRUE))
-})
+table_for_col_navigation("all", data_viewer_tag, show_rownames = TRUE)

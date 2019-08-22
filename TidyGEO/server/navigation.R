@@ -44,7 +44,7 @@ table_for_col_navigation <- function(datatype, extra_tag = NULL, show_rownames =
                 options = c(BASIC_TABLE_OPTIONS, pageLength = get_data_member(datatype, "user_pagelen")))
     }
     else {
-      empty_table(get_data_member(datatype, display_default))
+      empty_table(get_data_member(datatype, "display_default"))
     }
   })
 }
@@ -52,7 +52,7 @@ table_for_col_navigation <- function(datatype, extra_tag = NULL, show_rownames =
 # ** observers ------------------------------------------------------------
 
 observeEvent(input$next_cols_clicked, {
-  to_move <- allowed_datatypes[which(str_detect(input$next_cols_clicked, allowed_datatypes))]
+  to_move <- ALLOWED_DATATYPES[which(str_detect(input$next_cols_clicked, ALLOWED_DATATYPES))]
   if (identical(to_move, character(0))) {
     stop("Error in clicking next cols. The button that called next cols is not tagged with a valid datatype.")
   } else {
@@ -79,7 +79,7 @@ observeEvent(input$next_cols_clicked, {
 })
 
 observeEvent(input$prev_cols_clicked, {
-  to_move <- allowed_datatypes[which(str_detect(input$prev_cols_clicked, allowed_datatypes))]
+  to_move <- ALLOWED_DATATYPES[which(str_detect(input$prev_cols_clicked, ALLOWED_DATATYPES))]
   if (identical(to_move, character(0))) {
     stop("Error in clicking next cols. The button that called prev cols is not tagged with a valid datatype.")
   } else {
@@ -125,26 +125,7 @@ navigation_set_server <- function(prev, from, to, section_prev = NULL, section_t
 # ** observers ------------------------------------------------------------
 
 
-# ** ** Clinical side panel -----------------------------------------------
 
-observeEvent(get_input(nav("clinical", "choose")), {
-  updateTabItems(session, "top_level", "choose_dataset")
-})
-observeEvent(get_input(nav("1", "2", "clinical")), {
-  updateTabsetPanel(session, "clinical_side_panel", selected = "2")
-})
-navigation_set_server("1", "2", "3", "clinical_side_panel", "clinical_side_panel")
-navigation_set_server("2", "3", "4", "clinical_side_panel", "clinical_side_panel")
-navigation_set_server("3", "4", "5", "clinical_side_panel", "clinical_side_panel")
-navigation_set_server("4", "5", "6", "clinical_side_panel", "clinical_side_panel")
-navigation_set_server("5", "6", "7", "clinical_side_panel", "clinical_side_panel")
-navigation_set_server("6", "7", "8", "clinical_side_panel", "clinical_side_panel")
-observeEvent(get_input(nav("8", "7", "clinical")), {
-  updateTabsetPanel(session, "clinical_side_panel", selected = "7")
-})
-observeEvent(get_input(nav("clinical", "assay")), {
-  updateTabItems(session, "top_level", "assay_data")
-})
 
 # ** ** Expression side panel ---------------------------------------------
 

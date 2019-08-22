@@ -1,19 +1,21 @@
+clinical_colnames <- reactive({
+  colnames(get_data_member("clinical", dataname("clinical")))
+})
+
 observe({
   updateCheckboxGroupInput(
-    session, 'varsToKeep', choices = colnames(clinical_vals[[dataname("clinical")]]),
-    selected = if (input$select_all_columns) colnames(clinical_vals[[dataname("clinical")]])
+    session, 'varsToKeep', choices = clinical_colnames(),
+    selected = if (input$select_all_columns) clinical_colnames()
   )
 })
 
 output$display_vars_to_keep <- renderUI({
-  #colNames <- colnames(clinical_vals[[dataname("clinical")]][-which(colnames(clinical_vals[[dataname("clinical")]]) == "evalSame")])
-  colNames <- colnames(clinical_vals[[dataname("clinical")]])
   checkboxGroupInput(inputId = "varsToKeep", label = NULL, 
-                     choices = colNames, selected = colNames)
+                     choices = clinical_colnames(), selected = clinical_colnames())
 })
 
 observeEvent(input$clinical_evaluate_filters, ({
-  if (!is.null(clinical_vals[[dataname("clinical")]])) {
+  if (data_loaded("clinical")) {
     
     status <- if (input$filter_option == "preset_filters") {
       eval_function("clinical", "filterUninformativeCols", list(input$download_data_filter), "exclude undesired columns")
@@ -30,4 +32,11 @@ observeEvent(input$clinical_evaluate_filters, ({
 
 observeEvent(input$undo_select, {
   undo_last_action("clinical")
+})
+
+observeEvent(get_input(nav("clinical", "choose")), {
+  updateTabItems(session, "top_level", "choose_dataset")
+})
+observeEvent(get_input(nav("1", "2", "clinical")), {
+  updateTabsetPanel(session, "clinical_side_panel", selected = "2")
 })

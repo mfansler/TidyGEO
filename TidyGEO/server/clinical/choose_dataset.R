@@ -77,7 +77,7 @@ observeEvent(input$download_data_evaluate, {
   write_to_header(commentify("load series"), overwrite = TRUE)
   write_to_header(paste0("dataSetIndex <- ", format_string(input$platformIndex)))
   write_to_header(c(paste0("geoID <- ", format_string(input$geoID)), 
-               "series_data <- load_series(geoID, dataSetIndex)"))
+               paste0(SERIES, " <- load_series(geoID, dataSetIndex)")))
 })
 
 observe({
@@ -85,23 +85,22 @@ observe({
 })
 
 observe({
-  shinyjs::toggleState(id = "nav_choose_to_assay_button", condition = !is.null(values$allData))
+  shinyjs::toggleState(id = nav("choose", "assay"), condition = !is.null(values$allData))
 })
 
 observe({
   values$allData
-  shinyjs::toggleState(id = "nav_choose_to_clinical_button", condition = !is.null(values$allData))
+  shinyjs::toggleState(id = nav("choose", "clinical"), condition = !is.null(values$allData))
 })
 
-observeEvent(input$nav_choose_to_clinical_button, {
-  values$series_needs_download = is.null(values$allData)
-  
-  updateTabItems(session, 'top_level', selected = 'clinical_data')
+observeEvent(get_input(nav("choose", "clinical")), {
+  values$series_needs_download <- is.null(values$allData)
+  updateTabItems(session, 'top_level', selected = dataname("clinical"))
 })
 
-observeEvent(input$nav_choose_to_assay_button, {
-  values$series_needs_download = is.null(values$allData)
-  updateTabItems(session, 'top_level', selected = 'assay_data')
+observeEvent(get_input(nav("choose", "assay")), {
+  values$series_needs_download <- is.null(values$allData)
+  updateTabItems(session, 'top_level', selected = dataname("assay"))
 })
 
 # main panel --------------------------------------------------------------
@@ -179,7 +178,7 @@ observeEvent(input$expand_paper_information, {
         )
       }
     }, message = "Loading paper information")
-    updateButton(session, inputId = "expand_paper_information", label = icon = icon("caret-down"))
+    updateButton(session, inputId = "expand_paper_information", icon = icon("caret-down"))
     values$paper_info_expanded <- TRUE
   }
 }, ignoreInit = TRUE, ignoreNULL = TRUE)

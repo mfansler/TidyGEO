@@ -19,27 +19,25 @@ output$broken_cols_example <- renderDT({
   datatable(test_data, rownames = FALSE, options = list(dom = "t"))
 })
 
-current_colnames <- reactive({ colnames(clinical_vals[[dataname("clinical")]]) })
-
 output$display_cols_to_shift <- renderUI({
-  selectInput(inputId = "col_to_shift", label = div("Shift the values from:"), choices = current_colnames(), 
+  selectInput(inputId = "col_to_shift", label = div("Shift the values from:"), choices = clinical_colnames(), 
               options(list(placeholder = "Please load a dataset...")))
 })
 
 output$display_destination_cols <- renderUI({
-  into_cols <- current_colnames()[-which(current_colnames() %in% input$col_to_shift)]
+  into_cols <- clinical_colnames()[-which(clinical_colnames() %in% input$col_to_shift)]
   selectInput(inputId = "destination_col", label = div("into:"), choices = into_cols,
               options(list(placeholder = "Please load a dataset...")))
 })
 
 shift_preview <- reactive({ 
-  if (!is.null(clinical_vals[[dataname("clinical")]]) &&
+  if (data_loaded("clinical") &&
       !is.null(input$col_to_shift) &&
       !is.null(input$destination_col) &&
       input$col_to_shift != "" && 
       input$destination_col != "") {
     #shift_cells(head(clinical_vals[[dataname("clinical")]], 5), input$col_to_shift, input$destination_col)
-    preview_data <- head(clinical_vals[[dataname("clinical")]], 5)
+    preview_data <- head(get_data_member("clinical", dataname("clinical")), 5)
     preview_data <- cbind(sapply(preview_data[,input$col_to_shift], shorten_labels, 20), 
                           rep(as.character(icon("arrow-right")), nrow(preview_data)), 
                           sapply(preview_data[,input$destination_col], shorten_labels, 20),
@@ -50,12 +48,11 @@ shift_preview <- reactive({
 })
 
 output$shift_preview_table <- DT::renderDT({
-  if (!is.null(clinical_vals[[dataname("clinical")]]) &&
+  if (data_loaded("clinical") &&
       !is.null(input$col_to_shift) &&
       !is.null(input$destination_col) &&
       input$col_to_shift != "" && 
       input$destination_col != "") {
-  #datatable(shift_preview()[["result"]][input$destination_col], options = list(dom = "t"))
   datatable(shift_preview(), rownames = FALSE, 
             options = list(dom = "t", columnDefs = list(list(targets = 3, visible = FALSE))), 
             escape = c(1, 3)) %>%
@@ -63,7 +60,7 @@ output$shift_preview_table <- DT::renderDT({
       columns = 4,
       valueColumns = 4,
       target = 'row',
-      backgroundColor = styleEqual(TRUE, "#fee0d2")
+      backgroundColor = styleEqual("TRUE", "#fee0d2")
     )
   }
 })
@@ -84,14 +81,14 @@ output$conflict_delimiter_option <- renderUI({
 })
 
 output$shift_conflicts_table <- DT::renderDT({
-  if (!is.null(clinical_vals$shift_results[["conflicts"]])) {
-    datatable(clinical_vals$shift_results[["conflicts"]], options = list(dom = "t", scrollY = 300, paging = FALSE))
+  if (!is.null(get_data_member("clinical", "shift_results")[["conflicts"]])) {
+    datatable(get_data_member("clinical", "shift_results")[["conflicts"]], options = list(dom = "t", scrollY = 300, paging = FALSE))
   }
 })
 
 observeEvent(input$evaluate_shift, {
-  clinical_vals$shift_results <- shift_cells(clinical_vals[[dataname("clinical")]], input$col_to_shift, input$destination_col)
-  if (!is.null(clinical_vals$shift_results[["conflicts"]])) {
+  set_x_equalto_y("shift_results", shift_cells(get_data_member("clinical", dataname("clinical")), input$col_to_shift, input$destination_col), "clinical")
+  if (!is.null(get_data_member("clinical", "shift_results")[["conflicts"]])) {
     showModal(modalDialog( title = div(HTML('<font color="red">Whoops!</font>'), 
                                        tertiary_button("cancel_shift", "Cancel", class = "right_align")),
       HTML(paste0('<font color="red">Looks like we\'re trying to overwrite some of the values in ',
@@ -104,14 +101,13 @@ observeEvent(input$evaluate_shift, {
       footer = primary_button("evaluate_conflicts", "Resolve")
     ))
   } else {
-    clinical_vals$last_data <- clinical_vals[[dataname("clinical")]]
-    
-    clinical_vals[[dataname("clinical")]] <- clinical_vals$shift_results[["result"]]
-    
+    set_x_equalto_y("last_data", get_data_member("clinical", dataname("clinical")), "clinical")
+    set_x_equalto_y(dataname("clinical"), get_data_member("clinical", "shift_results")[["result"]], "clinical")
+                    
     set_undo_point_script("clinical")
     save_lines(commentify("shift cells"), "clinical", "body")
     add_function("shift_cells", "clinical")
-    save_lines(paste0("clinical_data <- shift_cells(clinical_data, ", 
+    save_lines(paste0(dataname("clinical"), " <- shift_cells(", dataname("clinical"), ", ", 
                                             format_string(input$col_to_shift), ", ",
                                             format_string(input$destination_col), ")"), "clinical", "body")
   }
@@ -123,15 +119,15 @@ observeEvent(input$cancel_shift, {
 
 observeEvent(input$evaluate_conflicts, {
   removeModal()
-  results <- shift_cells(clinical_vals[[dataname("clinical")]], input$col_to_shift, input$destination_col, 
+  results <- shift_cells(get_data_member("clinical", dataname("clinical")), input$col_to_shift, input$destination_col, 
                          conflicts = if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option)
-  clinical_vals$last_data <- clinical_vals[[dataname("clinical")]]
-  clinical_vals[[dataname("clinical")]] <- results[["result"]]
+  set_x_equalto_y("last_data", get_data_member("clinical", dataname("clinical")), "clinical")
+  set_x_equalto_y(dataname("clinical"), results[["result"]], "clinical")
   
   set_undo_point_script("clinical")
   save_lines(commentify("shift cells"), "clinical", "body")
   add_function("shift_cells", "clinical")
-  save_lines(paste0("clinical_data <- shift_cells(clinical_data, ", 
+  save_lines(paste0(dataname("clinical"), " <- shift_cells(", dataname("clinical"), ", ", 
                                           format_string(input$col_to_shift), ", ",
                                           format_string(input$destination_col), ", ",
                                           format_string(if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option), ")"), 
@@ -141,3 +137,5 @@ observeEvent(input$evaluate_conflicts, {
 observeEvent(input$undo_shift, {
   undo_last_action("clinical")
 })
+
+navigation_set_server("1", "2", "3", "clinical_side_panel", "clinical_side_panel")
