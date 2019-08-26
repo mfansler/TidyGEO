@@ -10,4 +10,4 @@ output$clinical_vals_viewing_subset <- renderUI({
   }
 })
 
-table_for_col_navigation("clinical", show_rownames = TRUE)
+table_for_col_navigation_server("clinical", show_rownames = TRUE)

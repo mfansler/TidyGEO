@@ -1,19 +1,17 @@
 output$feature_choose_cols_to_divide <- renderUI({
-  #colNames <- colnames(feature_vals$feature_data[-which(colnames(feature_vals$feature_data) == "evalSame")])
-  colNames <- colnames(feature_vals$feature_data)
-  checkboxGroupInput(inputId = "colsToDivide", label = NULL, colNames)
+  checkboxGroupInput(inputId = "colsToDivide", label = NULL, current_colnames_feature())
 })
 
 observe({
   updateCheckboxGroupInput(
-    session, 'colsToDivide', choices = colnames(feature_vals$feature_data),
-    selected = if (input$feature_select_all_divide) colnames(feature_vals$feature_data)
+    session, 'colsToDivide', choices = current_colnames_feature(),
+    selected = if (input$feature_select_all_divide) current_colnames_feature()
   )
 })
 
 
 observeEvent(input$feature_split_cols, ({
-  if (!is.null(feature_vals$feature_data)) {
+  if (data_loaded("feature")) {
     withProgress({
       status <- eval_function("feature", "splitCombinedVars", 
                     list(input$feature_colsToDivide, input$feature_divide_delimiter, input$split_cols_w_regex), 
@@ -34,3 +32,5 @@ observeEvent(input$feature_split_cols, ({
 observeEvent(input$feature_undo_split_cols, {
   undo_last_action("feature")
 })
+
+navigation_set_server("3", "4", "5", "feature_side_panel", "feature_side_panel")

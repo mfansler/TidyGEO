@@ -1,4 +1,4 @@
-tabPanel(title = icon("download"), value = "2",
+tabPanel(title = SAVE_ICON, value = "2",
          h4("Saving the data"),
          p("Here is where you can download the assay data to your computer."), 
          p("You can also download the R script that produced this data. The R script allows you
@@ -14,6 +14,6 @@ tabPanel(title = icon("download"), value = "2",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link("assay", "r_help")))
          ),
-         hr(), tertiary_button('expression_nav_2_to_1_button', div(icon('arrow-left'), 'Back')),
-         secondary_button("expression_to_all", div("Continue to all data", icon("arrow-right")), class = "right_align")
+         hr(), tertiary_button(nav("2", "1", "assay"), div(PREV_ICON, 'Back')),
+         secondary_button(nav("assay", "all"), div("Continue to all data", NEXT_ICON), class = "right_align")
 )

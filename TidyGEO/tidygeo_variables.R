@@ -173,8 +173,21 @@ PLATFORM_LIST <- read_feather("www/platform_list.feather")
 # The string corresponding to the colorbrewer palatte used for the graphs
 PLOT_COLORS <- "RdYlBu"
 
+# The units for the plot size
+PLOT_UNITS <- "cm"
+
 # An icon for buttons which navigate to the previous item
 PREV_ICON <- icon("arrow-left")
+
+# An icon used to represent replacing a column from one DataType with a column
+# from another
+REPLACE_ID_ICON <- icon("exchange-alt")
+
+# An icon used to represent renaming something
+RENAME_ICON <- icon("pencil-alt")
+
+# An icon for reset buttons
+RESET_ICON <- icon("history")
 
 # An icon used to represent downloading data from the app to a personal machine
 SAVE_ICON <- icon("download")
@@ -209,11 +222,8 @@ SUBSTITUTE_ICON <- icon("exchange-alt")
 # The string that will be returned when a function is evaluated successfully
 SUCCESS <- "completed"
 
-# An icon used to represent renaming something
-RENAME_ICON <- title = icon("pencil-alt")
-
-# An icon for reset buttons
-RESET_ICON <- icon("history")
+# An icon used to represent transposing a data frame
+TRANSPOSE_ICON <- icon("retweet")
 
 # An icon for undo buttons
 UNDO_ICON <- icon("undo")
@@ -240,6 +250,7 @@ dataname <- function(datatype) eval(DATA)
 VARIABLE <- expr(paste(datatype, "vals", sep = SEP))
 varname <- function(datatype) eval(VARIABLE)
 
+# The variable to view in a graphical summary
 VAR_TO_VIEW <- expr(
   if (is.null(extra_tag))
     paste("variable", "to", "view", datatype, extra_tag, sep = SEP)

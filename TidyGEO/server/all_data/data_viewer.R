@@ -33,14 +33,15 @@ output$view_data <- renderUI({
   if (!is.null(input$data_to_view)) {
     # This acts screwy if you try to use one DTOutput for all the datatypes. Don't know why.
     # Best to keep them all separate for now.
-    DTOutput(display(input$data_to_view, data_viewer_tag))
+    table_for_col_navigation(input$data_to_view, data_viewer_tag)
+    #DTOutput(display(input$data_to_view, data_viewer_tag))
   }
 })
 
-table_for_col_navigation("clinical", data_viewer_tag, show_rownames = TRUE)
+table_for_col_navigation_server("clinical", data_viewer_tag, show_rownames = TRUE)
 
-table_for_col_navigation("assay", data_viewer_tag)
+table_for_col_navigation_server("assay", data_viewer_tag)
 
-table_for_col_navigation("feature", data_viewer_tag)
+table_for_col_navigation_server("feature", data_viewer_tag)
 
-table_for_col_navigation("all", data_viewer_tag, show_rownames = TRUE)
+table_for_col_navigation_server("all", data_viewer_tag, show_rownames = TRUE)

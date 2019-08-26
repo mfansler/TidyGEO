@@ -8,7 +8,7 @@ output$expression_downloadData <- downloadHandler(
     input$expression_userFileName
   },
   content = function(file) {
-    save_data(assay_vals$assay_data, file, input$expression_fileType)
+    save_data(get_data_member("assay", dataname("assay")), file, input$expression_fileType)
   }
 )
 
@@ -20,3 +20,10 @@ output$expression_downloadRscript <- downloadHandler(
     save_rscript("assay", file, input$expression_userFileName, input$expression_fileType)
   }
 )
+
+observeEvent(get_input(nav("2", "1", "assay")), {
+  updateTabsetPanel(session, 'expression_side_panel', selected = '1')
+})
+observeEvent(get_input(nav("assay", "all")), {
+  updateTabItems(session, "top_level", "all_data")
+})

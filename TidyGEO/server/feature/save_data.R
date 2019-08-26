@@ -9,7 +9,7 @@ output$feature_downloadData <- downloadHandler(
   },
   content = function(file) {
     
-    save_data(feature_vals$feature_data, file, input$feature_fileType)
+    save_data(get_data_member("feature", dataname("feature")), file, input$feature_fileType)
   }
 )
 
@@ -21,3 +21,10 @@ output$feature_downloadRscript <- downloadHandler(
     save_rscript("feature", file, input$feature_userFileName, input$feature_fileType)
   }
 )
+
+observeEvent(get_input(nav("5", "4", "feature")), {
+  updateTabsetPanel(session, "feature_side_panel", selected = "4")
+})
+observeEvent(get_input(nav("5", "assay", "feature")), {
+  updateTabItems(session, "top_level", "assay_data")
+})

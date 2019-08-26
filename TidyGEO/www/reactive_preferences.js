@@ -8,13 +8,6 @@ $(document).ready(function() {
   $(document).on('click', '.next_cols', function () {
     Shiny.onInputChange('next_cols_clicked', this.id);
   });
-  // plot listeners
-  $(document).on('click', '.clinical_plot', function () {
-    Shiny.onInputChange('last_btn_clinical',this.id);
-  });
-  $(document).on('click', '.expression_plot', function () {
-    Shiny.onInputChange('last_btn_expression',this.id);
-  });
   // reset an input to NULL
   Shiny.addCustomMessageHandler('resetValue', function(variableName) {
     Shiny.onInputChange(variableName, null);

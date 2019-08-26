@@ -1,19 +1,19 @@
 source(file.path("server", "assay", "feature_data.R"), local = TRUE)$value
 
 observe({
-  shinyjs::toggleState("expression_replace_id", condition = !assay_vals$disable_btns)
+  shinyjs::toggleState("expression_replace_id", condition = !get_data_member("assay", "disable_btns"))
 })
 
 observe({
-  disable_transpose <- !assay_vals$disable_btns & length(unique(assay_vals$assay_data$ID)) == nrow(assay_vals$assay_data)
-  #browser()
+  disable_transpose <- !get_data_member("assay", "disable_btns") & 
+    length(unique(get_data_member("assay", dataname("assay"))[,get_data_member("assay", "id_col")])) == nrow(get_data_member("assay", dataname("assay")))
   shinyjs::toggleState("expression_transpose", disable_transpose)
 })
 
 # other expression options ------------------------------------------------
 
 observeEvent(input$expression_transpose, {
-  if (!is.null(assay_vals$assay_data)) {
+  if (data_loaded("assay")) {
     status <- withProgress(
       eval_function("assay", "quickTranspose", list(), "transpose data"), 
       message = "Transposing the data"
@@ -23,21 +23,29 @@ observeEvent(input$expression_transpose, {
         error_modal("Error in transpose", "Data not transposed.", status)
       )
     } else {
-      assay_vals$prev_id <- assay_vals$id_col
-      assay_vals$id_col <- "colnames"
-      assay_vals$disable_btns <- TRUE
+      set_x_equalto_y("prev_id", get_data_member("assay", "id_col"), "assay")
+      set_x_equalto_y("id_col", "colnames", "assay")
+      set_x_qualto_y("disable_btns", TRUE, "assay")
       shinyjs::enable("undoEvalExpr")
     }
   }
 })
 
 observeEvent(input$undoEvalExpr, {
-  if (!is.null(assay_vals$assay_data)) {
+  if (data_loaded("assay")) {
     undo_last_action("assay")
     
-    assay_vals$disable_btns <- FALSE
-    assay_vals$id_col <- assay_vals$prev_id
-    feature_vals$id_col <- feature_vals$prev_id
+    set_x_equalto_y("disable_btns", FALSE, "assay")
+    set_x_equalto_y("id_col", get_data_member("assay", "prev_id"), "assay")
+    set_x_equalto_y("id_col", get_data_member("feature", "prev_id"), "feature")
+    
     shinyjs::disable("undoEvalExpr")
   }
+})
+
+observeEvent(get_input(nav("assay", "clinical")), {
+  updateTabItems(session, "top_level", "clinical_data")
+})
+observeEvent(get_input(nav("1", "2", "assay")), {
+  updateTabsetPanel(session, "expression_side_panel", selected = "2")
 })

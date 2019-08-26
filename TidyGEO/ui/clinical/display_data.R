@@ -14,5 +14,5 @@ tabPanel(title = "Clinical Data",
          uiOutput("clinical_vals_viewing_subset"),
          br(),
          bsAlert("parseError"),
-         withSpinner(DTOutput(display("clinical")), type = SPINNER_TYPE)
+         table_for_col_navigation("clinical")
 )

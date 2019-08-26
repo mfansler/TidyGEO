@@ -3,7 +3,7 @@
 
 
 observeEvent(input$expression_replace_id, {
-  if (!is.null(values$allData) && is.null(feature_vals$feature_data)) {
+  if (!is.null(values$allData) && !data_loaded("feature")) {
     get_feature_data()
   }
   showModal(
@@ -29,7 +29,8 @@ observeEvent(input$expression_replace_id, {
         #  column(1, secondary_button(id = "feature_prev_cols", label = div(icon("arrow-left"), "Previous columns"))),
         #  column(1, offset = 8, secondary_button(id = "feature_next_cols", label = div("Next columns", icon("arrow-right"))))
         #),
-        withSpinner(dataTableOutput("featureData"), type = 5),
+        table_for_col_navigation("feature", "modal"),
+        #withSpinner(dataTableOutput("featureData"), type = 5),
         actionLink("link_to_feature2", "How do I clean up this data?")
       ),
       uiOutput("exprLabels"),
@@ -86,44 +87,25 @@ observeEvent(input$close_feature_modal, {
 #  }
 #})
 
-output$featureData <- DT::renderDT({
-  if (!is.null(feature_vals$feature_data)) {
-    datatable(feature_in_view(), 
-              filter = "top", rownames = FALSE, options = list(dom = "tp",
-                                                               pageLength = 5,
-                                                               scrollX = TRUE,
-                                                               columnDefs = list(list(
-                                                                 targets = "_all",
-                                                                 ##Makes it so that the table will only display the first 30 chars.
-                                                                 ##See https://rstudio.github.io/DT/options.html
-                                                                 render = JS(
-                                                                            "function(data, type, row, meta) {",
-                                                                            "return type === 'display' && typeof data === 'string' && data.length > 15 ?",
-                                                                            "'<span title=\"' + data + '\">' + data.substr(0, 15) + '...</span>' : data;",
-                                                                            "}")
-                                                                            ))))
-  }
-  else {
-    datatable(feature_vals$ft_default, rownames = FALSE, 
-              colnames = "NO DATA", options = list(dom = "tp"))
-  }
-})
+table_for_col_navigation_server("feature", "modal")
 
 output$exprLabels <- renderUI({
   selectInput("colForExprLabels", label = div("Please select a column that will identify each gene/transcript/exon/etc.", 
                                               help_button("To keep the same ID column, please choose ID.")), 
-              choices = colnames(feature_vals$feature_data)[which(!colnames(feature_vals$feature_data) == "ID")]
+              choices = colnames(get_data_member("feature", dataname("feature")))[which(!colnames(get_data_member("feature", dataname("feature"))) == "ID")]
   )
 })
 
 output$summarizeOptions <- renderUI({
   if (!is.null(input$colForExprLabels) && input$colForExprLabels != "") {
     new_expression_labels <- if (input$feature_dropNA) 
-      feature_vals$feature_data[!is.na(input$colForExprLabels), input$colForExprLabels] else feature_vals$feature_data[, input$colForExprLabels]
+      get_data_member("feature", dataname("feature"))[!is.na(input$colForExprLabels), input$colForExprLabels] 
+    else 
+      get_data_member("feature", dataname("feature"))[, input$colForExprLabels]
     #browser()
     can_summarize <- !is_all_unique(new_expression_labels)
     if (can_summarize) {
-      choices <- if (assay_vals$warning_state) c("keep all", "mean", "median", "max", "min") else c("keep all")
+      choices <- if (get_data_member("assay", "warning_state")) c("keep all", "mean", "median", "max", "min") else c("keep all")
       selectInput("howToSummarize", label = div("It looks like this column maps to multiple ID values in the assay data.
                                                 How would you like to summarize the data?", 
                                                 help_button("Groups the data by ID and takes the specified measurement for the group.
@@ -139,47 +121,47 @@ observeEvent(input$expression_evaluate_id, {
   
   removeModal()
   
-  if (!is.null(assay_vals$assay_data) && feature_vals$id_col != input$colForExprLabels) {
-    assay_vals$last_data <- assay_vals$assay_data
-    
-    feature_data <- feature_vals$feature_data
+  if (data_loaded("assay") && get_data_member("feature", "id_col") != input$colForExprLabels) {
+    set_x_equalto_y("last_data", get_data_member("assay", dataname("assay")), "assay")
     
     set_undo_point_script("assay")
     knit_scripts("assay", "feature", "assay")
     save_lines(c(commentify("replace ID column"),
-                 "feature_data2 <- feature_data"), "assay", "body")
+                 paste0(dataname("feature"), "2 <- ", dataname("feature"))), "assay", "body")
     
     if (feature_vals$id_col != "ID") {
       
       save_lines(
-        c(paste0("colnames(feature_data2)[which(colnames(feature_data2) == 'ID')] <- ", 
-                 format_string(colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")]))),
-          paste0("colnames(feature_data2)[which(colnames(feature_data2) == ", 
-                 format_string(feature_vals$id_col), ")] <- 'ID'")), 
+        c(paste0("colnames(", dataname("feature"), "2)[which(colnames(", dataname("feature"), "2) == 'ID')] <- ", 
+                 format_string(colnames(get_data_member("feature", "orig_data")[which(colnames(feature_data) == "ID")]))),
+          paste0("colnames(", dataname("feature"), "2)[which(colnames(", dataname("feature"), "2) == ", 
+                 format_string(get_data_member("feature", "id_col")), ")] <- 'ID'")), 
         "assay", "body")
+      feature_data <- get_data_member("feature", dataname("feature"))
       
       colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
-        colnames(assay_vals$orig_feature[which(colnames(feature_data) == "ID")])
-      colnames(feature_data)[which(colnames(feature_data) == feature_vals$id_col)] <- "ID"
+        colnames(get_data_member("feature", "orig_data")[which(colnames(feature_data) == "ID")])
+      colnames(feature_data)[which(colnames(feature_data) == get_data_member("feature", "id_col"))] <- "ID"
       
       if (length(which(colnames(feature_data) == "ID")) > 1) {
-        save_lines("feature_data2 <- feature_data2[,-1]", "assay", "body")
+        save_lines(paste0(dataname("feature"), "2 <- ", dataname("feature"), "2[,-1]"), "assay", "body")
         
         #You probably shouldn't be doing this every time
         feature_data <- feature_data[,-1]
       }
     }
     
-    assay_vals$assay_data <- withProgress(message = "Replacing the ID column", 
-                                          replaceID(assay_vals$assay_data, feature_data, input$colForExprLabels, input$howToSummarize, input$feature_dropNA))
+    result <- withProgress(message = "Replacing the ID column", 
+                                          replaceID(get_data_member("assay", dataname("assay")), feature_data, input$colForExprLabels, input$howToSummarize, input$feature_dropNA))
     
-    feature_vals$prev_id <- feature_vals$id_col
-    feature_vals$id_col <- input$colForExprLabels
+    set_x_equalto_y(dataname("assay"), result, "assay")
+    set_x_equalto_y("prev_id", get_data_member("feature", "id_col"), "feature")
+    set_x_equalto_y("id_col", input$colForExprLabels, "feature")
     
     shinyjs::enable("undoEvalExpr")
     
     add_function("replaceID", "assay")
-    save_lines(c(paste0("assay_data <- replaceID(assay_data, feature_data2, ", 
+    save_lines(c(paste0(dataname("assay"), " <- replaceID(", dataname("assay"), ", ", dataname("feature"), "2, ", 
                         format_string(input$colForExprLabels), ", ",
                         format_string(input$howToSummarize), ", ", 
                         format_string(input$feature_dropNA), ")")

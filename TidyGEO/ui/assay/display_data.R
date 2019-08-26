@@ -13,6 +13,5 @@ tabPanel("Data",
          uiOutput("assay_vals_viewing_subset"),
          br(),
          bsAlert("alpha_alert"),
-         withSpinner(dataTableOutput("assay_display"), type = 5),
-         uiOutput("evaluate_filters_button")
+         table_for_col_navigation("assay", show_filters = TRUE)
 )

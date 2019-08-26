@@ -77,3 +77,24 @@ col_navigation_set <- function(datatype, extra_tag = NULL) {
     )
   )
 }
+
+table_for_col_navigation <- function(datatype, extra_tag = NULL, show_filters = FALSE) {
+  output <- tagList()
+  output[[1]] <- withSpinner(DTOutput(display(datatype, extra_tag)), type = SPINNER_TYPE)
+  if (show_filters) output[[2]] <- uiOutput(paste(datatype, extra_tag, "evaluate", "filters", "button", sep = SEP))
+  output
+}
+
+graphical_summary <- function(datatype, extra_tag = NULL) {
+  tagList(
+    tags$script(HTML(paste0(
+      "$(document).on('click', '.", paste(datatype, extra_tag, "plot", sep = SEP), "', function () {
+        Shiny.onInputChange('", paste("last", "btn", datatype, extra_tag, sep = SEP), "', this.id);
+      });")
+    )),
+    colorSelectorInput(paste(datatype, extra_tag, "plot", "color", sep = SEP), "Color of bars:", choices = c(brewer.pal(11, PLOT_COLORS), "#808080", "#000000"), ncol = 13),
+    uiOutput(paste("choose", var_to_view(datatype, extra_tag), sep = SEP)),
+    sliderInput(paste(datatype, extra_tag, "binwidths", sep = SEP), "Number of bins (for numeric):", min = 1, max = MAX_BINS, value = MAX_BINS / 2, width = '100%'),
+    uiOutput(paste(datatype, extra_tag, "plots", sep = SEP))
+  )
+}

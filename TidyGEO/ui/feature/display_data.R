@@ -13,6 +13,5 @@ tabPanel("Feature Data",
          br(),
          uiOutput("feature_vals_viewing_subset"),
          br(),
-         withSpinner(dataTableOutput("feature_display"), type = 5),
-         uiOutput("evaluate_filters_button_feature")
+         table_for_col_navigation("feature", show_filters = TRUE)
 )

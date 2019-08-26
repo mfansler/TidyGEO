@@ -1,19 +1,18 @@
 output$choose_cols_to_split_feature <- renderUI({
-  colNames <- setdiff(colnames(feature_vals$feature_data), "ID")
-  checkboxGroupInput(inputId = "cols_to_split_feature", label = NULL, colNames)
+  checkboxGroupInput(inputId = "cols_to_split_feature", label = NULL, current_colnames_feature())
 })
 
 observe({
   if (!is.null(input$select_all_split_feature)) {
     updateCheckboxGroupInput(
       session, 'cols_to_split_feature', 
-      selected = if (input$select_all_split_feature) setdiff(colnames(feature_vals$feature_data), "ID")
+      selected = if (input$select_all_split_feature) current_colnames_feature()
     )
   }
 })
 
 observeEvent(input$split_pairs_feature, {
-  if (!is.null(feature_vals$feature_data)) {
+  if (data_loaded("feature")) {
     withProgress({
       status <- eval_function("feature", "extractColNames", 
                     list(input$split_delimiter_feature, input$cols_to_split_feature, input$split_pairs_w_regex_feature), 
@@ -34,3 +33,5 @@ observeEvent(input$split_pairs_feature, {
 observeEvent(input$undo_split_pairs_feature, {
   undo_last_action("feature")
 })
+
+navigation_set_server("2", "3", "4", "feature_side_panel", "feature_side_panel")

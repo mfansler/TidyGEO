@@ -7,7 +7,7 @@ tabPanel(title = icon("edit"), value = "1",
          fluidRow(
            column(12, 
                   primary_button("expression_replace_id", 
-                                 label = div(icon("exchange-alt"),
+                                 label = div(REPLACE_ID_ICON,
                                              "Use different ID column"),
                                  width = '200px', class = "indent"), 
                   help_link("assay", "replace_id_help"))
@@ -16,20 +16,15 @@ tabPanel(title = icon("edit"), value = "1",
          fluidRow(
            column(12, 
                   primary_button(id = "expression_transpose",
-                                 label = div(icon("retweet"),
+                                 label = div(TRANSPOSE_ICON,
                                              "Transpose"),
                                  width = '200px', class = "indent"),
                   help_link("assay", "transpose_help"))
          ),
-         #primary_button("expression_evaluate_filters", 
-          #              label = div(icon("filter"),
-          #                          "Apply filters"),
-          #              width = '200px', class = "indent"),
-         #help_link(id = "evaluate_filters_help"),
          div(
            undo_button("undoEvalExpr"),
            br()
          ),
-         hr(), tertiary_button("assay_to_clinical", div(icon("arrow-left"), "Back to clinical data")),
-         secondary_button("expression_nav_1_to_2_button", div("Next", icon("arrow-right")), class = "right_align")
+         hr(), tertiary_button(nav("assay", "clinical"), div(PREV_ICON, "Back to clinical data")),
+         secondary_button(nav("1", "2", "assay"), div("Next", icon(NEXT_ICON)), class = "right_align")
 )

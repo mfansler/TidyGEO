@@ -20,8 +20,8 @@ observeEvent(input$show_broken_cols_example_feature, {
 #})
 
 current_colnames_feature <- reactive({
-  if (!is.null(feature_vals$feature_data)) {
-    colnames(feature_vals$feature_data)[-which(colnames(feature_vals$feature_data) == "ID")]
+  if (data_loaded("feature")) {
+    setdiff(colnames(get_data_member("feature", dataname("feature"))), "ID")
   } 
 })
 
@@ -37,13 +37,13 @@ output$display_destination_cols_feature <- renderUI({
 })
 
 shift_preview_feature <- reactive({ 
-  if (!is.null(feature_vals$feature_data) &&
+  if (data_loaded("feature") &&
       !is.null(input$col_to_shift_feature) &&
       !is.null(input$destination_col_feature) &&
       input$col_to_shift_feature != "" && 
       input$destination_col_feature != "") {
     #shift_cells(head(feature_vals$feature_data, 5), input$col_to_shift_feature, input$destination_col_feature)
-    preview_data <- head(feature_vals$feature_data, 5)
+    preview_data <- head(get_data_member("feature", dataname("feature")), 5)
     preview_data <- cbind(sapply(preview_data[,input$col_to_shift_feature], shorten_labels, 20), 
                           rep(as.character(icon("arrow-right")), nrow(preview_data)), 
                           sapply(preview_data[,input$destination_col_feature], shorten_labels, 20),
@@ -54,7 +54,7 @@ shift_preview_feature <- reactive({
 })
 
 output$shift_preview_table_feature <- DT::renderDT({
-  if (!is.null(feature_vals$feature_data) &&
+  if (data_loaded("feature") &&
       !is.null(input$col_to_shift_feature) &&
       !is.null(input$destination_col_feature) &&
       input$col_to_shift_feature != "" && 
@@ -67,7 +67,7 @@ output$shift_preview_table_feature <- DT::renderDT({
         columns = 4,
         valueColumns = 4,
         target = 'row',
-        backgroundColor = styleEqual(TRUE, "#fee0d2")
+        backgroundColor = styleEqual("TRUE", "#fee0d2")
       )
   }
 })
@@ -89,14 +89,14 @@ output$conflict_delimiter_option_feature <- renderUI({
 })
 
 output$shift_conflicts_table_feature <- DT::renderDT({
-  if (!is.null(feature_vals$shift_results[["conflicts"]])) {
-    datatable(feature_vals$shift_results[["conflicts"]], options = list(dom = "t", scrollY = 300, paging = FALSE))
+  if (!is.null(get_data_member("feature", "shift_results")[["conflicts"]])) {
+    datatable(get_data_member("feature", "shift_results")[["conflicts"]], options = list(dom = "t", scrollY = 300, paging = FALSE))
   }
 })
 
 observeEvent(input$evaluate_shift_feature, {
-  feature_vals$shift_results <- shift_cells(feature_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature)
-  if (!is.null(feature_vals$shift_results[["conflicts"]])) {
+  set_x_equalto_y("shift_results", shift_cells(get_data_member("feature", dataname("feature")), input$col_to_shift_feature, input$destination_col_feature), "feature")
+  if (!is.null(get_data_member("feature", "shift_results")[["conflicts"]])) {
     showModal(modalDialog( title = div(HTML('<font color="red">Whoops!</font>'), 
                                        tertiary_button("cancel_shift_feature", "Cancel", class = "right_align")),
                            HTML(paste0('<font color="red">Looks like we\'re trying to overwrite some of the values in ',
@@ -109,15 +109,15 @@ observeEvent(input$evaluate_shift_feature, {
                            footer = primary_button("evaluate_conflicts_feature", "Resolve")
                            ))
   } else {
-    feature_vals$last_data <- feature_vals$feature_data
+    set_x_equalto_y("last_data", get_data_member("feature", dataname("feature")), "feature")
     
-    feature_vals$feature_data <- feature_vals$shift_results[["result"]]
+    set_x_equalto_y(dataname("feature"), get_data_member("feature", "shift_results")[["result"]], "feature")
     
     #WRITING COMMANDS TO R SCRIPT
     set_undo_point_script("feature")
     save_lines(commentify("shift cells"), "feature", "body")
     add_function("shift_cells", "feature")
-    save_lines(paste0("feature_data <- shift_cells(feature_data, ", 
+    save_lines(paste0(dataname("feature"), " <- shift_cells(", dataname("feature"), ", ", 
                                             format_string(input$col_to_shift_feature), ", ",
                                             format_string(input$destination_col_feature), ")"), "feature", "body")
   }
@@ -129,15 +129,15 @@ observeEvent(input$cancel_shift_feature, {
 
 observeEvent(input$evaluate_conflicts_feature, {
   removeModal()
-  results <- shift_cells(feature_vals$feature_data, input$col_to_shift_feature, input$destination_col_feature, 
+  results <- shift_cells(get_data_member("feature", dataname("feature")), input$col_to_shift_feature, input$destination_col_feature, 
                          conflicts = if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature)
-  feature_vals$last_data <- feature_vals$feature_data
-  feature_vals$feature_data <- results[["result"]]
+  set_x_equalto_y("last_data", get_data_member("feature", dataname("feature")), "feature")
+  set_x_equalto_y(dataname("feature"), results[["result"]], "feature")
   
   set_undo_point_script("feature")
   save_lines(commentify("shift cells"), "feature", "body")
   add_function("shift_cells", "feature")
-  save_lines(paste0("feature_data <- shift_cells(feature_data, ", 
+  save_lines(paste0(dataname("feature"), " <- shift_cells(", dataname("feature"), ", ", 
                     format_string(input$col_to_shift_feature), ", ",
                     format_string(input$destination_col_feature), ", ",
                     format_string(if (input$conflict_option_feature == "delim") input$conflict_delimiter_feature else input$conflict_option_feature), ")"), 
@@ -147,3 +147,5 @@ observeEvent(input$evaluate_conflicts_feature, {
 observeEvent(input$undo_shift_feature, {
   undo_last_action("feature")
 })
+
+navigation_set_server("1", "2", "3", "feature_side_panel", "feature_side_panel")
