@@ -336,7 +336,7 @@ get_input <- function(id) {
   eval(parse(text = paste0("input$", id)))
 }
 
-col_navigation_set_server <- function(datatype, extra_tag = NULL) {
+set_up_col_navigation <- function(datatype) {
   observe({
     n_cols <- ncol(get_data_member(datatype, dataname(datatype)))
     this_viewing_min <- get_data_member(datatype, "viewing_min")
@@ -356,7 +356,9 @@ col_navigation_set_server <- function(datatype, extra_tag = NULL) {
       get_data_member(datatype, dataname(datatype))
     }
   }), pos = parent.frame())
-  
+}
+
+col_navigation_set_server <- function(datatype, extra_tag = NULL) {
   output[[visible(datatype, extra_tag)]] <- renderText({
     paste("Showing", 
           get_data_member(datatype, "viewing_subset")[1], "to", 

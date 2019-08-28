@@ -1,17 +1,17 @@
 col_selector_ui <- function(input_id, selector_id) {
-  this_input <- parse(text = paste0("input$", input_id))
-  if (!is.null(eval(this_input))) {
-    data_to_join <- paste0(eval(this_input), "_vals$", dataname(eval(this_input)))
-    if (!is.null(eval(parse(text = data_to_join)))) {
+  this_input <- get_input(input_id)
+  if (!is.null(this_input)) {
+    data_to_join <- get_data_member(this_input, dataname(this_input))
+    if (data_loaded(this_input)) {
       selectInput(selector_id, 
-                  paste("Choose a column from the", eval(this_input), "data to match:"), 
-                  choices = c(eval(parse(text = paste0("colnames(", data_to_join, ")"))), 
+                  paste("Choose a column from the", this_input, "data to match:"), 
+                  choices = c(colnames(data_to_join),
                               "Column names" = "colnames", "Row names" = "rownames")
                   )
     } else {
       HTML(paste0(
-        '<p style="color:red">There is no ', eval(this_input), ' data loaded. Please load data in the "',
-        toupper(substring(eval(this_input), 1, 1)), substring(eval(this_input), 2, nchar(eval(this_input))), 
+        '<p style="color:red">There is no ', this_input, ' data loaded. Please load data in the "',
+        toupper(substring(this_input, 1, 1)), substring(this_input, 2, nchar(this_input)), 
         ' data" tab.</p>'))
     }
   }
@@ -30,7 +30,8 @@ output$col_to_match2_selector <- renderUI({
 observeEvent(input$match_columns, {
   status <- eval_function(
     input$data_to_match1, "find_intersection", 
-    list(data2 = get_datatype_expr(input$data_to_match2), id_col1 = input$col_to_match1, id_col2 = input$col_to_match2),
+    list(data2 = get_data_member_expr(input$data_to_match2, dataname(input$data_to_match2)), 
+         id_col1 = input$col_to_match1, id_col2 = input$col_to_match2),
     "matching rows from two columns", 
     to_knit = c(input$data_to_match1, input$data_to_match2)
     )
@@ -39,10 +40,11 @@ observeEvent(input$match_columns, {
       error_modal("Error in filtering first dataset", "No datasets filtered.", status)
     )
   } else {
-    all_vals$last_selected_match1 <- input$data_to_match1
+    set_x_equalto_y("last_selected_match1", input$data_to_match1, "all")
     status <- eval_function(
       input$data_to_match2, "find_intersection", 
-      list(data2 = get_datatype_expr(input$data_to_match1), id_col1 = input$col_to_match2, id_col2 = input$col_to_match1),
+      list(data2 = get_data_member_expr(input$data_to_match1, dataname(input$data_to_match1)), 
+           id_col1 = input$col_to_match2, id_col2 = input$col_to_match1),
       "matching rows from two columns",
       to_knit = c(input$data_to_match2, input$data_to_match1)
     )
@@ -51,20 +53,27 @@ observeEvent(input$match_columns, {
         error_modal("Error in filtering second dataset", "Second dataset not filtered.", status)
       )
     } else {
-      all_vals$last_selected_match2 <- input$data_to_match2
+      set_x_equalto_y("last_selected_match2", input$data_to_match2, "all")
     }
   }
 })
 
 observeEvent(input$undo_match, {
-  if (!is.null(all_vals$last_selected_match1)) {
-    undo_last_action(all_vals$last_selected_match1)
-    all_vals$last_selected_match1 <- NULL
+  if (!is.null(get_data_member("all", "last_selected_match1"))) {
+    undo_last_action(get_data_member("all", "last_selected_match1"))
+    set_x_equalto_y("last_selected_match1", NULL, "all")
   }
-  if (!is.null(all_vals$last_selected_match2)) {
-    undo_last_action(all_vals$last_selected_match2)
-    all_vals$last_selected_match2 <- NULL
+  if (!is.null(get_data_member("all", "last_selected_match2"))) {
+    undo_last_action(get_data_member("all", "last_selected_match2"))
+    set_x_equalto_y("last_selected_match2", NULL, "all")
   }
+})
+
+observeEvent(get_input(nav("all", "assay")), {
+  updateTabsetPanel(session, "top_level", "assay_data")
+})
+observeEvent(get_input(nav("1", "2", "all")), {
+  updateTabsetPanel(session, "all_data_options", selected = "2")
 })
 
 
@@ -100,29 +109,16 @@ output$col_to_match1_preview <- renderDT({
 match_vals1 <- reactive({
   if (!is.null(input$col_to_match1)) {
     if (input$col_to_match1 == "colnames" || input$col_to_match1 == "rownames") {
-      names_df <- as.data.frame(matrix(eval(parse(
-        text = paste0(
-          input$col_to_match1, "(",
-          input$data_to_match1,
-          "_vals$",
-          dataname(input$data_to_match1),
-          ')'
+      names_df <- as.data.frame(
+        matrix(
+          do.call(input$col_to_match1, list(get_data_member(input$data_to_match1, dataname(input$data_to_match1))))
+          )
         )
-      ))))
       colnames(names_df) <- paste0(toupper(substring(input$data_to_match1, 1, 1)), substring(input$data_to_match1, 2), 
                                    if (input$col_to_match1 == "colnames") "column" else "row", " names")
       names_df
     } else {
-      eval(parse(text =
-                   paste0(
-                     input$data_to_match1,
-                     "_vals$",
-                     dataname(input$data_to_match1),
-                     '["',
-                     input$col_to_match1,
-                     '"]'
-                   )
-      ))
+      get_data_member(input$data_to_match1, dataname(input$data_to_match1))[input$col_to_match1]
     }
   }
 })
@@ -130,29 +126,16 @@ match_vals1 <- reactive({
 match_vals2 <- reactive({
   if (!is.null(input$col_to_match2)) {
     if (input$col_to_match2 == "colnames" || input$col_to_match2 == "rownames") {
-      names_df <- as.data.frame(matrix(eval(parse(
-        text = paste0(
-          input$col_to_match2, "(",
-          input$data_to_match2,
-          "_vals$",
-          dataname(input$data_to_match2),
-          ')'
+      names_df <- as.data.frame(
+        matrix(
+          do.call(input$col_to_match2, list(get_data_member(input$data_to_match2, dataname(input$data_to_match2))))
         )
-      ))))
+      )
       colnames(names_df) <- paste0(toupper(substring(input$data_to_match2, 1, 1)), substring(input$data_to_match2, 2), 
                                    if (input$col_to_match2 == "colnames") " column" else " row", " names")
       names_df
     } else {
-      eval(parse(text =
-                   paste0(
-                     input$data_to_match2,
-                     "_vals$",
-                     dataname(input$data_to_match2),
-                     '["',
-                     input$col_to_match2,
-                     '"]'
-                   )
-      ))
+      get_data_member(input$data_to_match2, dataname(input$data_to_match2))[input$col_to_match2]
     }
   }
 })

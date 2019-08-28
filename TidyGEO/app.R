@@ -13,15 +13,9 @@
 # A
 
 source("tidygeo_variables.R")
-
-suppressPackageStartupMessages({
-  source("tidygeo_functions.R")
-  source("server/formatting_helper_functions.R")
-})
-
-# colored buttons of different types --------------------------------------
-
-source(file.path("ui", "button_types.R"), local = TRUE)$value
+source("tidygeo_functions.R")
+source("ui/tidygeo_ui_functions.R")
+source("server/formatting_helper_functions.R")
 
 options(shiny.autoreload = F)
 
@@ -53,7 +47,7 @@ ui <- dashboardPage(
     useShinyjs(),
     tabItems(
       tabItem("choose_dataset",
-               source(file.path("ui", "clinical", "choose_dataset.R"), local = TRUE)$value
+               source(file.path("ui", "choose_dataset", "choose_dataset.R"), local = TRUE)$value
       ),
       tabItem(dataname("clinical"),
                sidebarLayout(
@@ -226,12 +220,69 @@ server <- function(input, output, session) {
 
   # ** navigation --------------------------------------------------------------
   
-  source(file.path("server", "navigation.R"), local = TRUE)$value
+  for (dt in ALLOWED_DATATYPES) {
+    set_up_col_navigation(dt)
+  }
   
+  observeEvent(input$next_cols_clicked, {
+    to_move <- ALLOWED_DATATYPES[which(str_detect(input$next_cols_clicked, ALLOWED_DATATYPES))]
+    if (identical(to_move, character(0))) {
+      stop("Error in clicking next cols. The button that called next cols is not tagged with a valid datatype.")
+    } else {
+      ncol_data_to_move <- ncol(get_data_member(to_move, dataname(to_move)))
+      #move_by <- floor(ncol_data_to_move / 5)
+      current_subset <- get_data_member(to_move, "viewing_subset")[1]
+      
+      start <- min(ncol_data_to_move, current_subset + MOVE_BY + 1)
+      end <- min(ncol_data_to_move, start + MOVE_BY)
+      eval(
+        expr(
+          `<-`(
+            !!get_data_member_expr(to_move, "user_pagelen"),
+            input[[paste0(display(next_col_source(input$next_cols_clicked)), "_state")]][["length"]]
+          )
+        )
+      )
+      
+      eval(
+        expr(`<-`(!!get_data_member_expr(to_move, "viewing_subset"), c(start, end)))
+      )
+    }
+    session$sendCustomMessage("resetValue", "next_cols_clicked")
+  })
+  
+  observeEvent(input$prev_cols_clicked, {
+    to_move <- ALLOWED_DATATYPES[which(str_detect(input$prev_cols_clicked, ALLOWED_DATATYPES))]
+    if (identical(to_move, character(0))) {
+      stop("Error in clicking next cols. The button that called prev cols is not tagged with a valid datatype.")
+    } else {
+      ncol_data_to_move <- ncol(get_data_member(to_move, dataname(to_move)))
+      #move_by <- floor(ncol_data_to_move / 5)
+      viewing_min <- get_data_member(to_move, "viewing_min")
+      current_subset <- get_data_member(to_move, "viewing_subset")[2]
+      
+      end <- max(viewing_min, current_subset - MOVE_BY - 1)
+      start <- max(viewing_min, end - MOVE_BY)
+      
+      eval(
+        expr(
+          `<-`(
+            !!get_data_member_expr(to_move, "user_pagelen"),
+            input[[paste0(display(prev_col_source(input$prev_cols_clicked)), "_state")]][["length"]]
+          )
+        )
+      )
+      
+      eval(
+        expr(`<-`(!!get_data_member_expr(to_move, "viewing_subset"), c(start, end)))
+      )
+    }
+    session$sendCustomMessage("resetValue", "prev_cols_clicked")
+  })
   
   # ** Choose dataset ----------------------------------------------------------
 
-  source(file.path("server", "clinical", "choose_dataset.R"), local = TRUE)$value
+  source(file.path("server", "choose_dataset", "choose_dataset.R"), local = TRUE)$value
 
   
   observeEvent(input$top_level, {

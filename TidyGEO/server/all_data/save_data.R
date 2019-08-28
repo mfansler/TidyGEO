@@ -21,14 +21,14 @@ output$all_evaluate_save <- downloadHandler(
     
     data_to_save <- lapply(datatypes_selected(), function(dt) {
       if (dt == "clinical") {
-        myData <- clinical_vals$clinical_data
+        myData <- get_data_member("clinical", dataname("clinical"))
         if (!is.null(myData)) {
           myData <- cbind(rownames(myData), myData)
           colnames(myData)[1] <- if (input$all_file_type == "txt") "ExpId" else ""
         }
         myData
       } else {
-        eval(parse(text = paste0(dt, "_vals$", dataname(dt))))
+        get_data_member(dt, dataname(dt))
       }
     })
     filenames <- if (length(datatypes_selected()) > 1) {
@@ -54,7 +54,13 @@ output$all_save_rscript <- downloadHandler(
   }
 )
 
+observeEvent(get_input(nav("3", "2", "all")), {
+  updateTabsetPanel(session, "all_data_options", selected = "2")
+})
+
 # Main panel --------------------------------------------------------------
+
+save_tag <- "view_save"
 
 save_data_ui <- tagList(
   h4("Saving datasets"),
@@ -69,7 +75,7 @@ datatypes_selected <- reactive({
 data_to_save_is_null <- reactive({
   
   null_dts <- unlist(lapply(datatypes_selected(), function(dt) {
-    eval(parse(text = paste0("is.null(", dt, "_vals$", dataname(dt), ")")))
+    !data_loaded(dt)
   }))
   if (any(null_dts)) {
     disable("all_evaluate_save")
@@ -88,7 +94,10 @@ output$view_data_save <- renderUI({
         if (data_to_save_is_null()[i]) {
           get_null_error_message(datatypes_selected()[i])
         } else {
-          DTOutput(paste0(datatypes_selected()[i], "_view_save"))
+          div(
+            col_navigation_set(datatypes_selected()[i], save_tag),
+            table_for_col_navigation(datatypes_selected()[i], save_tag)  
+          )
         }
       })
     titles <- lapply(datatypes_selected(), function(dt) {
@@ -100,18 +109,10 @@ output$view_data_save <- renderUI({
   }
 })
 
-output$clinical_view_save <- renderDT({
-  clinical_vals$clinical_data
-}, options = dt_opts)
+table_for_col_navigation_server("clinical", save_tag, show_rownames = TRUE)
 
-output$assay_view_save <- renderDT({
-  assay_vals$assay_data
-}, options = dt_opts)
+table_for_col_navigation_server("assay", save_tag)
 
-output$feature_view_save <- renderDT({
-  feature_vals$feature_data
-}, options = dt_opts)
+table_for_col_navigation_server("feature", save_tag)
 
-output$all_view_save <- renderDT({
-  all_vals$all_data
-}, options = dt_opts)
+table_for_col_navigation_server("all", save_tag, show_rownames = TRUE)

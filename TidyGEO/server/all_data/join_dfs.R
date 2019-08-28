@@ -15,22 +15,22 @@ output$col_to_join3_selector <- renderUI({
 })
 
 observeEvent(input$add_dataset, {
-  all_vals$join_datatypes_visible <- all_vals$join_datatypes_visible + 1
-  this_id <- paste0("data_to_join", all_vals$join_datatypes_visible)
-  this_selector_id <- paste0("col_to_join", all_vals$join_datatypes_visible)
+  set_x_equalto_y("join_datatypes_visible", get_data_member("all", "join_datatypes_visible") + 1, "all")
+  this_id <- paste0("data_to_join", get_data_member("all", "join_datatypes_visible"))
+  this_selector_id <- paste0("col_to_join", get_data_member("all", "join_datatypes_visible"))
   insertUI(
     selector = "#add_dataset",
     where = "beforeBegin",
-    ui = div(id = paste0("selector_div", all_vals$join_datatypes_visible),
+    ui = div(id = paste0("selector_div", get_data_member("all", "join_datatypes_visible")),
       selectInput(this_id, "Choose another dataset to join:", choices = c("clinical", "assay", "feature")),
       uiOutput(paste0(this_selector_id, "_selector")),
-      radioButtons(paste0("join_behavior", all_vals$join_datatypes_visible), 
+      radioButtons(paste0("join_behavior", get_data_member("all", "join_datatypes_visible")), 
                    paste0("Please choose the action you would like to take when items in the first dataset",
                                            " are not present in the second dataset (and visa versa):"), 
                    choices = c("drop", "keep values from first dataset", "keep values from second dataset", "keep all"))
     )
   )
-  if (all_vals$join_datatypes_visible > 2) disable("add_dataset")
+  if (get_data_member("all", "join_datatypes_visible") > 2) disable("add_dataset")
   enable("remove_dataset")
   
   #insertUI(
@@ -54,25 +54,25 @@ observeEvent(input$add_dataset, {
 
 observeEvent(input$remove_dataset, {
   removeUI(
-    selector = paste0("#selector_div", all_vals$join_datatypes_visible)
+    selector = paste0("#selector_div", get_data_member("all", "join_datatypes_visible"))
   )
   #removeUI(
   #  selector = paste0("#preview_div", all_vals$join_datatypes_visible)
   #)
-  session$sendCustomMessage("resetValue", paste0("data_to_join", all_vals$join_datatypes_visible))
-  session$sendCustomMessage("resetValue", paste0("col_to_join", all_vals$join_datatypes_visible))
-  all_vals$join_datatypes_visible <- all_vals$join_datatypes_visible - 1
+  session$sendCustomMessage("resetValue", paste0("data_to_join", get_data_member("all", "join_datatypes_visible")))
+  session$sendCustomMessage("resetValue", paste0("col_to_join", get_data_member("all", "join_datatypes_visible")))
+  set_x_equalto_y("join_datatypes_visible", get_data_member("all", "join_datatypes_visible") - 1, "all")
   enable("add_dataset")
-  if (all_vals$join_datatypes_visible < 2) disable("remove_dataset")
+  if (get_data_member("all", "join_datatypes_visible") < 2) disable("remove_dataset")
 })
 
 observeEvent(input$join_columns, {
-  all_vals$all_data <- eval(parse(text = paste0(input$data_to_join1, "_vals$", dataname(input$data_to_join1))))
+  set_x_equalto_y(dataname("all"), get_data_member(input$data_to_join1, dataname(input$data_to_join1)), "all")
   set_script_equal("all", input$data_to_join1)
   
   withProgress({
     incProgress(message = "Performing first join")
-    if (all_vals$join_datatypes_visible > 1) {
+    if (get_data_member("all", "join_datatypes_visible") > 1) {
       join1_status <- eval_function("all", "join_data", 
                                     list(get_data_member_expr(input$data_to_join2, dataname(input$data_to_join2)),
                                          input$col_to_join1,
@@ -83,7 +83,7 @@ observeEvent(input$join_columns, {
     }
     if (join1_status == SUCCESS) {
       incProgress(message = "Performing second join")
-      if (all_vals$join_datatypes_visible > 2) {
+      if (get_data_member("all", "join_datatypes_visible") > 2) {
         join2_status <- eval_function("all", "join_data", 
                                       list(get_data_member_expr(input$data_to_join3, dataname(input$data_to_join3)),
                                            input$col_to_join2,
@@ -109,6 +109,7 @@ observeEvent(input$join_columns, {
   
 })
 
+navigation_set_server("1", "2", "3", "all_data_options", "all_data_options")
 
 # main panel --------------------------------------------------------------
 
@@ -191,63 +192,61 @@ output$selected_join_var2 <- renderText({
   paste0(input$col_to_join2, " = ", input$col_to_join3)
 })
 
-if (FALSE) {
-
-get_data_to_join_rows <- function(datatype) {
-  eval(parse(
-    text = paste0("nrow(", datatype, "_vals$", dataname(datatype), ')')
-  ))
-}
-
-output$data_to_join1_preview <- renderDT({
-  datatable(data_to_join1_data(), rownames = FALSE, colnames = input$data_to_join1, escape = FALSE, 
-            options = list(dom = "t", scrollY = 200))
-})
-
-output$data_to_join1_rows <- renderUI({
-  HTML(paste0("<p><b>Rows: </b>", get_data_to_join_rows(input$data_to_join1), "</p>"))
-})
-
-
-
-output$data_to_join2_preview <- renderDT({
-  datatable(data_to_join2_data(), rownames = FALSE, colnames = input$data_to_join2, escape = FALSE, 
-            options = list(dom = "t", scrollY = 200))
-})
-
-output$data_to_join2_rows <- renderUI({
-  HTML(paste0("<p><b>Rows: </b>", get_data_to_join_rows(input$data_to_join2), "</p>"))
-})
-
-output$data_to_join3_preview <- renderDT({
-  datatable(data_to_join3_data(), rownames = FALSE, colnames = input$data_to_join3, escape = FALSE, 
-            options = list(dom = "t", scrollY = 200))
-})
-
-output$data_to_join3_rows <- renderUI({
-  HTML(paste0("<p><b>Rows: </b>", get_data_to_join_rows(input$data_to_join3), "</p>"))
-})
-
-}
+#if (FALSE) {
+#
+#get_data_to_join_rows <- function(datatype) {
+#  nrow(get_data_member(datatype, dataname(datatype)))
+#}
+#
+#output$data_to_join1_preview <- renderDT({
+#  datatable(data_to_join1_data(), rownames = FALSE, colnames = input$data_to_join1, escape = FALSE, 
+#            options = list(dom = "t", scrollY = 200))
+#})
+#
+#output$data_to_join1_rows <- renderUI({
+#  HTML(paste0("<p><b>Rows: </b>", get_data_to_join_rows(input$data_to_join1), "</p>"))
+#})
+#
+#
+#
+#output$data_to_join2_preview <- renderDT({
+#  datatable(data_to_join2_data(), rownames = FALSE, colnames = input$data_to_join2, escape = FALSE, 
+#            options = list(dom = "t", scrollY = 200))
+#})
+#
+#output$data_to_join2_rows <- renderUI({
+#  HTML(paste0("<p><b>Rows: </b>", get_data_to_join_rows(input$data_to_join2), "</p>"))
+#})
+#
+#output$data_to_join3_preview <- renderDT({
+#  datatable(data_to_join3_data(), rownames = FALSE, colnames = input$data_to_join3, escape = FALSE, 
+#            options = list(dom = "t", scrollY = 200))
+#})
+#
+#output$data_to_join3_rows <- renderUI({
+#  HTML(paste0("<p><b>Rows: </b>", get_data_to_join_rows(input$data_to_join3), "</p>"))
+#})
+#
+#}
 
 
 get_data_to_join_preview <- function(datatype, selected_col) {
-  if (FALSE) {
-  this_data <- if (selected_col %in% "colnames") {
-    selected_col <- "ID"
-    eval(parse(text = paste0("withProgress(colnames(quickTranspose(", datatype, "_vals$", dataname(datatype), ")))")))
-  } else {
-    eval(parse(
-      text = paste0("colnames(", datatype, "_vals$", dataname(datatype), ')')
-    ))
-  }
-  font_weights <- sapply(this_data, function(x) if (x == selected_col) paste0("<b>", x, "</b>") else x,
-                         USE.NAMES = FALSE)
-  matrix(font_weights)
-  }
+  #if (FALSE) {
+  #this_data <- if (selected_col %in% "colnames") {
+  #  selected_col <- "ID"
+  #  eval(parse(text = paste0("withProgress(colnames(quickTranspose(", datatype, "_vals$", dataname(datatype), ")))")))
+  #} else {
+  #  eval(parse(
+  #    text = paste0("colnames(", datatype, "_vals$", dataname(datatype), ')')
+  #  ))
+  #}
+  #font_weights <- sapply(this_data, function(x) if (x == selected_col) paste0("<b>", x, "</b>") else x,
+  #                       USE.NAMES = FALSE)
+  #matrix(font_weights)
+  #}
   if (!is.null(datatype) && !is.null(selected_col)) {
     this_func <- if (selected_col == "colnames") "row" else "col"
-    eval(parse(text = paste0("n", this_func, "(", datatype, "_vals$", dataname(datatype), ")")))
+    do.call(paste0("n", this_func), list(get_data_member(datatype, dataname(datatype))))
   } else {
     0
   }
