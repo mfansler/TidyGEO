@@ -26,5 +26,5 @@ tabPanel(title = icon("edit"), value = "1",
            br()
          ),
          hr(), tertiary_button(nav("assay", "clinical"), div(PREV_ICON, "Back to clinical data")),
-         secondary_button(nav("1", "2", "assay"), div("Next", icon(NEXT_ICON)), class = "right_align")
+         secondary_button(nav("1", "2", "assay"), div("Next", NEXT_ICON), class = "right_align")
 )

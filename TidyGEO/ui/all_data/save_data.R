@@ -9,7 +9,8 @@ tabPanel(title = icon("download"), value = "3",
          conditionalPanel(condition = "input.which_data_to_save === 'zip'",
                           radioButtons("zipped_filetype", div("Zip file type:", help_link("all", "zipfiles_help")),
                                        c("Zip" = "zip", "Gzipped TAR" = "tgz"))),
-         uiOutput("all_display_filename"),
+         textInput("all_user_filename", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows what to name the data file.")), 
+                   placeholder = "Start typing..."),
          tags$b("Download:"),
          fluidRow(
            column(1, downloadButton("all_evaluate_save", "Data", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")),
@@ -17,5 +18,5 @@ tabPanel(title = icon("download"), value = "3",
                                                     style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                                      help_link("all", "r_help")))
          ),
-         hr(), tertiary_button("all_3_to_2_button", div(icon("arrow-left"), "Back"))
+         hr(), tertiary_button(nav("3", "2", "all"), div(PREV_ICON, "Back"))
          )

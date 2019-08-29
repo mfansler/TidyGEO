@@ -11,6 +11,15 @@
 # 
 # Thanks,
 # A
+# 
+# Some more notes/discoveries for consideration
+# renderUIs are, in general, better than observes with update[]Inputs in them.
+# This is because observes are called more often--whenever their dependencies are
+# updated--rather than only when we need to use them in the UI. I have a hypothesis, though,
+# that with computationally-intensive UIs that we need to use often and that update often,
+# an update[]Input might outperform a renderUI since it only has to update a part of the UI
+# rather than render the entire thing again. However, I have never encountered a UI so
+# difficult to render that renderUI lagged down the code. So IDK.
 
 source("tidygeo_variables.R")
 source("tidygeo_functions.R")
@@ -161,7 +170,7 @@ server <- function(input, output, session) {
   session$allowReconnect(TRUE)
   session$onSessionEnded(stopApp)
   
-  source(file.path("tidygeo_server_functions.R"), local = TRUE)$value
+  source(file.path("server", "tidygeo_server_functions.R"), local = TRUE)$value
 
   
 # ** reactive values ---------------------------------------------------------

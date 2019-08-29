@@ -1,5 +1,12 @@
 //https://stackoverflow.com/questions/40168801/r-shiny-last-clicked-button-id
 
+//when I have a bunch of buttons that do the same thing, I can't name the buttons the same thing (duplicate
+//IDs not allowed) and I can't have an observeEvent that listens to multiple buttons; instead, I give the
+//buttons a class and whenever a button from that class is clicked, the JavaScript here puts that button's
+//ID in an input for me to listen to with an observeEvent; after I've used that input, I have to reset it
+//with this JavaScript so the next button click can set off the observeEvent again
+
+
 $(document).ready(function() {
   // column navigation listeners
   $(document).on('click', '.prev_cols', function () {

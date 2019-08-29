@@ -1,15 +1,19 @@
 
 # Side panel --------------------------------------------------------------
 
-
-output$all_display_filename <- renderUI({
-  file_name <- if (input$which_data_to_save == "zip") {
+suggested_filename <- reactive({
+  if (is.null(input$geoID)) {
+    NULL
+  } else if (input$which_data_to_save == "zip") {
     paste0(input$geoID, ".", input$zipped_filetype)
-    } else {
-      get_filename(input$which_data_to_save, input$geoID, input$all_file_type)
-    }
-  textInput("all_user_filename", label = div("File name: ", help_button("If you are downloading an R script, this will make sure the script knows what to name the data file.")), 
-            value = file_name)
+  } else {
+    get_filename(input$which_data_to_save, input$geoID, input$all_file_type)
+  }
+})
+
+observe({
+  updateTextInput(session, "all_user_filename",
+                  value = suggested_filename())
 })
 
 output$all_evaluate_save <- downloadHandler(
@@ -95,7 +99,9 @@ output$view_data_save <- renderUI({
           get_null_error_message(datatypes_selected()[i])
         } else {
           div(
+            hr(),
             col_navigation_set(datatypes_selected()[i], save_tag),
+            br(),
             table_for_col_navigation(datatypes_selected()[i], save_tag)  
           )
         }

@@ -129,15 +129,15 @@ observeEvent(input$expression_evaluate_id, {
     save_lines(c(commentify("replace ID column"),
                  paste0(dataname("feature"), "2 <- ", dataname("feature"))), "assay", "body")
     
+    feature_data <- get_data_member("feature", dataname("feature"))
+    
     if (feature_vals$id_col != "ID") {
-      
       save_lines(
         c(paste0("colnames(", dataname("feature"), "2)[which(colnames(", dataname("feature"), "2) == 'ID')] <- ", 
                  format_string(colnames(get_data_member("feature", "orig_data")[which(colnames(feature_data) == "ID")]))),
           paste0("colnames(", dataname("feature"), "2)[which(colnames(", dataname("feature"), "2) == ", 
                  format_string(get_data_member("feature", "id_col")), ")] <- 'ID'")), 
         "assay", "body")
-      feature_data <- get_data_member("feature", dataname("feature"))
       
       colnames(feature_data)[which(colnames(feature_data) == "ID")] <- 
         colnames(get_data_member("feature", "orig_data")[which(colnames(feature_data) == "ID")])

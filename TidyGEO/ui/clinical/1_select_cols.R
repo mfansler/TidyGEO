@@ -24,6 +24,7 @@ tabPanel(title = FILTER_ICON, value = "1",
                               help_button("This will drop unselected columns from the table.")),
                           tags$i("Keep the following columns..."),
                           checkboxInput(inputId = "select_all_columns", label = tags$i("Select all"), value = TRUE),
+                          #checkboxGroupInput(inputId = "varsToKeep", label = NULL)
                           uiOutput("display_vars_to_keep")
          ),
          div(

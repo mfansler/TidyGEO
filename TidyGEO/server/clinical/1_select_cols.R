@@ -2,16 +2,9 @@ clinical_colnames <- reactive({
   colnames(get_data_member("clinical", dataname("clinical")))
 })
 
-observe({
-  updateCheckboxGroupInput(
-    session, 'varsToKeep', choices = clinical_colnames(),
-    selected = if (input$select_all_columns) clinical_colnames()
-  )
-})
-
 output$display_vars_to_keep <- renderUI({
   checkboxGroupInput(inputId = "varsToKeep", label = NULL, 
-                     choices = clinical_colnames(), selected = clinical_colnames())
+                     choices = clinical_colnames(), selected = if (input$select_all_columns) clinical_colnames())
 })
 
 observeEvent(input$clinical_evaluate_filters, ({
