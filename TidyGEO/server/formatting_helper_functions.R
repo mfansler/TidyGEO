@@ -3,6 +3,7 @@ in_app <- TRUE
 # Retrieve the platform information for a dataset -------------------------
 # Library dependencies: GEOquery; stringr
 # Function dependencies:
+# Variable dependencies:
 get_platforms <- function(geoID, session = NULL) {
   platforms <- NULL
   status <- tryCatch({
@@ -460,8 +461,8 @@ filterCols <- function(metaData, varsToKeep) {
 # Library dependencies:
 # Function dependencies:
 renameCols <- function(metaData, old_name, new_name) {
-  
   if (old_name %in% colnames(metaData)) {
+    new_name <- str_replace_all(new_name, INVALID_NAME_CHARS, VALID_REPLACEMENT)
     colnames(metaData)[which(colnames(metaData) == old_name)] <- new_name
   }
   return(metaData)
@@ -635,14 +636,6 @@ process_expression <- function(expressionSet, session = NULL) {
       FALSE
     }
   })
-  if (!pass && !is.null(session)) {
-    # NOTE: It would seem that some alertIds are reserved ("parseError", for example), so if createAlert
-    # isn't working, try changing the alertId.
-    createAlert(session, anchorId = "alpha_alert", alertId = "nonnumeric", title = "Warning",
-                content = paste("Some of the data is non-numeric.",
-                                "This data is not supported by our some of our functionality.",
-                                "Feel free to download the data to edit with another application."), append = FALSE)
-  }
   
   expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
   

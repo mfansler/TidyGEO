@@ -15,7 +15,7 @@ observe({
 observeEvent(input$expression_transpose, {
   if (data_loaded("assay")) {
     status <- withProgress(
-      eval_function("assay", "quickTranspose", list(), "transpose data"), 
+      eval_function("assay", "quickTranspose", list(force = TRUE), "transpose data"), 
       message = "Transposing the data"
       )
     if (status != SUCCESS) {

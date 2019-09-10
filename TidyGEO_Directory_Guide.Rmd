@@ -2,9 +2,15 @@
 title: "An Overview of TidyGEO and Some Helpful Resources"
 author: "Avery Bell"
 date: "June 25, 2019"
-output: html_document
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
 ---
 
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
 
 ## Table of Contents {#contents}
 1. __[Introduction to TidyGEO](#intro-to-tidygeo)__
@@ -158,9 +164,9 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
     + `generate_rscript_functions.R`
         - generates a list of functions that can be used in the scripts the user can download
     + `tidygeo-install.R`
-        - contains the packages needed to run the app and use any of the functions in the app (some packages may be             extraneous--this hasn't been updated in a while)
+        - contains the packages needed to run the app and use any of the functions in the app (some packages may be extraneous--this hasn't been updated in a while)
     + `tidygeo_functions.R`
-        - some functions for the app that don't really fall under the "ui", "server", or "variables" categories;                mostly for script writing
+        - some functions for the app that don't really fall under the "ui", "server", or "variables" categories; mostly for script writing
     + `tidygeo_variables.R`
         - consists of two parts: global variables and naming conventions
         - global variables are constants used by multiple parts of the app
@@ -183,11 +189,11 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
         - contains all the code for the ui object
         - subsectioned by datatype (clinical, assay, feature, all)
     + `User/`
-        - pretty much everything in this directory is useless except rscript_functions.rds--it is the list of the               functions that can be included in the script the user can download
+        - pretty much everything in this directory is useless except rscript_functions.rds--it is the list of the functions that can be included in the script the user can download
     + `www/`
-        - resources for the app, including help gifs, the series and platform lists, the javascript file, and the css           styling file
+        - resources for the app, including help gifs, the series and platform lists, the javascript file, and the css styling file
 * Level 2 - `server`
-    + Each directory contains R scripts organized by tab (the name of the tab is usually the name of the R script, and       the tab is named by what the user does in that tab)
+    + Each directory contains R scripts organized by tab (the name of the tab is usually the name of the R script, and the tab is named by what the user does in that tab)
     + `assay/`
         - `feature_data.R` is the code for the modal that comes up when you click the "Replace ID" button
         - `side_panel.R` and `helper_functions.R` are pretty much useless (the code in helper_functions.R should all be in `formatting_functions.R` now)
@@ -196,13 +202,13 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
     + `formatting_helper_functions.R`
         - the functions that can be included in the script the user can download; __these same functions__ are used in the app to format the data in various ways--usually one function per tab
     + `help_modals.R`
-        - functions to create the modals that come up when the user clicks a question icon, observers to make the               question icons reactive
+        - functions to create the modals that come up when the user clicks a question icon, observers to make the question icons reactive
     + `regex_modal.R`
         - the code to create the modal that allows users to test regular expressions
     + `tidygeo_server_functions.R`
-        - functions to create various pieces of the server; these often correspond to similarly-named ui                        functions to create an object the user can interact with
+        - functions to create various pieces of the server; these often correspond to similarly-named ui functions to create an object the user can interact with
 * Level 2 - `ui`
-    + Each directory contains R scripts organized by tab (the name of the tab is usually the name of the R script, and       the tab is named by what the user does in that tab)
+    + Each directory contains R scripts organized by tab (the name of the tab is usually the name of the R script, and the tab is named by what the user does in that tab)
     + `assay/`
         - `side_panel.R` and `side_panel_assay.R` are useless
     + `feature/`
@@ -211,7 +217,7 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
         - functions to create various pieces of the ui; these often correspond to similarly-named server                        functions to create an object the user can interact with
 * Level 2 - `www`
     + `reactive_preferences.js`
-        - when I have a bunch of buttons that do the same thing, I can't name the buttons the same thing (duplicate             IDs not allowed) and I can't have an `observeEvent` that listens to multiple buttons; instead, I give the               buttons a class and whenever a button from that class is clicked, the JavaScript here puts that button's              ID in an input for me to listen to with an `observeEvent`; after I've used that input, I have to reset it               with this JavaScript so the next button click can set off the `observeEvent` again
+        - when I have a bunch of buttons that do the same thing, I can't name the buttons the same thing (duplicate  IDs not allowed) and I can't have an `observeEvent` that listens to multiple buttons; instead, I give the buttons a class and whenever a button from that class is clicked, the JavaScript here puts that button's ID in an input for me to listen to with an `observeEvent`; after I've used that input, I have to reset it with this JavaScript so the next button click can set off the `observeEvent` again
         - it's generally good practice to put any JS in a separate script such as this one so that your R code                  doesn't look as cluttered
     + `style.css`
         - a bunch of HTML that defines how certain elements of the app should look
@@ -222,7 +228,7 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
 I tried my best to follow the tidyverse style guide written by Hadley Wickham as it appears in [this article](https://style.tidyverse.org/).
 
 #### Naming conventions
-1. Most variable and function names are all undercase with underscores separating the words. If you ever want to change this convention, please change the `SEP` variable in tidygeo_variables.R
+1. Most variable and function names are all undercase with underscores separating the words. If you ever want to change this convention, please change the `SEP` variable in `tidygeo_variables.R`.
 2. Much of the app is built using functions, and these functions use specific names to reference certain variable names in the app. Rather than having the programmer memorize how the functions reference the variable names, I created naming patterns in `tidygeo_variables.R` that define how certain types of variables are named. To change the naming pattern, one simply changes `tidygeo_variables.R` and all the variable names in the app will be updated. In this way, the naming conventions in `tidygeo_variables.R` also prevent extensive refactoring.
 3. In general, variables are named using three parts: the general name for the variable, the datatype the variable corresponds to (clinical, assay, feature, all), and some kind of extra tag to make that variable unique, in case it is used for the same datatype in multiple sections.
 
@@ -239,26 +245,71 @@ There are two reasons that I would __strongly encourage__ any programmer working
 
 1. Pieces of UI often correspond to similarly-named pieces of Server.
 
-Just like you pair a textOutput in the UI with a renderText in the Server, I have created pieces of UI that correspond to pieces of the Server, and these corresponding pieces have similar names. One example is with the column navigation you might notice above each of the datatables in the app. The UI for the column navigation looks like this:
-```{r}
-#ui
+Just like you pair a `textOutput` in the UI with a `renderText` in the Server, I have created pieces of UI that correspond to pieces of the Server, and these corresponding pieces have similar names. One example is with the column navigation you might notice above each of the datatables in the app. The UI for the column navigation looks like this:
+```{r eval=FALSE}
+fluidRow( # A row for all these elements
+    column(4, # The "previous columns" button
+      secondary_button(id = "prev_cols_clinical_data_viewer", label = div(PREV_ICON, "Previous columns"), class = "prev_cols")
+    ),
+    column(4, # A spot for the text showing what subset the user is viewing
+      div(textOutput("cols_visible_clinical_data_viewer"), class = "center_align")
+    ),
+    column(4, # The "next columns" button
+      div(secondary_button(id = "next_cols_clinical_data_viewer", label = "Next columns", icon = NEXT_ICON, class = "next_cols"), class = "right_align")
+    )
+  )
 ```
 and the server looks like this:
-```{r}
-#server
+```{r eval=FALSE}
+# This fills in the spot with the text showing what subset the user is viewing
+output[["cols_visible_clinical_data_viewer"]] <- renderText({
+  paste("Showing", 
+        clinical_vals$viewing_subset[1], "to",
+        clinical_vals$viewing_subset[2], "of",
+        ncol(clinical_vals$clinical_data),
+        "columns")
+})
 ```
-See how the variable names in the UI and Server look similar? Now, rather than repeating these chunks of UI and Server for every single datatype, I made functions that will create these pieces for me:
-```{r}
-# UI functions
+See how the variable names in the UI and Server look similar? They all have the name of the element ("prev_cols", "cols_visble", or "next_cols"), then the datatype, then the section where the element appears ("data_viewer"), all separated by an underscore. Now, rather than repeating these chunks of UI and Server for every single datatype, I made functions that will create these pieces for me:
+```{r eval=FALSE}
+# ui functions
+# The "extra tag" specifies the section for the element; it helps make the element unique
+col_navigation_set <- function(datatype, extra_tag = NULL) {
+  fluidRow(
+    column(4,
+      secondary_button(id = prev_col(datatype, extra_tag), label = div(PREV_ICON, "Previous columns"), class = "prev_cols")
+    ),
+    column(4,
+      div(textOutput(visible(datatype, extra_tag)), class = "center_align")
+    ),
+    column(4,
+      div(secondary_button(id = next_col(datatype, extra_tag), label = "Next columns", icon = NEXT_ICON, class = "next_cols"), class = "right_align")
+    )
+  )
+}
 # server functions
+# Uses the same "extra tag" as above
+col_navigation_set_server <- function(datatype, extra_tag = NULL) {
+  output[[visible(datatype, extra_tag)]] <- renderText({
+    paste("Showing", 
+          get_data_member(datatype, "viewing_subset")[1], "to", 
+          get_data_member(datatype, "viewing_subset")[2], "of", 
+          ncol(get_data_member(datatype, dataname(datatype))), 
+          "columns")
+  })
+}
 # ui
+col_navigation_set("clinical", "data_viewer")
 # server
+col_navigation_set_server("clinical", "data_viewer")
 ```
 2. The use of functions makes variable names very important
 
-You might have noticed how the functions above had to know a little bit about how the variables would be named in order to
+You might have noticed how the functions above had to know a little bit about how the variables would be named in order to reference them. For example, the server function had to know that the textOutput spot would start with "cols_visible" and end in the datatype and an extra tag. Rather than forcing the programmer to memorize this naming schema, I created functions that replicate the naming schema--for this example, a function called `visible` that creates the string `cols_visible_clinical_data_viewer` given the datatype `clinical` and the section `data_viewer`. Functions like this are also helpful when the programmer wants to change the naming schema. For example, if the programmer wanted to change the prefix from `cols_visible` to `view_subset`, they would simply need to change one line in`tidygeo_variables.R` rather than refactoring all of the ui and server code.
 
 3. Functions have error-checking in place
+
+This app currently only has four datatypes: clinical, assay, feature, and all, and if one references a datatype that does not exist, say they tried to call `expression_vals$viewing_subset`, they will get an error. Referencing the datatypes by hand (i.e. [datatype]`_vals$`[datatype]`_data`) will throw a generic "variable not found" error that may be difficult to track down, but using functions (i.e. get_data_member(datatype, dataname(datatype))) will make use of my built-in error checking that indicates which function caused the error and keeps the app from crashing.
 
 [&uarr; To top](#contents)
 
@@ -268,9 +319,28 @@ You might have noticed how the functions above had to know a little bit about ho
 
 ### Known bugs {#known-bugs}
 
+1. (none)
+
 ### TODO items {#todo-items}
 
+1. Loading assay data into the app is ridiculously slow because the loading function must perform the O(n^2) operation of checking whether each cell is a blank string " " and replacing it with NA if so.
+2. If the user wants to load the data into BRB array tools, the assay data can't have been transposed. There is currently nothing to prevent the user from doing this.
+3. There's not really a great way to deal with invalid column names when the user renames a column to something like "#$%^&*()". Currently the app just keeps the names, until any formatting is performed on the column, then the name might change to something like "V1....."
+
 ### Possible future features {#future-features}
+
+1. Sometimes, as is the case for GSE20181, datasets will have subsets of rows that should be treated differently from the other rows. Currently the app only supports edits on entire columns. Perhaps we could add a feature to select which rows the user would like to reformat.
+2. There are no data analysis options for the assay data. We could look into some common data analysis things like the ones BRB Array Tools expects the data to already have when it is loaded.
+3. There are very few formatting options for the feature data.
+4. We could add options to create graphs besides bar plots/histograms.
+5. We could add standardization options such as those that appear in GoodNomen.
+6. We could suggest certain edits based on what we find in the data. For example, if a column has a non-word character, we could suggest that the user split columns on a delimiter.
+7. If not all rows in a column contain a delimiter when the user wants to split the column, the entire column is not split. We could make this smarter so it only splits the rows that contain the delimiter and leaves the rest in the first column.
+8. There's probably a better way to summarize the data so the user can see what's in all the rows than the bar plots. The labels in the bar plots are often cut off so it's hard to see the unique values.
+9. We could add an option to transpose/summarize clinical data like in the assay data tab.
+10. We could make it so the series and platform lists don't have to be udpated manually.
+11. The rownames on the clinical data aren't really necessary since there's always a `geo_accession` column. We could drop the rownames and make the `geo_accession` column an ID like the IDs in the assay and feature data tabs.
+12. We could add a way to combine two different series.
 
 [&uarr; To top](#contents)
 
@@ -294,6 +364,18 @@ When I run into a tricky error, I make note of it in `error_log.md`, so when I e
 `renderUI`s are, in general, better than observes with `update[]Input`s in them. This is because observes are called more often--whenever their dependencies are updated--rather than only when we need to use them in the UI. I have a hypothesis, though, that with computationally-intensive UIs that we need to use often and that update often, an `update[]Input` might outperform a `renderUI` since it only has to update a part of the UI rather than render the entire thing again. However, I have never encountered a UI so difficult to render that `renderUI` lagged down the code. So IDK.
 
 ### Tips for time testing {#time-testing}
+
+There is an R package called profvis that can perform profiling for Shiny apps, i.e., it watches the app as the app runs and when the app stops, outputs data on which parts of the code took the longest and which were called the most. This package usually didn't work for me because the output file is too big (there are fixes for this that I found on Google but these worked once and stopped working). I usually just copy-and-pasted sections of code into `time_testing.R`, used Sys.time() calls before and after each section to check how long it took, and printed out the time to see how many times it was called. All the Sys.time() calls should be removed but there might be some I forgot about.
+```{r time_testing_example}
+
+start <- Sys.time()
+for (i in 1:10) {
+  Sys.sleep(0.1)
+}
+end <- Sys.time()
+print(end - start)
+
+```
 
 ### Other resources {#other-resources}
 

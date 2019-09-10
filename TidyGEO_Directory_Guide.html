@@ -539,7 +539,7 @@ summary {
 <div id="naming-conventions" class="section level4">
 <h4>Naming conventions</h4>
 <ol style="list-style-type: decimal">
-<li>Most variable and function names are all undercase with underscores separating the words. If you ever want to change this convention, please change the <code>SEP</code> variable in tidygeo_variables.R</li>
+<li>Most variable and function names are all undercase with underscores separating the words. If you ever want to change this convention, please change the <code>SEP</code> variable in <code>tidygeo_variables.R</code>.</li>
 <li>Much of the app is built using functions, and these functions use specific names to reference certain variable names in the app. Rather than having the programmer memorize how the functions reference the variable names, I created naming patterns in <code>tidygeo_variables.R</code> that define how certain types of variables are named. To change the naming pattern, one simply changes <code>tidygeo_variables.R</code> and all the variable names in the app will be updated. In this way, the naming conventions in <code>tidygeo_variables.R</code> also prevent extensive refactoring.</li>
 <li>In general, variables are named using three parts: the general name for the variable, the datatype the variable corresponds to (clinical, assay, feature, all), and some kind of extra tag to make that variable unique, in case it is used for the same datatype in multiple sections.</li>
 </ol>
@@ -562,22 +562,66 @@ summary {
 <ol style="list-style-type: decimal">
 <li>Pieces of UI often correspond to similarly-named pieces of Server.</li>
 </ol>
-<p>Just like you pair a textOutput in the UI with a renderText in the Server, I have created pieces of UI that correspond to pieces of the Server, and these corresponding pieces have similar names. One example is with the column navigation you might notice above each of the datatables in the app. The UI for the column navigation looks like this:</p>
-<pre class="r"><code>#ui</code></pre>
+<p>Just like you pair a <code>textOutput</code> in the UI with a <code>renderText</code> in the Server, I have created pieces of UI that correspond to pieces of the Server, and these corresponding pieces have similar names. One example is with the column navigation you might notice above each of the datatables in the app. The UI for the column navigation looks like this:</p>
+<pre class="r"><code>fluidRow( # A row for all these elements
+    column(4, # The &quot;previous columns&quot; button
+      secondary_button(id = &quot;prev_cols_clinical_data_viewer&quot;, label = div(PREV_ICON, &quot;Previous columns&quot;), class = &quot;prev_cols&quot;)
+    ),
+    column(4, # A spot for the text showing what subset the user is viewing
+      div(textOutput(&quot;cols_visible_clinical_data_viewer&quot;), class = &quot;center_align&quot;)
+    ),
+    column(4, # The &quot;next columns&quot; button
+      div(secondary_button(id = &quot;next_cols_clinical_data_viewer&quot;, label = &quot;Next columns&quot;, icon = NEXT_ICON, class = &quot;next_cols&quot;), class = &quot;right_align&quot;)
+    )
+  )</code></pre>
 <p>and the server looks like this:</p>
-<pre class="r"><code>#server</code></pre>
-<p>See how the variable names in the UI and Server look similar? Now, rather than repeating these chunks of UI and Server for every single datatype, I made functions that will create these pieces for me:</p>
-<pre class="r"><code># UI functions
+<pre class="r"><code># This fills in the spot with the text showing what subset the user is viewing
+output[[&quot;cols_visible_clinical_data_viewer&quot;]] &lt;- renderText({
+  paste(&quot;Showing&quot;, 
+        clinical_vals$viewing_subset[1], &quot;to&quot;,
+        clinical_vals$viewing_subset[2], &quot;of&quot;,
+        ncol(clinical_vals$clinical_data),
+        &quot;columns&quot;)
+})</code></pre>
+<p>See how the variable names in the UI and Server look similar? They all have the name of the element (“prev_cols”, “cols_visble”, or “next_cols”), then the datatype, then the section where the element appears (“data_viewer”), all separated by an underscore. Now, rather than repeating these chunks of UI and Server for every single datatype, I made functions that will create these pieces for me:</p>
+<pre class="r"><code># ui functions
+# The &quot;extra tag&quot; specifies the section for the element; it helps make the element unique
+col_navigation_set &lt;- function(datatype, extra_tag = NULL) {
+  fluidRow(
+    column(4,
+      secondary_button(id = prev_col(datatype, extra_tag), label = div(PREV_ICON, &quot;Previous columns&quot;), class = &quot;prev_cols&quot;)
+    ),
+    column(4,
+      div(textOutput(visible(datatype, extra_tag)), class = &quot;center_align&quot;)
+    ),
+    column(4,
+      div(secondary_button(id = next_col(datatype, extra_tag), label = &quot;Next columns&quot;, icon = NEXT_ICON, class = &quot;next_cols&quot;), class = &quot;right_align&quot;)
+    )
+  )
+}
 # server functions
+# Uses the same &quot;extra tag&quot; as above
+col_navigation_set_server &lt;- function(datatype, extra_tag = NULL) {
+  output[[visible(datatype, extra_tag)]] &lt;- renderText({
+    paste(&quot;Showing&quot;, 
+          get_data_member(datatype, &quot;viewing_subset&quot;)[1], &quot;to&quot;, 
+          get_data_member(datatype, &quot;viewing_subset&quot;)[2], &quot;of&quot;, 
+          ncol(get_data_member(datatype, dataname(datatype))), 
+          &quot;columns&quot;)
+  })
+}
 # ui
-# server</code></pre>
+col_navigation_set(&quot;clinical&quot;, &quot;data_viewer&quot;)
+# server
+col_navigation_set_server(&quot;clinical&quot;, &quot;data_viewer&quot;)</code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li>The use of functions makes variable names very important</li>
 </ol>
-<p>You might have noticed how the functions above had to know a little bit about how the variables would be named in order to</p>
+<p>You might have noticed how the functions above had to know a little bit about how the variables would be named in order to reference them. For example, the server function had to know that the textOutput spot would start with “cols_visible” and end in the datatype and an extra tag. Rather than forcing the programmer to memorize this naming schema, I created functions that replicate the naming schema–for this example, a function called <code>visible</code> that creates the string <code>cols_visible_clinical_data_viewer</code> given the datatype <code>clinical</code> and the section <code>data_viewer</code>. Functions like this are also helpful when the programmer wants to change the naming schema. For example, if the programmer wanted to change the prefix from <code>cols_visible</code> to <code>view_subset</code>, they would simply need to change one line in<code>tidygeo_variables.R</code> rather than refactoring all of the ui and server code.</p>
 <ol start="3" style="list-style-type: decimal">
 <li>Functions have error-checking in place</li>
 </ol>
+<p>This app currently only has four datatypes: clinical, assay, feature, and all, and if one references a datatype that does not exist, say they tried to call <code>expression_vals$viewing_subset</code>, they will get an error. Referencing the datatypes by hand (i.e. [datatype]<code>_vals$</code>[datatype]<code>_data</code>) will throw a generic “variable not found” error that may be difficult to track down, but using functions (i.e. get_data_member(datatype, dataname(datatype))) will make use of my built-in error checking that indicates which function caused the error and keeps the app from crashing.</p>
 <p><a href="#contents">↑ To top</a></p>
 <hr />
 </div>
@@ -586,12 +630,33 @@ summary {
 <h2>Next Steps</h2>
 <div id="known-bugs" class="section level3">
 <h3>Known bugs</h3>
+<ol style="list-style-type: decimal">
+<li>Loading assay data into the app is ridiculously slow because the loading function must perform the O(n^2) operation of checking whether each cell is a blank string &quot; &quot; and replacing it with NA if so.</li>
+<li>If the user wants to load the data into BRB array tools, the assay data can’t have been transposed. There is currently nothing to prevent the user from doing this.</li>
+<li>There’s not really a great way to deal with invalid column names when the user renames a column to something like “#$%^&amp;*()“.</li>
+<li>The wording for that “drop NA” checkbox in the feature modal in the assay data tab is kind of vague and confusing.</li>
+<li>When the assay data is not numeric, the error message is unclear on which functionality is not supported by the app.</li>
+</ol>
 </div>
 <div id="todo-items" class="section level3">
 <h3>TODO items</h3>
 </div>
 <div id="future-features" class="section level3">
 <h3>Possible future features</h3>
+<ol style="list-style-type: decimal">
+<li>Sometimes, as is the case for GSE____, datasets will have subsets of rows that should be treated differently from the other rows. Currently the app only supports edits on entire columns. Perhaps we could add a feature to select which rows the user would like to reformat.</li>
+<li>There are no data analysis options for the assay data. We could look into some common data analysis things like the ones BRB Array Tools expects the data to already have when it is loaded.</li>
+<li>There are very few formatting options for the feature data.</li>
+<li>We could add options to create graphs besides bar plots/histograms.</li>
+<li>We could add standardization options such as those that appear in GoodNomen.</li>
+<li>We could suggest certain edits based on what we find in the data. For example, if a column has a non-word character, we could suggest that the user split columns on a delimiter.</li>
+<li>If not all rows in a column contain a delimiter when the user wants to split the column, the entire column is not split. We could make this smarter so it only splits the rows that contain the delimiter and leaves the rest in the first column.</li>
+<li>There’s probably a better way to summarize the data so the user can see what’s in all the rows than the bar plots. The labels in the bar plots are often cut off so it’s hard to see the unique values.</li>
+<li>We could add an option to transpose/summarize clinical data like in the assay data tab.</li>
+<li>We could make it so the series and platform lists don’t have to be udpated manually.</li>
+<li>The rownames on the clinical data aren’t really necessary since there’s always a <code>geo_accession</code> column. We could drop the rownames and make the <code>geo_accession</code> column an ID like the IDs in the assay and feature data tabs.</li>
+<li>We could add a way to combine two different series.</li>
+</ol>
 <p><a href="#contents">↑ To top</a></p>
 <hr />
 </div>
@@ -671,6 +736,14 @@ Error in (function (name, val, shinysession)  :
 </div>
 <div id="time-testing" class="section level3">
 <h3>Tips for time testing</h3>
+<p>There is an R package called profvis that can perform profiling for Shiny apps, i.e., it watches the app as the app runs and when the app stops, outputs data on which parts of the code took the longest and which were called the most. This package usually didn’t work for me, so I copy-and-pasted sections of code into <code>time_testing.R</code>, used Sys.time() calls before and after each section to check how long it took, and printed out the time to see how many times it was called. All the Sys.time() calls should be removed but there might be some I forgot about.</p>
+<pre class="r"><code>start &lt;- Sys.time()
+for (i in 1:10) {
+  Sys.sleep(0.1)
+}
+end &lt;- Sys.time()
+print(end - start)</code></pre>
+<pre><code>## Time difference of 1.123718 secs</code></pre>
 </div>
 <div id="other-resources" class="section level3">
 <h3>Other resources</h3>

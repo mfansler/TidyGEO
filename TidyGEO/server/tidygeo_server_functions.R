@@ -157,6 +157,14 @@ get_assay_data <- function() {
   
   extracted_data <- withProgress(process_expression(values$allData, session = session), message = "Processing assay data")
   
+  
+  if (!extracted_data[["status"]]) {
+    # NOTE: It would seem that some alertIds are reserved ("parseError", for example), so if createAlert
+    # isn't working, try changing the alertId.
+    createAlert(session, anchorId = "alpha_alert", alertId = "nonnumeric", title = "Warning",
+                content = ASSAY_NONNUMERIC_MESSAGE, append = FALSE)
+  }
+  
   set_x_equalto_y("warning_state", extracted_data[["status"]], "assay")
   set_x_equalto_y("orig_data", extracted_data[["expressionData"]], "assay")
   
@@ -287,8 +295,8 @@ data_loaded <- function(datatype) {
 error_modal <- function(title, subtitle, error_message) {
   modalDialog(
     title = HTML(paste0('<font color="red">', title, '</font>')),
-    p(paste(subtitle, "Reason:"), style = "color:red"),
-    p(error_message, style = "color:red")
+    p(subtitle, style = "color:red"),
+    p(paste("Reason:", error_message), style = "color:red")
   )
 }
 

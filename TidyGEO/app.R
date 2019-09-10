@@ -1,26 +1,3 @@
-# A NOTE TO PROGRAMMERS WORKING WITH THIS APP
-# 
-# At first, you will not understand what my functions are doing and you will be tempted to do
-# things manually. I STRONGLY DISCOURAGE THIS as I have most things knit together just so.
-# Doing things manually will bypass the error checking I have set up and will likely be a
-# nightmare to debug. WHENEVER POSSIBLE, use existing functions to perform operations. These
-# functions can be found at the beginning of the server function, in tidygeo_functions.R,
-# in formatting_helper_functions.R, in help_modals.R, and in button_types.R. If you would like
-# to make a change, it would be MOST HELPFUL to change these functions rather than starting
-# from scratch.
-# 
-# Thanks,
-# A
-# 
-# Some more notes/discoveries for consideration
-# renderUIs are, in general, better than observes with update[]Inputs in them.
-# This is because observes are called more often--whenever their dependencies are
-# updated--rather than only when we need to use them in the UI. I have a hypothesis, though,
-# that with computationally-intensive UIs that we need to use often and that update often,
-# an update[]Input might outperform a renderUI since it only has to update a part of the UI
-# rather than render the entire thing again. However, I have never encountered a UI so
-# difficult to render that renderUI lagged down the code. So IDK.
-
 source("tidygeo_variables.R")
 source("tidygeo_functions.R")
 source("ui/tidygeo_ui_functions.R")

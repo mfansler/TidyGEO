@@ -91,6 +91,11 @@ INVALID_SECTION_MESSAGE <- paste0('Please specify a valid section (',
 # Icon used to represent assay data
 ASSAY_ICON <- icon("microscope")
 
+# A message to the user when the assay data is not numeric
+ASSAY_NONNUMERIC_MESSAGE <- paste("Some of the data is non-numeric.",
+                                  'This data cannot be summarized in the "Use different ID column" section.',
+                                  "For more data analysis options, feel free to download the data to edit with another application.")
+
 # The font size for the graphs
 BASE_SIZE <- 18
 
@@ -153,6 +158,14 @@ FUNC_LISTS <- readRDS("User/rscript_functions.rds")
 
 # An icon for help buttons
 HELP_ICON <- icon("question-circle")
+
+# A regex to find invalid characters for column names. 
+# These correspond to the characters not allowed in BRB array tools
+# files. See the BRB array tools documentation for more information.
+INVALID_NAME_CHARS <- "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]"
+
+# A replacement character for the invalid characters above
+VALID_REPLACEMENT <- "_"
 
 # An icon for links which lead outside the application
 LINK_OUT_ICON <- icon("external-link")

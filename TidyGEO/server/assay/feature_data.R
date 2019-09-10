@@ -35,13 +35,7 @@ observeEvent(input$expression_replace_id, {
       ),
       uiOutput("exprLabels"),
       uiOutput("summarizeOptions"),
-      checkboxInput(inputId = "feature_dropNA", label = div("Drop NA values", 
-                                                            help_button(paste("This drops the NA values from the",
-                                                                              "column you choose before replacing",
-                                                                              "the assay data ID column. This ensures",
-                                                                              "that there are no blank entries in",
-                                                                              "the ID column.")))),
-      
+      uiOutput("dropNA_if_exists"),
       footer = primary_button(id = "expression_evaluate_id", label = "Replace ID column"), 
       title = div("Choose a different column to use as the ID column", tertiary_button("close_feature_modal", "Cancel", class = "right_align")),
       size = "l",
@@ -96,26 +90,44 @@ output$exprLabels <- renderUI({
   )
 })
 
+new_assay_labels <- reactive({
+  if (!is.null(input$colForExprLabels) && input$colForExprLabels != "") {
+    get_data_member("feature", dataname("feature"))[, input$colForExprLabels]
+  }
+})
+
 output$summarizeOptions <- renderUI({
   if (!is.null(input$colForExprLabels) && input$colForExprLabels != "") {
-    new_expression_labels <- if (input$feature_dropNA) 
-      get_data_member("feature", dataname("feature"))[!is.na(input$colForExprLabels), input$colForExprLabels] 
-    else 
-      get_data_member("feature", dataname("feature"))[, input$colForExprLabels]
-    #browser()
-    can_summarize <- !is_all_unique(new_expression_labels)
+    can_summarize <-
+      if (!is.null(input$feature_dropNA) && input$feature_dropNA) {
+        !is_all_unique(new_assay_labels()[!is.na(new_assay_labels()),])
+      } else {
+        !is_all_unique(new_assay_labels())
+      }
     if (can_summarize) {
       choices <- if (get_data_member("assay", "warning_state")) c("keep all", "mean", "median", "max", "min") else c("keep all")
       selectInput("howToSummarize", label = div("It looks like this column maps to multiple ID values in the assay data.
                                                 How would you like to summarize the data?", 
-                                                help_button("Groups the data by ID and takes the specified measurement for the group.
-                                                            Please note that if you choose 'keep all' you will not be able to transpose
-                                                            the data.")), 
+                                                help_button(paste("Groups the data by ID and takes the specified measurement for the group.",
+                                                            "Please note that if you choose 'keep all', there will be duplicate entries",
+                                                            "in the ID column. These entries will be made unique by appending a '.[number]'",
+                                                            "on the end of them."))), 
                   choices = choices)
     }
     
   }
   })
+
+output$dropNA_if_exists <- renderUI({
+  if (!is.null(new_assay_labels()) && any(is.na(new_assay_labels()))) {
+    checkboxInput(inputId = "feature_dropNA", label = div("Drop NA values", 
+                                                          help_button(paste("This drops the NA values from the",
+                                                                            "column you choose before replacing",
+                                                                            "the assay data ID column. This ensures",
+                                                                            "that there are no blank entries in",
+                                                                            "the ID column."))))
+  }
+})
 
 observeEvent(input$expression_evaluate_id, {
   

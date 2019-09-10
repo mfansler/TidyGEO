@@ -9,6 +9,16 @@ observeEvent(input$rename, {
   if (data_loaded("clinical")) {
     if (!input$rename_new_name %in% clinical_colnames()) {
       set_x_equalto_y("last_selected_rename", input$rename_new_name, "clinical")
+      
+      invalid_chars <- str_extract_all(input$rename_new_name, INVALID_NAME_CHARS)[[1]]
+      if (!identical(invalid_chars, character(0))) {
+        showModal(
+          error_modal("Warning", 
+                      paste0('Input "', input$rename_new_name, '" changed to "', str_replace_all(input$rename_new_name, INVALID_NAME_CHARS, VALID_REPLACEMENT), '".'), 
+                      paste0("Invalid characters (", paste0(unique(invalid_chars), collapse = ","), ") in new column name."))
+        )
+      }
+      
       status <- eval_function("clinical", "renameCols", 
                               list(input$colsToRename, input$rename_new_name), "rename column")
       if (status != SUCCESS) {
