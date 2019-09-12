@@ -3,6 +3,15 @@ output$expression_nameFile <- renderUI({
             value = get_filename("assay", input$geoID, input$expression_fileType))
 })
 
+assay_file_options <- reactive({
+  if (get_data_member("assay", id_col) == "colnames") SUPPORTED_FILE_TYPES[which(SUPPORTED_FILE_TYPES != "txt")] else SUPPORTED_FILE_TYPES
+})
+
+output$assay_file_type_select <- renderUI({
+  radioButtons("expression_fileType", div("File type:", help_link("assay", "files_help")), 
+               choices = assay_file_options())
+})
+
 output$expression_downloadData <- downloadHandler(
   filename = function() {
     input$expression_userFileName

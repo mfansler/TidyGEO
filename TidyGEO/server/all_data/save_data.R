@@ -16,6 +16,19 @@ observe({
                   value = suggested_filename())
 })
 
+filetype_choices <- reactive({
+  if (input$which_data_to_save == "all" || # the joined data (will likely contain transposed assay data)
+      ("assay" %in% datatypes_selected && get_data_member("assay", id_col) == "colnames")) { # transposed assay data
+    SUPPORTED_FILE_TYPES[which(SUPPORTED_FILE_TYPES != "txt")] # BRB Array Tools does not support transposed assay data
+    } else {
+      SUPPORTED_FILE_TYPES # All file types available when assay data not transposed
+    }
+})
+
+output$all_file_type_select <- renderUI({
+  radioButtons("all_file_type", div("File type:", help_link("all", "files_help")), filetype_choices())
+})
+
 output$all_evaluate_save <- downloadHandler(
   contentType = if (input$which_data_to_save == "zip") "application/gzip" else paste0("text/", input$all_file_type),
   filename = function() {

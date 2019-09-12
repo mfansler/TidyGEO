@@ -235,6 +235,13 @@ SUBSTITUTE_ICON <- icon("exchange-alt")
 # The string that will be returned when a function is evaluated successfully
 SUCCESS <- "completed"
 
+# File types that can be downloaded using the app
+SUPPORTED_FILE_TYPES <- c("Comma-separated file" = "csv", 
+                          "Tab-separated file" = "tsv", 
+                          "JSON" = "JSON", 
+                          "Excel" = "xlsx", 
+                          "Formatted for BRB Array Tools" = "txt")
+
 # An icon used to represent transposing a data frame
 TRANSPOSE_ICON <- icon("retweet")
 

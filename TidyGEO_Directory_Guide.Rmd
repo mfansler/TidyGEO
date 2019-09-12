@@ -35,6 +35,8 @@ options(tinytex.verbose = TRUE)
    + [Error log](#error-log)
    + [Shiny/R tips and observations](#observations)
    + [Tips for time testing](#time-testing)
+   + [Tips for screen recording GIFs](#gifs)
+   + [Tips for drawing logos](#logos)
    + [Other resources](#other-resources)
        - [On RMarkdown](#Rmarkdown-resource)
 
@@ -143,7 +145,7 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
     + `TidyGEO/`
         - Contains all the code
     + `TidyGEO_Directory_Guide.Rmd`
-       - This file
+        - This file
 * Level 1 - TidyGEO
     + `app.R`
         - sources all the R scripts from the ui and server directories
@@ -325,7 +327,24 @@ This app currently only has four datatypes: clinical, assay, feature, and all, a
 
 1. Loading assay data into the app is ridiculously slow because the loading function must perform the O(n^2) operation of checking whether each cell is a blank string " " and replacing it with NA if so.
 2. If the user wants to load the data into BRB array tools, the assay data can't have been transposed. There is currently nothing to prevent the user from doing this.
-3. There's not really a great way to deal with invalid column names when the user renames a column to something like "#$%^&*()". Currently the app just keeps the names, until any formatting is performed on the column, then the name might change to something like "V1....."
+3. Credit Nicke Manarin and ScreenToGif for the GIFs
+4. Update the following help documentation:
+    + About
+    + Apply Filters
+    + Different ID
+    + Divide Vars
+    + Download Data
+    + Exclude Vals
+    + Expression Data
+    + FAQ
+    + File Types (esp. on BRB Array Tools)
+    + Filter Data
+    + R Help
+    + Regular Expressions
+    + Shift cells
+    + Split vars
+    + Substitute vals
+    + Transpose
 
 ### Possible future features {#future-features}
 
@@ -376,6 +395,14 @@ end <- Sys.time()
 print(end - start)
 
 ```
+
+### Tips for screen recording GIFs {#gifs}
+
+I used the free software ScreenToGif developed by Nicke Manarin (we might consider crediting him somewhere in the app). It is available for download [here](https://www.screentogif.com/). It's pretty easy to use, and the help docs are self-explanatory. I recorded all the GIFs by running the app on my machine using Google Chrome.
+
+### Tips for drawing logos {#logos}
+
+I used the free, open-source software Inkscape to draw the arrow logo for TidyGEO. It is available for download [here](https://inkscape.org/release/inkscape-0.92.4/).
 
 ### Other resources {#other-resources}
 

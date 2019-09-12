@@ -4,9 +4,7 @@ tabPanel(title = SAVE_ICON, value = "8",
          p("You can also download the R script that produced this data. The R script allows you
            to replicate the steps you took so you can see how the data was obtained."),
          radioButtons("clinical_file_type", div("File type:", help_link("clinical", "files_help")), 
-                      choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                                  "JSON" = "JSON", "Excel" = "xlsx", "Formatted for BRB Array Tools" = "txt")),
-         p("BRB Array Tools", help_link("clinical", "brb_help")),
+                      choices = SUPPORTED_FILE_TYPES),
          uiOutput("clinical_display_filename"),
          tags$b("Download:"),
          fluidRow(

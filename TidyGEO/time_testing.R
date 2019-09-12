@@ -490,3 +490,36 @@ end_time <- Sys.time()
 print(paste("New process:", end_time - start_time))
 
 
+# process assay data - remove blanks --------------------------------------
+
+expressionSet <- load_series(geoID, platform_index, session = session)
+
+expression_raw <- assayData(expressionSet)$exprs
+
+# write to temp file, read from file
+
+if (nrow(expression_raw) == 1) {
+  expressionData <- expression_raw
+  expressionData[1,] <- replace_blank_cells(expressionData[1,])
+} else {
+  expressionData <- apply(expression_raw, 2, replace_blank_cells)
+}
+
+pass <- tryCatch({
+  if (nrow(expressionData) == 1) {
+    expressionData <- t(as.matrix(apply(expressionData, 2, as.numeric)))
+  } else {
+    expressionData <- apply(expressionData, 2, as.numeric)
+  }
+  TRUE
+}, warning = function(w) {
+  if (grepl("NAs introduced by coercion", w)) {
+    FALSE
+  }
+})
+
+expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
+
+if (nrow(expressionData) == 0) {
+  expressionData <- NULL
+}

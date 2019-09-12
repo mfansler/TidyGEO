@@ -4,8 +4,7 @@ tabPanel(title = icon("download"), value = "5",
   p("You can also download the R script that produced this data. The R script allows you
            to replicate the steps you took so you can see how the data was obtained."),
   radioButtons("feature_fileType", div("File type:", help_link("feature", "files_help")), 
-               choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                           "JSON" = "JSON", "Excel" = "xlsx", "Formatted for BRB Array Tools" = "txt")),
+               choices = SUPPORTED_FILE_TYPES),
   uiOutput("feature_nameFile"),
   tags$b("Download:"),
   fluidRow(

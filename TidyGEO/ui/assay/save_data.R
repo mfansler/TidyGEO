@@ -3,9 +3,7 @@ tabPanel(title = SAVE_ICON, value = "2",
          p("Here is where you can download the assay data to your computer."), 
          p("You can also download the R script that produced this data. The R script allows you
            to replicate the steps you took so you can see how the data was obtained."),
-         radioButtons("expression_fileType", div("File type:", help_link("assay", "files_help")), 
-                      choices = c("Comma-separated file" = "csv", "Tab-separated file" = "tsv", 
-                                  "JSON" = "JSON", "Excel" = "xlsx", "Formatted for BRB Array Tools" = "txt")),
+         uiOutput("assay_file_type_select"),
          uiOutput("expression_nameFile"),
          tags$b("Download:"),
          fluidRow(
