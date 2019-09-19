@@ -1,7 +1,45 @@
 
 # Libraries ---------------------------------------------------------------
 
+# Set this to true if running on a new machine, outside of a Docker container
+install_if_inexistent <- FALSE
+
 # The libraries used in the app
+suppressPackageStartupMessages({
+  # D
+  library(dplyr)
+  library(DT)
+  
+  # F
+  library(feather)
+  
+  # G
+  library(GEOquery)
+  library(ggplot2)
+  
+  # P
+  library(plotly)
+  
+  # R
+  library(RColorBrewer)
+  library(readr)
+  library(rhandsontable)
+  library(rlang)
+  library(rmarkdown)
+  
+  # S
+  library(shiny)
+  library(shinyBS)
+  library(shinycssloaders)
+  library(shinydashboard)
+  library(shinyjs)
+  library(shinyWidgets)
+  library(stringr)
+  
+  # T
+  library(tidyr)
+})
+
 libs <- c(
   # D
   "dplyr",
@@ -50,19 +88,23 @@ load_geoquery_if_exists <- rlang::expr(
 load_library_if_exists <- rlang::expr(
   if (!suppressWarnings(require(lib_name, quietly = TRUE, character.only = TRUE))) {
     install.packages(lib_name)
-    library(lib_name)
+    library(lib_name, character.only = TRUE)
   }
 )
 
 # Load all the libraries listed above
-suppressPackageStartupMessages({
-  lapply(libs, function(lib_name) {
-    if (lib_name == "GEOquery")
-      eval(load_geoquery_if_exists)
-    else
-      eval(load_library_if_exists)
-  })
-})
+# suppressPackageStartupMessages({
+#   lapply(libs, function(lib_name) {
+#     if (install_if_inexistent) {
+#       if (lib_name == "GEOquery")
+#         eval(load_geoquery_if_exists)
+#       else
+#         eval(load_library_if_exists)
+#     } else {
+#       library(lib_name, character.only = TRUE)
+#     }
+#   })
+# })
 
 
 # Global variables --------------------------------------------------------

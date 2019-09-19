@@ -492,12 +492,18 @@ print(paste("New process:", end_time - start_time))
 
 # process assay data - remove blanks --------------------------------------
 
-expressionSet <- load_series(geoID, platform_index, session = session)
+
+geoID <- "GSE2"
+platform_index <- "GSE2"
+in_app <- FALSE
+platforms <- read_feather("TidyGEO/www/series_list.feather")
+expressionSet <- load_series(geoID, platform_index)
 
 expression_raw <- assayData(expressionSet)$exprs
 
 # write to temp file, read from file
 
+start_time <- Sys.time()
 if (nrow(expression_raw) == 1) {
   expressionData <- expression_raw
   expressionData[1,] <- replace_blank_cells(expressionData[1,])
@@ -517,9 +523,20 @@ pass <- tryCatch({
     FALSE
   }
 })
+end_time <- Sys.time()
+
+print(paste("Old method:", end_time - start_time))
+
+start_time <- Sys.time()
+
+temp <- tempfile()
+
+write_tsv(as.data.frame(expression_raw), temp)
+
+expressionData2 <- read_tsv(temp, na=c("", "NA", " "))
+
+end_time <- Sys.time()
+
+print(paste("New method:", end_time - start_time))
 
 expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
-
-if (nrow(expressionData) == 0) {
-  expressionData <- NULL
-}

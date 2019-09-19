@@ -12,6 +12,7 @@ DataType <- function(datatype, ...) {
     viewing_min = 1,
     viewing_subset = c(1, MOVE_BY),
     user_pagelen = DEFAULT_PAGELEN,
+    user_startrow = 0,
     !!!list(...)
   )))
 }
@@ -382,7 +383,9 @@ table_for_col_navigation_server <- function(datatype, extra_tag = NULL, show_row
   output[[display(datatype, extra_tag)]] <- DT::renderDT({
     if (!is.null(get_data_member(datatype, dataname(datatype)))) {
       datatable(do.call(view(datatype), list()), filter = filter, rownames = show_rownames, 
-                options = c(BASIC_TABLE_OPTIONS, pageLength = get_data_member(datatype, "user_pagelen")))
+                options = c(BASIC_TABLE_OPTIONS, 
+                            pageLength = get_data_member(datatype, "user_pagelen"),
+                            displayStart = get_data_member(datatype, "user_startrow")))
     }
     else {
       empty_table(get_data_member(datatype, "display_default"))

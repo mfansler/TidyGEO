@@ -1,6 +1,7 @@
 app.html
 app.R
 tidygeo_functions.R
+tidygeo_variables.R
 VERSION
 User/rscript_functions.rds
 server/

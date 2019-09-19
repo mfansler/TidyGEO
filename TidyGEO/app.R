@@ -221,18 +221,34 @@ server <- function(input, output, session) {
       
       start <- min(ncol_data_to_move, current_subset + MOVE_BY + 1)
       end <- min(ncol_data_to_move, start + MOVE_BY)
-      eval(
-        expr(
-          `<-`(
-            !!get_data_member_expr(to_move, "user_pagelen"),
-            input[[paste0(display(next_col_source(input$next_cols_clicked)), "_state")]][["length"]]
-          )
-        )
-      )
       
-      eval(
-        expr(`<-`(!!get_data_member_expr(to_move, "viewing_subset"), c(start, end)))
+      set_x_equalto_y(
+        "user_pagelen",
+        input[[paste0(display(next_col_source(input$next_cols_clicked)), "_state")]][["length"]],
+        to_move
+        )
+      set_x_equalto_y(
+        "user_startrow",
+        input[[paste0(display(next_col_source(input$next_cols_clicked)), "_state")]][["start"]],
+        to_move
       )
+      #eval(
+      #  expr(
+      #    `<-`(
+      #      !!get_data_member_expr(to_move, "user_pagelen"),
+      #      input[[paste0(display(next_col_source(input$next_cols_clicked)), "_state")]][["length"]]
+      #    )
+      #  )
+      #)
+      
+      set_x_equalto_y(
+        "viewing_subset",
+        c(start, end),
+        to_move
+      )
+      #eval(
+      #  expr(`<-`(!!get_data_member_expr(to_move, "viewing_subset"), c(start, end)))
+      #)
     }
     session$sendCustomMessage("resetValue", "next_cols_clicked")
   })
@@ -250,18 +266,32 @@ server <- function(input, output, session) {
       end <- max(viewing_min, current_subset - MOVE_BY - 1)
       start <- max(viewing_min, end - MOVE_BY)
       
-      eval(
-        expr(
-          `<-`(
-            !!get_data_member_expr(to_move, "user_pagelen"),
-            input[[paste0(display(prev_col_source(input$prev_cols_clicked)), "_state")]][["length"]]
-          )
-        )
+      set_x_equalto_y(
+        "user_pagelen", 
+        input[[paste0(display(prev_col_source(input$prev_cols_clicked)), "_state")]][["length"]],
+        to_move)
+      set_x_equalto_y(
+        "user_startrow",
+        input[[paste0(display(prev_col_source(input$prev_cols_clicked)), "_state")]][["start"]],
+        to_move
       )
+      #eval(
+      #  expr(
+      #    `<-`(
+      #      !!get_data_member_expr(to_move, "user_pagelen"),
+      #      input[[paste0(display(prev_col_source(input$prev_cols_clicked)), "_state")]][["length"]]
+      #    )
+      #  )
+      #)
       
-      eval(
-        expr(`<-`(!!get_data_member_expr(to_move, "viewing_subset"), c(start, end)))
+      set_x_equalto_y(
+        "viewing_subset",
+        c(start, end),
+        to_move
       )
+      #eval(
+      #  expr(`<-`(!!get_data_member_expr(to_move, "viewing_subset"), c(start, end)))
+      #)
     }
     session$sendCustomMessage("resetValue", "prev_cols_clicked")
   })

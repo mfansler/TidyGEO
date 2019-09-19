@@ -3,7 +3,6 @@ in_app <- TRUE
 # Retrieve the platform information for a dataset -------------------------
 # Library dependencies: GEOquery; stringr
 # Function dependencies:
-# Variable dependencies:
 get_platforms <- function(geoID, session = NULL) {
   platforms <- NULL
   status <- tryCatch({
@@ -616,31 +615,24 @@ process_expression <- function(expressionSet, session = NULL) {
   
   if (in_app) incProgress(message = "Extracting expression data")
   expression_raw <- assayData(expressionSet)$exprs
-  if (in_app) incProgress(message = "Replacing blank values")
-  if (nrow(expression_raw) == 1) {
-    expressionData <- expression_raw
-    expressionData[1,] <- replace_blank_cells(expressionData[1,])
+  
+  if (in_app) incProgress(message = "Parsing expression data")
+  expressionData <- if (nrow(expression_raw) == 0) {
+    pass <- TRUE
+    NULL
   } else {
-    expressionData <- apply(expression_raw, 2, replace_blank_cells)
-  }
-  if (in_app) incProgress(message = "Formatting numeric data")
-  pass <- tryCatch({
-    if (nrow(expressionData) == 1) {
-      expressionData <- t(as.matrix(apply(expressionData, 2, as.numeric)))
-    } else {
-      expressionData <- apply(expressionData, 2, as.numeric)
-    }
-    TRUE
-  }, warning = function(w) {
-    if (grepl("NAs introduced by coercion", w)) {
-      FALSE
-    }
-  })
-  
-  expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
-  
-  if (nrow(expressionData) == 0) {
-    expressionData <- NULL
+    if (in_app) incProgress(message = "Writing to temporary file")
+    temp <- tempfile()
+    write_tsv(as.data.frame(expression_raw), temp)
+    
+    if (in_app) incProgress(message = "Reading from temporary file")
+    expressionData <- read_tsv(temp, na = c("", "NA", " "))
+    
+    if (in_app) incProgress(message = "Checking for numeric columns")
+    pass <- all(sapply(expressionData, class) == "numeric")
+    
+    if (in_app) incProgress(message = "Adding ID column")
+    cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
   }
   
   return(list("expressionData" = expressionData, "status" = pass))
