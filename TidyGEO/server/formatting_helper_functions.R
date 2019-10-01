@@ -148,7 +148,10 @@ load_series <- function(geoID, platform, session = NULL) {
 # Function dependencies:
 isAllNum <- function(metaData) {
   #toEvaluate <- metaData[which(!is.na(metaData)),]
-  toEvaluate <- na.omit(unlist(metaData))
+  if (typeof(metaData) == "list") {
+    metaData <- unlist(metaData)
+  }
+  toEvaluate <- na.omit(metaData)
   vals <- unique(toEvaluate)
   temp <- suppressWarnings(as.numeric(as.character(toEvaluate)))
   isNum <- all(is.numeric(temp)) && all(!is.na(temp)) && length(vals) > 2
@@ -159,6 +162,9 @@ isAllNum <- function(metaData) {
 # Library dependencies:
 # Function dependencies:
 is_all_unique <- function(my_list) {
+  if (typeof(my_list) == "list") {
+    my_list <- unlist(my_list)
+  }
   vals <- unique(my_list[which(!is.na(my_list))])
   return(length(vals) == length(my_list))
 }
@@ -167,6 +173,9 @@ is_all_unique <- function(my_list) {
 # Library dependencies:
 # Function dependencies:
 is_all_identical <- function(my_list) {
+  if (typeof(my_list) == "list") {
+    my_list <- unlist(my_list)
+  }
   vals <- unique(my_list[which(!is.na(my_list))])
   return(length(vals) == 1)
 }
@@ -621,18 +630,35 @@ process_expression <- function(expressionSet, session = NULL) {
     pass <- TRUE
     NULL
   } else {
-    if (in_app) incProgress(message = "Writing to temporary file")
-    temp <- tempfile()
-    write_tsv(as.data.frame(expression_raw), temp)
+    if (in_app) incProgress(message = "Parsing expressionSet object from GEO")
     
-    if (in_app) incProgress(message = "Reading from temporary file")
-    expressionData <- read_tsv(temp, na = c("", "NA", " "))
+    intermed_data <- if (typeof(expression_raw) != "double") {
+      if (in_app) incProgress(message = "Attempting to convert data to numeric")
+      result <- tryCatch({
+        if (nrow(expressionData) == 1) {
+          t(as.matrix(apply(expression_raw, 2, parse_double)))
+        } else {
+          apply(expression_raw, 2, parse_double)
+        }
+      }, warning = function(w) {
+        if (grepl("parsing failures", w)) {
+          NULL
+        }
+      })
+      if (all(is.null(result))) {
+        pass <- FALSE
+        expression_raw
+      } else {
+        pass <- TRUE
+        result
+      }
+    } else {
+      pass <- TRUE
+      expression_raw
+    }
     
-    if (in_app) incProgress(message = "Checking for numeric columns")
-    pass <- all(sapply(expressionData, class) == "numeric")
-    
-    if (in_app) incProgress(message = "Adding ID column")
-    cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
+    if (in_app) incProgress(message = "Structuring data")
+    cbind.data.frame("ID" = rownames(expression_raw), intermed_data, stringsAsFactors = FALSE)
   }
   
   return(list("expressionData" = expressionData, "status" = pass))

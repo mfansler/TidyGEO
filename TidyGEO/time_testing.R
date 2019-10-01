@@ -493,10 +493,9 @@ print(paste("New process:", end_time - start_time))
 # process assay data - remove blanks --------------------------------------
 
 
-geoID <- "GSE2"
-platform_index <- "GSE2"
+geoID <- "GSE8055"
+platform_index <- get_platforms("GSE8055")[1]
 in_app <- FALSE
-platforms <- read_feather("TidyGEO/www/series_list.feather")
 expressionSet <- load_series(geoID, platform_index)
 
 expression_raw <- assayData(expressionSet)$exprs
@@ -539,4 +538,25 @@ end_time <- Sys.time()
 
 print(paste("New method:", end_time - start_time))
 
+start_time <- Sys.time()
+
+pass <- tryCatch({
+  if (nrow(expressionData) == 1) {
+    expressionData3 <- t(as.matrix(apply(expression_raw, 2, parse_double)))
+  } else {
+    expressionData3 <- apply(expression_raw, 2, parse_double)
+  }
+  TRUE
+}, warning = function(w) {
+  if (grepl("parsing failures", w)) {
+    FALSE
+  }
+})
+
+end_time <- Sys.time()
+
+print(paste("New new method:", end_time - start_time))
+
 expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
+expressionData2 <- cbind.data.frame("ID" = rownames(expression_raw), expressionData2, stringsAsFactors = FALSE)
+expressionData3 <- cbind.data.frame("ID" = rownames(expression_raw), expressionData3, stringsAsFactors = FALSE)
