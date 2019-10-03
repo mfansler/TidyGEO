@@ -467,7 +467,6 @@ graphical_summary_server <- function(datatype, extra_tag = NULL) {
   # Create the actual plots associated with the plot names
   observe({
     if (!is.null(eval(data_expr))) {
-      browser()
       lapply(1:ncol(eval(data_expr)), function(i){
         if (!is_all_identical(eval(data_expr)[,i])) {
           is_all_numeric <- isAllNum(eval(data_expr)[i])

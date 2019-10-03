@@ -741,7 +741,7 @@ quickTranspose <- function(dataToTranspose, force = FALSE) {
 replaceID <- function(data, replacement, replaceCol, summaryOption, dropNA) {
   
   if (in_app) incProgress(message = "Formatting replacement")
-  if (dropNA) {
+  if (!is.null(dropNA) && dropNA) {
     replacementWRowNames <- replacement[!is.na(replacement[,replaceCol]), c("ID", replaceCol)]
   } else {
     replacementWRowNames <- replacement[, c("ID", replaceCol)]
