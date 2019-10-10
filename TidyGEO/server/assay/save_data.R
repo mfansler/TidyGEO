@@ -4,7 +4,7 @@ output$expression_nameFile <- renderUI({
 })
 
 assay_file_options <- reactive({
-  if (get_data_member("assay", id_col) == "colnames") SUPPORTED_FILE_TYPES[which(SUPPORTED_FILE_TYPES != "txt")] else SUPPORTED_FILE_TYPES
+  if (get_data_member("assay", "id_col") == "colnames") SUPPORTED_FILE_TYPES[which(SUPPORTED_FILE_TYPES != "txt")] else SUPPORTED_FILE_TYPES
 })
 
 output$assay_file_type_select <- renderUI({

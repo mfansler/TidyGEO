@@ -325,7 +325,7 @@ save_data <- function(myData, file, file_type, filenames = NULL) {
     else if (file_type == "tsv") {
       write.table(myData[[i]], files[i], sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
-    else if (file_type == "JSON") {
+    else if (file_type == "json") {
       library(jsonlite)
       
       myData[[i]] %>% toJSON() %>% write_lines(files[i])
@@ -357,8 +357,8 @@ save_rscript <- function(datatype, file, file_name, file_type) {
   lapply(1:length(datatype), function(i) {
     save_lines(commentify("save data"), datatype[i], "end", overwrite = TRUE)
     if (datatype[i] == "clinical") {
-      save_lines(c("clinical_data <- cbind(rownames(clinical_data), clinical_data)", 
-                   "colnames(clinical_data)[1] <- ''", 
+      save_lines(c("myData <- cbind(rownames(clinical_data), clinical_data)", 
+                   "colnames(myData)[1] <- ''", 
                    paste0("file <- ", format_string(file_name[i]))), 
                  "clinical", "end")
     }
@@ -370,7 +370,7 @@ save_rscript <- function(datatype, file, file_name, file_type) {
       save_lines(paste0("write.table(", datatype[i], "_data, file, sep = '\t', row.names = FALSE, col.names = TRUE, quote = FALSE)"), 
                  datatype[i], "end")
     }
-    else if (file_type == "JSON") {
+    else if (file_type == "json") {
       add_library("jsonlite", datatype[i])
       add_library("readr", datatype[i])
       save_lines(paste0(datatype[i], "_data %>% toJSON() %>% write_lines(file)"), 

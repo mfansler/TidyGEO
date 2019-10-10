@@ -18,7 +18,7 @@ ui <- dashboardPage(
                menuSubItem("Clinical data", icon = CLINICAL_ICON, tabName = "clinical_data"),
                menuSubItem("Assay data", icon = ASSAY_ICON, tabName = "assay_data"),
                menuSubItem("Feature data", icon = FEATURE_ICON, tabName = "feature_data"),
-               menuSubItem("All data", icon = ALL_ICON, tabName = "all_data")),
+               menuSubItem("Merge data", icon = ALL_ICON, tabName = "all_data")),
       menuItem("FAQ", tabName = "faq"),
       menuItem("About", tabName = "about")
     )
@@ -40,6 +40,7 @@ ui <- dashboardPage(
                  
                  # ** ** side panel --------------------------------------------------------------
                  sidebarPanel(
+                   TABS_MESSAGE,
                    tabsetPanel(id = "clinical_side_panel",
                                source(file.path("ui", "clinical", "1_select_cols.R"), local = TRUE)$value,
                                source(file.path("ui", "clinical", "2_shift_cells.R"), local = TRUE)$value,
@@ -69,6 +70,7 @@ ui <- dashboardPage(
                sidebarLayout(
                  #source(file.path("ui", "assay", "side_panel.R"), local = TRUE)$value, # sidebarPanel
                  sidebarPanel(
+                   TABS_MESSAGE,
                    tabsetPanel(id = "expression_side_panel", 
                                source(file.path("ui", "assay", "format_data.R"), local = TRUE)$value,
                                source(file.path("ui", "assay", "save_data.R"), local = TRUE)$value)
@@ -88,6 +90,7 @@ ui <- dashboardPage(
       tabItem(dataname("feature"),
                sidebarLayout(
                  sidebarPanel(
+                   TABS_MESSAGE,
                    tabsetPanel(id = "feature_side_panel",
                      source(file.path("ui", "feature", "feature_info.R"), local = TRUE)$value,
                      source(file.path("ui", "feature", "shift_cells.R"), local = TRUE)$value,
@@ -108,6 +111,7 @@ ui <- dashboardPage(
       tabItem(dataname("all"),
                sidebarLayout(
                  sidebarPanel(
+                   TABS_MESSAGE,
                    tabsetPanel(id = "all_data_options",
                      source(file.path("ui", "all_data", "filter_rows.R"), local = TRUE)$value,
                      source(file.path("ui", "all_data", "join_dfs.R"), local = TRUE)$value,
@@ -345,6 +349,7 @@ server <- function(input, output, session) {
   # ** feature data ---------------------------------------------------------------
 
   # ** ** side panel --------------------------------------------------------------
+  source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_cols.R"), local = TRUE)$value

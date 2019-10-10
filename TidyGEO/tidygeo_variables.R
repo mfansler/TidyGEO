@@ -280,9 +280,12 @@ SUCCESS <- "completed"
 # File types that can be downloaded using the app
 SUPPORTED_FILE_TYPES <- c("Comma-separated file" = "csv", 
                           "Tab-separated file" = "tsv", 
-                          "JSON" = "JSON", 
+                          "JSON" = "json", 
                           "Excel" = "xlsx", 
                           "Formatted for BRB Array Tools" = "txt")
+
+# A message above the tabset for all the operations you can perform for each datatype
+TABS_MESSAGE <- div(icon("arrow-left"), " tools (visit in any order) ", icon("arrow-right"), align = "center")
 
 # An icon used to represent transposing a data frame
 TRANSPOSE_ICON <- icon("retweet")

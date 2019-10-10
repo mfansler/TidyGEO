@@ -131,7 +131,7 @@ load_series <- function(geoID, platform, session = NULL) {
       } else {
         title <- "Success!"
         content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
-        to see the data."
+        to begin working with the data."
       }
       createAlert(session, "alert", "fileError", title = title,
                   content = content, append = FALSE)
@@ -470,7 +470,7 @@ filterCols <- function(metaData, varsToKeep) {
 # Function dependencies:
 renameCols <- function(metaData, old_name, new_name) {
   if (old_name %in% colnames(metaData)) {
-    new_name <- str_replace_all(new_name, INVALID_NAME_CHARS, VALID_REPLACEMENT)
+    new_name <- str_replace_all(new_name, "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!]", "_")
     colnames(metaData)[which(colnames(metaData) == old_name)] <- new_name
   }
   return(metaData)

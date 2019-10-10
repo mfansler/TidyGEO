@@ -81,7 +81,8 @@ observeEvent(get_input(nav("1", "2", "all")), {
 
 filter_rows_ui <- tagList(
   h4("Matching up datasets"),
-  p("Here is a preview of the first ten rows of each column you have selected to match."),
+  p(paste("Here is a preview of the first ten rows of each column you have selected to match.",
+          "To actually merge the datasets, please use the join tool in the next tab.")),
   br(),
   fluidRow(
     column(4,

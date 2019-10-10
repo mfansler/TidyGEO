@@ -117,7 +117,7 @@ join_dfs_ui <- tagList(
   h4("Joining datasets"),
   p(paste("Here is a representation of the join you are about to perform. You will notice that you can join up to two",
           "times for a total of three joined datasets. If you have only selected one dataset, no joins will be performed",
-          "but \"all data\" will consist of the one dataset you have selected.", 
+          "but \"joined data\" will consist of the one dataset you have selected.", 
           "Blank boxes are placeholders that will not affect the final join.")),
   br(),
   fluidRow(

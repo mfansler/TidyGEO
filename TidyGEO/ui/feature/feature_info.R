@@ -11,6 +11,6 @@ tabPanel(title = icon("question-circle"), value = "1",
            genes, transcripts, exons, etc. to the corresponding probe sets in the assay data.'),
          hr(),
          div(
-           tertiary_button("back_to_assay", div(icon("arrow-left"), "Back to assay data")),
-           secondary_button("start_feature_format", div("Get started", icon("arrow-right")), class = "right_align"))
+           tertiary_button(nav("1", "assay", "feature"), div(PREV_ICON, "Back to assay data")),
+           secondary_button(nav("1", "2", "feature"), div("Get started", NEXT_ICON), class = "right_align"))
          )
