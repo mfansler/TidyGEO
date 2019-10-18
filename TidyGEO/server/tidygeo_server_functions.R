@@ -472,6 +472,7 @@ graphical_summary_server <- function(datatype, extra_tag = NULL) {
           is_all_numeric <- isAllNum(eval(data_expr)[i])
           if (!is_all_unique(eval(data_expr)[,i]) || is_all_numeric) {
             output[[ make.names(colnames(eval(data_expr))[i]) ]] <- renderPlotly({
+              # Please see "create_plot" definition for notes on speed.
               suppressWarnings(create_plot(
                 as.character(eval(data_expr)[,i]), 
                 get_input(paste(datatype, extra_tag, "plot", "color", sep = SEP)), 
@@ -498,6 +499,7 @@ graphical_summary_server <- function(datatype, extra_tag = NULL) {
         modalDialog(
           sliderInput(paste(datatype, extra_tag, "plot", "width", sep = SEP), label = paste0("Image width (", PLOT_UNITS, "):"), min = 20, max = 100, value = 60),
           sliderInput(paste(datatype, extra_tag, "plot", "height", sep = SEP), label = paste0("Image height (", PLOT_UNITS, "):"), min = 20, max = 100, value = 60),
+          sliderInput(paste(datatype, extra_tag, "plot", "text", "size", sep = SEP), label = "Font size (pt)", min = 8, max = 64, value = 14),
           radioButtons(paste(datatype, extra_tag, "plot", "filetype", sep = SEP), label = "File type:", choices = c("PDF" = "pdf", "JPG" = "jpg", "PNG" = "png")),
           downloadButton(paste(datatype, extra_tag, "plot", "download", sep = SEP)),
           footer = modalButton("Close")
@@ -519,7 +521,8 @@ graphical_summary_server <- function(datatype, extra_tag = NULL) {
         eval(data_expr)[,get_data_member(datatype, "plot_to_save")], 
         get_input(paste(datatype, extra_tag, "plot", "color", sep = SEP)), 
         get_input(paste(datatype, extra_tag, "binwidths", sep = SEP)), 
-        colnames(eval(data_expr))[get_data_member(datatype, "plot_to_save")], 
+        colnames(eval(data_expr))[get_data_member(datatype, "plot_to_save")],
+        get_input(paste(datatype, extra_tag, "plot", "text", "size", sep = SEP)),
         isAllNum(eval(data_expr)[get_data_member(datatype, "plot_to_save")]))
       
       ggsave(

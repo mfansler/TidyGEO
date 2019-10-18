@@ -6,7 +6,7 @@ tabPanel(title = FILTER_ICON, value = "1",
            and drop the rest. You may either use preset filters that will detect commonly-dropped
            columns, or select specific columns to keep."),
          radioButtons(inputId = "filter_option", label = div("Please select an option:", help_link("clinical", "filter_help")),
-                      choices = c("Use preset filters" = "preset_filters",
+                      choices = c("Use preset filters (see options below)" = "preset_filters",
                                   "Select columns by column name" = "column_filters")),
          conditionalPanel(condition = "input.filter_option == 'preset_filters'",
                           div(tags$b("Preset filters"),

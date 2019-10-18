@@ -375,6 +375,19 @@ server <- function(input, output, session) {
   # ** help modals -------------------------------------------------------------
   
   source(file.path("server", "help_modals.R"), local = TRUE)$value
+  
+  # allowReconnect sends all the previous inputs to the new session
+  # this means that if the disconnect was caused by an error, the error will happen again
+  # this causes the session to keep disconnecting and reconnecting
+  # this is an attempt to clear the error-causing inputs so we only reconnect once
+  session$onSessionEnded(function(){
+    err <- last_error()
+    if (err$message != "Can't show last error because no error was recorded yet") { # an error caused the disconnect
+      # reset everything
+      session$input <- NULL
+    }
+    # else, the disconnect was likely just a regular time-out
+  })
 }
 
 shinyApp(ui = ui, server = server)

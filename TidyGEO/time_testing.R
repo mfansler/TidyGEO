@@ -560,3 +560,69 @@ print(paste("New new method:", end_time - start_time))
 expressionData <- cbind.data.frame("ID" = rownames(expression_raw), expressionData, stringsAsFactors = FALSE)
 expressionData2 <- cbind.data.frame("ID" = rownames(expression_raw), expressionData2, stringsAsFactors = FALSE)
 expressionData3 <- cbind.data.frame("ID" = rownames(expression_raw), expressionData3, stringsAsFactors = FALSE)
+
+
+# graphing with exprs vs adding -------------------------------------------
+
+BASE_HISTOGRAM2 <- ggplot() +
+  labs(x = "Values",
+       y = "Frequency") +
+  theme_bw(base_size = base_size) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+BASE_HISTOGRAM <- ggplot() +
+  labs(x = "Values",
+       y = "Frequency")
+
+BASE <- expr(ggplot() +
+  labs(x = "Values",
+       y = "Frequency") +
+  theme_bw(base_size = base_size) +
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                 binwidth = plot_binwidth, fill = plot_color) +
+  ggtitle(title))
+
+BASE_HYBRID <- expr(ggplot() +
+  labs(x = "Values",
+       y = "Frequency") +
+    theme_bw(base_size = base_size) +
+    theme(plot.title = element_text(hjust = 0.5))
+)
+
+variable <- rnorm(10000)
+title <- "My title"
+plot_color <- "blue"
+plot_binwidth <- 1
+base_size <- 14
+
+start_time <- Sys.time()
+BASE_HISTOGRAM2 +
+  geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                 binwidth = plot_binwidth, fill = plot_color) +
+  ggtitle(title)
+end_time <- Sys.time()
+print(paste("Old2", end_time - start_time))
+
+start_time <- Sys.time()
+BASE_HISTOGRAM +
+  theme_bw(base_size = base_size) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                 binwidth = plot_binwidth, fill = plot_color) +
+  ggtitle(title)
+end_time <- Sys.time()
+print(paste("Old", end_time - start_time))
+
+start_time <- Sys.time()
+eval(BASE)
+end_time <- Sys.time()
+print(paste("New", end_time - start_time))
+
+start_time <- Sys.time()
+eval(BASE_HYBRID) +
+  geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
+                 binwidth = plot_binwidth, fill = plot_color) +
+  ggtitle(title)
+end_time <- Sys.time()
+print(paste("Hybrid", end_time - start_time))

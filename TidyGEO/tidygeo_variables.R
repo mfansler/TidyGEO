@@ -149,12 +149,29 @@ BASE_BARPLOT <- ggplot() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
                  plot.title = element_text(hjust = 0.5))
 
+BASE_BARPLOT_TO_SAVE <- expr(
+  ggplot() +
+    labs(x = "Values",
+         y = "Count") +
+    theme_bw(base_size = base_size) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+          plot.title = element_text(hjust = 0.5))
+)
+
 # A template for the histograms in the graphical summary
 BASE_HISTOGRAM <- ggplot() +
   labs(x = "Values",
                 y = "Frequency") +
   theme_bw(base_size = BASE_SIZE) +
   theme(plot.title = element_text(hjust = 0.5))
+
+BASE_HISTOGRAM_TO_SAVE <- expr(
+  ggplot() +
+    labs(x = "Values",
+         y = "Frequency") +
+    theme_bw(base_size = base_size) +
+    theme(plot.title = element_text(hjust = 0.5))
+)
 
 # Formatting specifications passed to the "options" parameter of most tables in the app
 BASIC_TABLE_OPTIONS <- list(

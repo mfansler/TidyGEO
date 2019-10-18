@@ -244,7 +244,11 @@ shorten_labels <- function(label, max_char) {
 
 # ** create plot to display -----------------------------------------------
 create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FALSE) {
-  
+  # This method of creating a base and adding interchangeable elements
+  # is the fastest method I have found (testing against rendering entire plot
+  # each time or using eval/expr pair with updated environment). If you want the user to have more
+  # power to change the base plot, you will have to add more interchangeable elements which will
+  # increase the amount of time it will take to render the plot.
   if (is_numeric) {
     p <- BASE_HISTOGRAM + 
       geom_histogram(data = data.frame(value = as.numeric(as.character(value))), aes(x = value),
@@ -262,16 +266,16 @@ create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FA
 }
 
 # ** create plot to download ----------------------------------------------
-create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, is_numeric = FALSE) {
+create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, base_size = BASE_SIZE, is_numeric = FALSE) {
   
   if (is_numeric) {
-    BASE_HISTOGRAM + 
+    eval(BASE_HISTOGRAM_TO_SAVE) + 
       geom_histogram(data = data.frame(measured = as.numeric(as.character(variable))), aes(x = measured),
                      binwidth = plot_binwidth, fill = plot_color) +
       ggtitle(title)
   }
   else {
-    BASE_BARPLOT +
+    eval(BASE_BARPLOT_TO_SAVE) +
       geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
                stat = "identity", fill = plot_color) +
       ggtitle(title) +

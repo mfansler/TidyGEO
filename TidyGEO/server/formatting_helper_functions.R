@@ -632,25 +632,29 @@ process_expression <- function(expressionSet, session = NULL) {
   } else {
     if (in_app) incProgress(message = "Parsing expressionSet object from GEO")
     
-    intermed_data <- if (typeof(expression_raw) != "double") {
+    intermed_data <- if (typeof(expression_raw) != "double") { # only attempt to convert if character
       if (in_app) incProgress(message = "Attempting to convert data to numeric")
       result <- tryCatch({
         if (nrow(expressionData) == 1) {
+          # apply does weird things to datasets with only 1 row
           t(as.matrix(apply(expression_raw, 2, parse_double)))
         } else {
+          # parse_double simultaneously gets rid of extra spaces and converts to numeric
+          # this is faster than writing to a temp file and reading back with read_csv
+          # and faster than getting rid of spaces and using as.numeric
           apply(expression_raw, 2, parse_double)
         }
-      }, warning = function(w) {
+      }, warning = function(w) { # some of the data is non-numeric
         if (grepl("parsing failures", w)) {
           NULL
         }
       })
-      if (all(is.null(result))) {
+      if (all(is.null(result))) { # the data was not converted to numeric
         pass <- FALSE
-        expression_raw
+        expression_raw # keep the original data
       } else {
         pass <- TRUE
-        result
+        result # use the converted data
       }
     } else {
       pass <- TRUE
