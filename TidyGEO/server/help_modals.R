@@ -27,6 +27,26 @@ help_modal <- function(help_file, images = NULL, image_names = NULL) {
   #print(paste("Creating help modal", end_time - start_time))
 }
 
+#help_modal_server <- function() {
+#  toggleModal(session, 'columnModal', toggle = "open")
+#}
+
+help_modal_ui <- function(trigger, help_file, images = NULL, image_names = NULL) {
+  title = read_lines(help_file, n_max = 1)
+  eval(
+    bsModal(
+      id = make.names(title),
+      title = title,
+      trigger = trigger,
+      includeMarkdown(help_file),
+      conditionalPanel(
+        condition = !is.null(images),
+        #uiOutput(images_id)
+        create_image_grid(images, image_names)
+      )
+    ), envir = parent.frame())
+}
+
 #' .
 #'
 #' @param images .
@@ -128,13 +148,14 @@ observeEvent(input$transpose_help_clicked, {
   help_modal("help_docs/Transpose_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "transpose_help_clicked")
 })
-observeEvent(input$filter_help_clicked, {
-  images <- c("filter_presets_example.gif", "filter_by_name_example.gif")
-  image_names <- c("Demo - Filter using Presets", "Demo - Filter by Name")
-  
-  help_modal("help_docs/Filter_Data_Documentation.md", images, image_names)
-  session$sendCustomMessage("resetValue", "filter_help_clicked")
-})
+
+#observeEvent(input$filter_help_clicked, {
+#  images <- c("filter_presets_example.gif", "filter_by_name_example.gif")
+#  image_names <- c("Demo - Filter using Presets", "Demo - Filter by Name")
+#  
+#  help_modal("help_docs/Filter_Data_Documentation.md", images, image_names)
+#  session$sendCustomMessage("resetValue", "filter_help_clicked")
+#})
 
 observeEvent(input$evaluate_filters_help_clicked, {
   images <- c("apply_filters_example.gif")

@@ -3,6 +3,8 @@ source("tidygeo_functions.R")
 source("ui/tidygeo_ui_functions.R")
 source("server/formatting_helper_functions.R")
 
+source(file.path("server", "help_modals.R"))
+
 options(shiny.autoreload = F)
 
 # UI ----------------------------------------------------------------------
@@ -374,7 +376,7 @@ server <- function(input, output, session) {
   
   # ** help modals -------------------------------------------------------------
   
-  source(file.path("server", "help_modals.R"), local = TRUE)$value
+  #source(file.path("server", "help_modals.R"), local = TRUE)$value
   
   # allowReconnect sends all the previous inputs to the new session
   # this means that if the disconnect was caused by an error, the error will happen again
