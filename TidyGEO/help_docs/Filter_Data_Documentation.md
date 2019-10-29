@@ -1,5 +1,3 @@
-## Selecting informative columns
-
 Upon loading the clinical data, you may notice some columns that are not useful for your research purposes. Here, you can drop those columns from the data. There are some preset options for columns to exclude, which are:
 
 * *Columns in which every row has the same value*

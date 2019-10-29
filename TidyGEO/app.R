@@ -375,6 +375,22 @@ server <- function(input, output, session) {
   
   
   # ** help modals -------------------------------------------------------------
+  # 
+  observeEvent(input$clickimg, {
+    #start_time <- Sys.time()
+    showModal(
+      modalDialog(
+        tags$img(src = input$clickimg, width = "100%", height = "100%"),
+        # add logic for "next" and "back" buttons for addtl. images
+        # add logic to return scrolling ability to bsModal upon closing (currently returns scrolling to main app)
+        size = "l",
+        easyClose = TRUE
+      )
+    )
+    #end_time <- Sys.time()
+    #print(paste("Creating enlarged image modal", end_time - start_time))
+    session$sendCustomMessage("resetValue", "clickimg")
+  }, ignoreInit = TRUE)
   
   #source(file.path("server", "help_modals.R"), local = TRUE)$value
   
