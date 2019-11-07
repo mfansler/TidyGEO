@@ -58,7 +58,7 @@ observeEvent(input$download_data_evaluate, {
   
   values$allData <- withProgress(
     load_series(input$geoID, platform_index, session = session), 
-    message = "Downloading series data from GEO")
+    message = "Downloading series data from GEO (this may take awhile)")
   clinical_vals[[dataname("clinical")]] <- NULL
   assay_vals[[dataname("assay")]] <- NULL
   feature_vals[[dataname("feature")]] <- NULL
