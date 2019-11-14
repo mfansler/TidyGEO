@@ -148,8 +148,18 @@ observeEvent(input$transpose_help_clicked, {
 })
 
 observeEvent(input$filter_help_clicked, {
- images <- c("filter_presets_example.gif", "filter_by_name_example.gif")
- image_names <- c("Demo - Filter using Presets", "Demo - Filter by Name")
+ images <- c("filter_allsame_example.gif", 
+             "filter_unique_example.gif", 
+             "filter_date_example.gif", 
+             "filter_webaddress_example.gif", 
+             "filter_presets_steps_example.gif", 
+             "filter_columnname_example.gif")
+ image_names <- c("Demo - Columns that are All the Same", 
+                  "Demo - Columns that are All Unique",
+                  "Demo - Columns that Contain a Date",
+                  "Demo - Columns that are a Web Address",
+                  "Demo - Filter Using Presets",
+                  "Demo - Filter by Column Name")
 
  help_modal("help_docs/Filter_Data_Documentation.md", images, image_names)
  session$sendCustomMessage("resetValue", "filter_help_clicked")
