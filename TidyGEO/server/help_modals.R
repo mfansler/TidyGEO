@@ -69,24 +69,24 @@ create_image_grid <- function(images, image_names) {
 # listeners ---------------------------------------------------------------
 
 observeEvent(input$shift_help_clicked, {
-  images <- c("shift_cells_example.gif")
-  image_names <- c("Demo - Shift Cells")
+  images <- c("shift_cells_example.gif", "shift_cells_example_part2.gif", "shift_cells_example_part3.gif")
+  image_names <- c("Demo - Cells to Shift", 'Demo - "From" vs "Into"', "Demo - Cell Shift Result")
 
   help_modal("help_docs/Shift_Cells_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "shift_help_clicked")
 })
 
 observeEvent(input$split_help_clicked, {
-  images <- c("separate_example.gif")
-  image_names <- c("Demo - Separate Columns")
+  images <- c("split_pairs1.gif", "split_pairs2.gif", "split_pairs3.gif")
+  image_names <- c("Demo - Key/Value Pairs", "Demo - Delimiter", "Demo - Split Result")
 
   help_modal("help_docs/Split_Vars_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "split_help_clicked")
 })
 
 observeEvent(input$divide_help_clicked, {
-  images <- c("divide_example.gif")
-  image_names <- c("Demo - Divide Columns")
+  images <- c("split_cols1.gif", "split_cols2.gif")
+  image_names <- c("Demo - Different Values", "Demo - Delimiter")
 
   help_modal("help_docs/Divide_Vars_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "divide_help_clicked")
@@ -101,7 +101,7 @@ observeEvent(input$substitute_help_clicked, {
 })
 
 observeEvent(input$regex_help_clicked, {
-  values$regex_dt <- allowed_datatypes[which(str_detect(input$regex_help_clicked, allowed_datatypes))]
+  values$regex_dt <- ALLOWED_DATATYPES[which(str_detect(input$regex_help_clicked, ALLOWED_DATATYPES))]
   if (identical(values$regex_dt, character(0))) {
     stop("Error in opening regex modal. The button that called the modal is not tagged with a valid datatype.")
   } else {
@@ -119,7 +119,7 @@ observeEvent(input$exclude_help_clicked, {
 })
 
 observeEvent(input$download_help_clicked, {
-  images <- c("download_data_example_part1.gif", "download_data_example_part2.gif", "download_data_example_part3.gif")
+  images <- c("download_data_example_part1.gif", "download_example_part2.gif", "download_example_part3.gif")
   image_names <- c("Demo - Load Series and View Publication Info", "Demo - Import Series from GEO", "Demo - Next Steps")
 
   help_modal("help_docs/Download_Data_Documentation.md", images, image_names)

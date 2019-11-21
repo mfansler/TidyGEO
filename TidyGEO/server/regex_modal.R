@@ -22,7 +22,7 @@ showModal(
 )
 
 selected_regex_dt <- reactive(
-  eval(get_datatype_expr(values$regex_dt))
+  get_data_member(values$regex_dt, "data")
 )
 
 output$choose_col_to_test <- renderUI({
