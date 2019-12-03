@@ -85,8 +85,8 @@ observeEvent(input$split_help_clicked, {
 })
 
 observeEvent(input$divide_help_clicked, {
-  images <- c("split_cols1.gif", "split_cols2.gif")
-  image_names <- c("Demo - Different Values", "Demo - Delimiter")
+  images <- c("split_cols1.gif", "split_cols2.gif", "split_cols3.gif")
+  image_names <- c("Demo - Different Values", "Demo - Delimiter", "Demo - Split Result")
 
   help_modal("help_docs/Divide_Vars_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "divide_help_clicked")
