@@ -16,11 +16,10 @@ ui <- dashboardPage(
   dashboardSidebar(collapsed = TRUE,
     sidebarMenu(id = "top_level",
       menuItem("Choose dataset", tabName = "choose_dataset"),
-      menuItem("Process data", tabName = "process_data",
-               menuSubItem("Clinical data", icon = CLINICAL_ICON, tabName = "clinical_data"),
-               menuSubItem("Assay data", icon = ASSAY_ICON, tabName = "assay_data"),
-               menuSubItem("Feature data", icon = FEATURE_ICON, tabName = "feature_data"),
-               menuSubItem("Merge data", icon = ALL_ICON, tabName = "all_data")),
+      menuItem("Clinical data", icon = CLINICAL_ICON, tabName = "clinical_data"),
+      menuItem("Assay data", icon = ASSAY_ICON, tabName = "assay_data"),
+      menuItem("Feature data", icon = FEATURE_ICON, tabName = "feature_data"),
+      menuItem("Merge data", icon = ALL_ICON, tabName = "all_data"),
       menuItem("FAQ", tabName = "faq"),
       menuItem("About", tabName = "about")
     )
@@ -130,13 +129,15 @@ ui <- dashboardPage(
       # ** FAQ ---------------------------------------------------------------------
       
       tabItem("faq",
-               includeMarkdown("help_docs/FAQ.md")
+              div("FAQ", class = "fancy-header"),
+              includeMarkdown("help_docs/FAQ.md")
       ),
       # ** about page --------------------------------------------------------------
       
       tabItem("about",
-               h2(paste("Version:", VERSION)),
-               includeMarkdown("help_docs/About.md")
+              div("About", class = "fancy-header"),
+              h2(paste("Version:", VERSION)),
+              includeMarkdown("help_docs/About.md")
       )
     )
   )

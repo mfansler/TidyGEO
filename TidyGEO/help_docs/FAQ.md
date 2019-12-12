@@ -1,7 +1,3 @@
-FAQ
----------------------
-
-
 ### <a name="contents"></a>Contents
 
 1. [Importing the data](#importing-the-data)

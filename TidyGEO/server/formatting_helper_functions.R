@@ -130,8 +130,7 @@ load_series <- function(geoID, platform, session = NULL) {
         content <- unlist(status)
       } else {
         title <- "Success!"
-        content <- "Series data successfully downloaded. Please continue to Clinical data and Assay data tabs
-        to begin working with the data."
+        content <- "Series data successfully downloaded. You may now work with the Clinical and/or Assay data using the buttons and menu options to the left."
       }
       createAlert(session, "alert", "fileError", title = title,
                   content = content, append = FALSE)

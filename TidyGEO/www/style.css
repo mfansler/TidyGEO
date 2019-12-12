@@ -12,36 +12,56 @@
 
 /* navbar (rest of the header) */
 .skin-blue .main-header .navbar {
-                      background-color: #337ab7;
-                      } 
+                      background: transparent linear-gradient(to right, #337ab7 0%, #2ca25f 100%) repeat scroll 0% 0%;
+                      }
                       
 
 /* main sidebar */
-.skin-blue .main-sidebar {
+/*.skin-blue .main-sidebar {
                       background-color: #337ab7;
-                      }
+                      }*/
 
 /* active selected tab in the sidebarmenu */
-.skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
+/*.skin-blue .main-sidebar .sidebar .sidebar-menu .active a{
                       background-color: #6baed6;
-                      }
+                      }*/
                       
 
 /* other links in the sidebarmenu */
-.skin-blue .main-sidebar .sidebar .sidebar-menu a{
+/*.skin-blue .main-sidebar .sidebar .sidebar-menu a{
                       background-color: #337ab7;
                       color: #fff;
-                      }
+                      }*/
 
 /* other links in the sidebarmenu when hovered */
- .skin-blue .main-sidebar .sidebar .sidebar-menu a:hover{
+/*.skin-blue .main-sidebar .sidebar .sidebar-menu a:hover{
                       background-color: #6baed6;
-                      }
+                      }*/
                       
 /* toggle button when hovered  */                    
  .skin-blue .main-header .navbar .sidebar-toggle:hover{
                       background-color: #6baed6;
                       }
+
+.fancy-header {
+  background-image: url("fancy_header.png");
+  background-repeat:no-repeat;
+  background-size:cover;
+  height:200px;
+  width:100%;
+  font-size: 100px;
+  font-family: trebuchet ms;
+  text-indent: 20px;
+  vertical-align:middle;
+  line-height:200px;
+}
+
+/*.fancy-header-text {
+  font-size: 100px;
+  font-family: trebuchet ms;
+  margin-left: 20px;
+  vertical-align: middle;
+}*/
 
 .right_align{
   display: block;
