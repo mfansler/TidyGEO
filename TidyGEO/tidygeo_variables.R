@@ -17,6 +17,9 @@ suppressPackageStartupMessages({
   library(GEOquery)
   library(ggplot2)
   
+  # J
+  library(janitor)
+  
   # P
   library(plotly)
   

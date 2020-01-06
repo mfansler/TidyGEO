@@ -5,8 +5,9 @@ observe({
 })
 
 observe({
-  disable_transpose <- !get_data_member("assay", "disable_btns") & 
-    length(unique(get_data_member("assay", dataname("assay"))[,get_data_member("assay", "id_col")])) == nrow(get_data_member("assay", dataname("assay")))
+  disable_transpose <- !get_data_member("assay", "disable_btns") #& 
+    #get_data_member("assay", "id_col") != "colnames" &
+    #any(duplicated(get_data_member("assay", dataname("assay"))[,get_data_member("assay", "id_col")]))
   shinyjs::toggleState("expression_transpose", disable_transpose)
 })
 
@@ -25,7 +26,7 @@ observeEvent(input$expression_transpose, {
     } else {
       set_x_equalto_y("prev_id", get_data_member("assay", "id_col"), "assay")
       set_x_equalto_y("id_col", "colnames", "assay")
-      set_x_qualto_y("disable_btns", TRUE, "assay")
+      set_x_equalto_y("disable_btns", TRUE, "assay")
       shinyjs::enable("undoEvalExpr")
     }
   }

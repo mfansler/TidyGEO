@@ -41,7 +41,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
     b = GEOquery:::getDirListing(sprintf(gdsurl, stub, GEO))
     platform <- b[1]
   }
-  if (in_app) incProgress()
+  if (in_app) incProgress(message = "Loading GSE file")
   destfile = file.path(destdir, platform)
   if (file.exists(destfile)) {
     message(sprintf("Using locally cached version: %s", 
@@ -52,7 +52,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
                           stub, GEO, platform), destfile = destfile, mode = "wb", 
                   method = getOption("download.file.method.GEOquery"))
   }
-  if (in_app) incProgress()
+  if (in_app) incProgress(message = "Parsing GSE matrix")
   result <- GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
                                       AnnotGPL = AnnotGPL, getGPL = getGPL)$eset
   file.remove(destfile)
@@ -77,7 +77,7 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
   if (is.null(GEO) & is.null(filename)) {
     stop("You must supply either a filename of a GEO file or a GEO accession")
   }
-  if (in_app) incProgress()
+  if (in_app) incProgress(message = "Fetching GSE file")
   if (is.null(filename)) {
     GEO <- toupper(GEO)
     geotype <- toupper(substr(GEO, 1, 3))
@@ -98,16 +98,16 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
 load_series <- function(geoID, platform, session = NULL) {
   
   #expressionSet <- loadRdsFromDropbox(geoID)
-  expressionSet <- NULL
+  #expressionSet <- NULL
   
-  if (is.null(expressionSet)) {
+  #if (is.null(expressionSet)) {
     status <- tryCatch({
       if (!grepl("GSE", geoID, ignore.case = TRUE)) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
       #expressionSet <- getGEO(GEO = geoID, GSEMatrix = TRUE, getGPL = TRUE, AnnotGPL = TRUE)
       #browser()
-      if (in_app) incProgress()
+      if (in_app) incProgress(message = "Loading series files")
       expressionSet <- getGEO(geoID, platform = platform)
       #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       "pass"
@@ -123,7 +123,7 @@ load_series <- function(geoID, platform, session = NULL) {
       }
     }
     )
-    if (in_app) incProgress()
+    if (in_app) incProgress(message = "Evaluating success")
     if (!is.null(session)) {
       if (status != "pass") {
         title <- "Error"
@@ -137,7 +137,7 @@ load_series <- function(geoID, platform, session = NULL) {
     } else if (status != "pass") {
         stop(unlist(status))
     }
-  }
+  #}
   
   return(expressionSet)
 }
@@ -485,7 +485,7 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
   row_names <- rownames(clinical_data)
   clinical_data[,col_to_sub] <- as.character(clinical_data[,col_to_sub])
   
-  if (in_app) incProgress()
+  if (in_app) incProgress(message = "Reformatting missing values")
   
   subs$New_Val <- str_replace_na(subs$New_Val, replacement = "")
   
@@ -533,12 +533,12 @@ substitute_vals <- function(clinical_data, sub_specs, use_reg_ex = FALSE)
 # Function dependencies:
 excludeVars <- function(metaData, variable, to_exclude) {
   metaData <- cbind(ID = rownames(metaData), metaData)
-  tryCatch({ #for debugging purposes, take out in final product
+  #tryCatch({ #for debugging purposes, take out in final product
     metaData <- dplyr::rename(metaData, filter_var = variable)
     if (any(to_exclude == "NA")) {
       metaData <- filter(metaData, !is.na(filter_var))
     }
-    if (in_app) incProgress()
+    if (in_app) incProgress(message = "Determining columns to exclude")
     if (any(!to_exclude %in% metaData$filter_var)) { #indicates that the thing to exclude is a range
       values <- to_exclude[which(!to_exclude %in% metaData$filter_var)]
       if (grepl("exclude", values)) {
@@ -560,15 +560,15 @@ excludeVars <- function(metaData, variable, to_exclude) {
           dplyr::filter(filter_var >= bounds[1], filter_var <= bounds[2])
       }
     }
-    if (in_app) incProgress()
+    if (in_app) incProgress(message = "Dropping columns")
     #keep these lines down here so it won't fool the if statement above
     values <- to_exclude[which(to_exclude %in% metaData$filter_var)]
     metaData <- if (!identical(values, character(0))) filter(metaData, !filter_var %in% values) else metaData
-    if (in_app) incProgress()
+    if (in_app) incProgress(message = "Structuring data")
     colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
-  }, error = function(e) {
-    print(e)
-  })
+  #}, error = function(e) {
+  #  print(e)
+  #})
   rownames(metaData) <- metaData$ID
   metaData <- metaData[-which(colnames(metaData) == "ID")]
   return(metaData)
@@ -668,8 +668,8 @@ process_expression <- function(expressionSet, session = NULL) {
 }
 
 # Extract feature data from expressionSet object --------------------------
-# Library dependencies: stringr
-# Function dependencies: replace_blank_cells
+# Library dependencies: stringr; readr; janitor
+# Function dependencies:
 process_feature <- function(expressionSet, session = NULL) {
   if (in_app) incProgress(message = "Extracting feature data")
   featureData <- data.frame(fData(expressionSet))
@@ -678,23 +678,19 @@ process_feature <- function(expressionSet, session = NULL) {
   }
   if (in_app) incProgress(message = "Replacing blank cells")
   if (nrow(featureData) == 1) {
-    featureData <- as.data.frame(t(as.matrix(apply(featureData, 2, replace_blank_cells))), stringsAsFactors = FALSE)
+    # apply does weird things to datasets with only 1 row
+    t(as.matrix(apply(featureData, 2, parse_character)))
   } else {
-    featureData <- as.data.frame(apply(featureData, 2, replace_blank_cells), stringsAsFactors = FALSE)
-  }
-  
-  if (in_app) incProgress(message = "Removing whitespace from ID column")
-  if (any(str_detect(featureData$ID, "\\s+"))) {
-    featureData$ID <- str_trim(featureData$ID)
+    # parse_double simultaneously gets rid of extra spaces and converts to numeric
+    # this is faster than writing to a temp file and reading back with read_csv
+    # and faster than getting rid of spaces and using as.numeric
+    apply(featureData, 2, parse_character)
   }
   
   if (in_app) incProgress(message = "Dropping empty columns")
-  rows_to_keep <- sapply(1:nrow(featureData), function(i) {
-    if (!all(is.na(featureData[i,]))) {
-      i
-    }
-  })
-  featureData <- featureData[unlist(rows_to_keep),]
+  # remove_empty is a function from the "janitor" package that drops
+  # columns that are all `NA`
+  featureData <- remove_empty(featureData, which = "cols")
   
   
   if (nrow(featureData) == 0) {
@@ -720,6 +716,8 @@ quickTranspose <- function(dataToTranspose, force = FALSE) {
   # (column names must be unique).
   if (any(duplicated(dataToTranspose$ID, incomparables = NA))) {
     if (force) { # Make the ID values unique.
+      message <- "The ID column is not all unique. Appending numbers to duplicates to make unique for transpose."
+      if (in_app) showNotification(message) else print(message)
       dataToTranspose$ID <- make.unique(dataToTranspose$ID)
     } else { # Inform the user that we didn't perform the operation.
       message <- "Data cannot be transposed because the ID column is not all unique."
