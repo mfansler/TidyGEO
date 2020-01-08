@@ -21,9 +21,9 @@ showModal(
   )
 )
 
-selected_regex_dt <- reactive(
-  get_data_member(values$regex_dt, "data")
-)
+selected_regex_dt <- reactive({
+  get_data_member(values$regex_dt, dataname(values$regex_dt))
+})
 
 output$choose_col_to_test <- renderUI({
   selectInput("col_to_test", 
