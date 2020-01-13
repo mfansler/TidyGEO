@@ -14,6 +14,7 @@ then
   currentVersion=$(cat TidyGEO/VERSION)
   newVersion=$(($currentVersion + 1))
   echo $newVersion > TidyGEO/VERSION
+  echo $message >> TidyGEO/help_docs/About.md
 fi
 
 git add --all

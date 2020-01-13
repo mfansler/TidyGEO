@@ -83,11 +83,15 @@
     + Splitting a column will make multiple columns out of one column, each with a different value that was separated by the delimiter.
     + Usually data with one ":" or "=" in the column indicates a key-value pair, and data with one or more of ",", or ";" indicates a column with multiple values.
 * __I tried to split a column into more columns, but it put the first value as the title of the column. What happened?__
-    + If a column has more than one of the delimiter you've specified, you should probably split the column instead of splitting the key-value pairs.
+    + You probably split key-value pairs instead of splitting the column. Try this again in the next tab over.
 * __I would like to do the _opposite_ of splitting a column, i.e., I would like to combine two columns. How do I achieve this?__
     + You can use the "Shift cells" functionality to combine columns.
 * __I tried to split key-value pairs and the application crashed. What happened?__
     + If multiple columns in your data have the same key (i.e., the value before the delimiter), splitting these columns will create duplicate column names, which is not allowed. To prevent this from happening, change the keys to be unique for each column using the "Substituting values" tab. After splitting, you can combine the columns using "Shift cells" if they all describe the same variable.
+* __It said there is an error and that I should leave the regex option unchecked, but the regex option _is_ unchecked. What am I doing wrong?__
+    + There could be a number of issues causing this problem.
+    + You could try using the regex tester (in the link under "Use regex") to see if your delimiter is actually splitting where you think it should. Once you've tested your delimiter, make sure to click the "Split" button again _with the regex option selected_ (this will give you the same result as what you viewed in the regex tester).
+    + If you're still having problems, please feel free to <a href="https://github.com/srp33/TidyGEO/issues" target="_blank">open an issue on the GitHub page.</a>
 
 #### <a name="renaming-columns"></a>Renaming columns
 * __Why do the column names have periods in them after I have renamed them?__
@@ -97,7 +101,7 @@
 #### <a name="substituting-values"></a>Substituting values
 * __When I try to use the numeric option, it says that my column is not numeric, even though I can see that it is. Why?__
     + If your column of interest only has one or two unique values, it is treated as a non-numeric column. This is because, usually, two or fewer unique numbers in a column indicates that the column is a categorical, rather than a discrete, variable.
-    + With only two unique entries, you should be able to filter the data normally by selecting which value you would like to exclude.
+    + With only two unique entries, you should be able to substitute values normally by entering the value you would like to substitute.
 * __How do I discretize a numeric column?__
     + Start by selecting the column you would like to discretize, and select the "Select a range" option.
     + Select a range of values that you would like to replace, for example, numbers 3 to 4 could change to "three to four".
@@ -112,6 +116,8 @@
 * __When I try to use the numeric option, it says that my column is not numeric, even though I can see that it is. Why?__
     + If your column of interest only has one or two unique values, it is treated as a non-numeric column. This is because, usually, two or fewer unique numbers in a column indicates that the column is a categorical, rather than a discrete, variable.
     + With only two unique entries, you should be able to filter the data normally by selecting which value you would like to exclude.
+* __One of the options to exclude is `NA`, but I don't see any `NA` values in my data. Where is this coming from?__
+    + For the purposes of this application, `NA` values are displayed as blank cells in the table. If there are any blank cells in your data, those are actually `NA` values.
 
 [&uarr; To top](#contents)
 
