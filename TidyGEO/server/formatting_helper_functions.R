@@ -101,7 +101,7 @@ load_series <- function(geoID, platform, session = NULL) {
   #expressionSet <- NULL
   
   #if (is.null(expressionSet)) {
-    status <- tryCatch({
+    eSet_status <- tryCatch({
       if (!grepl("GSE", geoID, ignore.case = TRUE)) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
       }
@@ -110,36 +110,39 @@ load_series <- function(geoID, platform, session = NULL) {
       if (in_app) incProgress(message = "Loading series files")
       expressionSet <- getGEO(geoID, platform = platform)
       #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
-      "pass"
+      list(eSet = expressionSet, status = "pass")
     }, error = function(e){
       if (grepl("open\\.connection", paste0(e))) {
-        return(paste0("Trouble establishing connection to GEO. Please try again later."))
+        status <- "Trouble establishing connection to GEO. Please try again later."
+        return(list(eSet = NULL, status = status))
       }
       else if (grepl("file\\.exists", paste0(e))) {
-        return(paste0("File not found. Please enter a valid ID."))
+        status <- "File not found. Please enter a valid ID."
+        return(list(eSet = NULL, status = status))
       }
       else {
-        return(paste(e))
+        status <- paste(e, collapse = " ")
+        return(list(eSet = NULL, status = status))
       }
     }
     )
+    
     if (in_app) incProgress(message = "Evaluating success")
     if (!is.null(session)) {
-      if (status != "pass") {
+      if (eSet_status$status != "pass") {
         title <- "Error"
-        content <- unlist(status)
+        content <- eSet_status$status
       } else {
         title <- "Success!"
         content <- "Series data successfully downloaded. You may now work with the Clinical and/or Assay data using the buttons and menu options to the left."
       }
       createAlert(session, "alert", "fileError", title = title,
                   content = content, append = FALSE)
-    } else if (status != "pass") {
-        stop(unlist(status))
+    } else if (eSet_status$status != "pass") {
+        stop(eSet_status$status)
     }
   #}
-  
-  return(expressionSet)
+  return(eSet_status$eSet)
 }
 
 # Check if a column is all numeric ----------------------------------------
@@ -194,7 +197,6 @@ replace_blank_cells <- function(values) {
 # Library dependencies: GEOquery
 # Function dependencies: replace_blank_cells; filterUninformativeCols
 process_clinical <- function(expressionSet, session = NULL) {
-
   if (in_app) incProgress(message = "Extracting data")
   metaData <- pData(expressionSet)
   if (nrow(metaData) == 1) {
@@ -382,16 +384,24 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
 # Library dependencies: stringr; tidyr
 # Function dependencies: filterUninformativeCols
 splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FALSE) {
+  # Step 1: prevent splitting if input is empty
   if (is.null(colsToDivide) || delimiter == "") {
     return(input_df)
   }
+  # Step 2: prep variables needed
   metaData <- input_df
   num_split <- 0
   errorMessage <- NULL
   regex_delimiter <- if (!use_regex) paste0("\\Q", delimiter, "\\E") else delimiter
   tryCatch({
-    browser()
+    #browser()
     for (colName in colsToDivide) {
+      # Step 3: separate out the rows that actually have the delimiter
+      contains_delim <- str_detect(pull(metaData, colName), regex_delimiter)
+      dont_split <- metaData[,colName][!contains_delim]
+      metaData[,colName][!contains_delim] <- NA
+      
+      # Step 4: generate the column names for the new columns
       numElements <- max(sapply(metaData[,colName], function(x) {
         len <- length(str_extract_all(x, regex_delimiter)[[1]]) + 1
         if (!is.na(x) && len > nchar(x)) {
@@ -400,28 +410,34 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
           len
         }
       }), na.rm = TRUE)
-      if (numElements > 1) {
-        colNames <- make.unique(c(colnames(metaData), rep(colName, numElements)))
-        colNames <- colNames[(length(colnames(metaData)) + 1):length(colNames)]
-        #if (any(colNames %in% colnames(metaData))) {
-        #  colNames[which(colNames %in% colnames(metaData))] <- paste(colNames[which(colNames %in% colnames(metaData))], 2, sep = ".")
-        #}
-        #for (i in 1:numElements) {
-        #  colNames <- c(colNames, paste(colName, i, sep = "."))
-        #}
-        metaData <- separate(metaData, col = colName, into = colNames, sep = regex_delimiter)
-        
-        num_split <- num_split + 1
-      } else {
-        offendingVals <- paste(metaData[, colName], collapse = ", ")
-        offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
-        
-        errorMessage <- c(errorMessage, paste0(colName, " could not be split."),
-                          paste0("Values: ", offendingVals))
+      #if (numElements > 1) {
+      colNames <- make.unique(c(colnames(metaData), rep(colName, numElements)))
+      colNames <- colNames[(length(colnames(metaData)) + 1):length(colNames)]
+      #if (any(colNames %in% colnames(metaData))) {
+      #  colNames[which(colNames %in% colnames(metaData))] <- paste(colNames[which(colNames %in% colnames(metaData))], 2, sep = ".")
+      #}
+      #for (i in 1:numElements) {
+      #  colNames <- c(colNames, paste(colName, i, sep = "."))
+      #}
+      
+      # Step 5: split the column that has all the delimiters
+      metaData <- separate(metaData, col = colName, into = colNames, sep = regex_delimiter, fill = "right")
+      if (length(dont_split) > 0 && paste0(colName, ".1") %in% colnames(metaData)) {
+        metaData[,paste0(colName, ".1")][!contains_delim] <- dont_split
       }
+      
+      # Step 6: put the rows without the delimiters back where they belong
+      num_split <- num_split + 1
+      #} else {
+      #  offendingVals <- paste(metaData[, colName], collapse = ", ")
+      #  offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
+      #  
+      #  errorMessage <- c(errorMessage, paste0(colName, " could not be split."),
+      #                    paste0("Values: ", offendingVals))
+      #}
     }
   }, error = function(e) {
-    errorMessage <<- 'Something went wrong. Try running again with the "Use regex" option <b>unchecked</b>.'
+    errorMessage <<- paste('Something went wrong.', paste(e, collapse = " "), sep = "\n")
     metaData <<- input_df
     num_split <<- 0
   })
@@ -875,13 +891,31 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
                   else
                     data2[,id_col2]
   
-  if (grepl("col.*names", id_col1)) {
+  data1_edited <- if (grepl("col.*names", id_col1)) {
     data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
   } else if (grepl("row.*names", id_col1)) {
-    data1[which(rownames(data1)) %in% search_terms,]
+    data1[which(rownames(data1) %in% search_terms),]
   } 
   else {
     data1[which(data1[,id_col1] %in% search_terms),]
+  }
+  if (is.null(length(data1_edited) > 0) || is.null(nrow(data1_edited) > 0)) {
+    browser()
+  }
+  if (length(data1_edited) > 0 && nrow(data1_edited) > 0) {
+    if (in_app) {
+      showModal(
+        modalDialog(
+          title = HTML(paste0('<font color="green">', 'Success!', '</font>')),
+          p("Entries in each dataset were successfully filtered to match each other.", style="color:green"),
+          easyClose = TRUE
+        )
+      )
+    }
+    data1_edited
+  } else {
+    stop("No entries in the second dataset matched the entries in the first.")
+    data1
   }
 }
 

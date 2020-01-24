@@ -116,7 +116,7 @@ match_vals1 <- reactive({
           )
         )
       colnames(names_df) <- paste0(toupper(substring(input$data_to_match1, 1, 1)), substring(input$data_to_match1, 2), 
-                                   if (input$col_to_match1 == "colnames") "column" else "row", " names")
+                                   if (input$col_to_match1 == "colnames") " column" else " row", " names")
       names_df
     } else {
       get_data_member(input$data_to_match1, dataname(input$data_to_match1))[input$col_to_match1]

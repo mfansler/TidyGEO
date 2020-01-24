@@ -137,7 +137,12 @@ ui <- dashboardPage(
       tabItem("about",
               div("About", class = "fancy-header"),
               h2(paste("Version:", VERSION)),
-              includeMarkdown("help_docs/About.md")
+              includeMarkdown("help_docs/About.md"),
+              tags$a(name="top"),
+              tags$a(href="#bottom", "Go to most recent >"),
+              includeMarkdown("help_docs/Changelog.md"),
+              tags$a(name="bottom"),
+              tags$a(href="#top", "^To top")
       )
     )
   )

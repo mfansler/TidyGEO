@@ -5,5 +5,3 @@
 
 ## Changelog
 The following is a list of changes implemented by successive versions of TidyGEO. This list is pulled from the GitHub repository for the app. For a more extensive changelog, please visit <a href = "https://github.com/srp33/TidyGEO" target = "_blank">the GitHub page.</a>
-
-Edited FAQ and About sections; testing automated changelog.

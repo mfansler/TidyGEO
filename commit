@@ -14,7 +14,13 @@ then
   currentVersion=$(cat TidyGEO/VERSION)
   newVersion=$(($currentVersion + 1))
   echo $newVersion > TidyGEO/VERSION
-  echo $message >> TidyGEO/help_docs/About.md
+  
+  todays_date=$(date +'%m/%d/%Y')
+  echo "__Version ${newVersion}, ${todays_date}:__" >> TidyGEO/help_docs/Changelog.md
+  echo "" >> TidyGEO/help_docs/Changelog.md
+  echo $message >> TidyGEO/help_docs/Changelog.md
+  echo "" >> TidyGEO/help_docs/Changelog.md
+  echo "" >> TidyGEO/help_docs/Changelog.md
 fi
 
 git add --all

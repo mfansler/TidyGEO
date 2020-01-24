@@ -13,9 +13,8 @@ observe({
 observeEvent(input$feature_split_cols, ({
   if (data_loaded("feature")) {
     withProgress({
-      #browser()
       status <- eval_function("feature", "splitCombinedVars", 
-                    list(input$feature_colsToDivide, input$feature_divide_delimiter, input$split_cols_w_regex), 
+                    list(input$feature_colsToDivide, input$feature_divide_delimiter, input$feature_split_cols_w_regex), 
                     "extract values from columns with delimiter"
                     )
       }, 

@@ -63,7 +63,6 @@ filterUninformativeCols <- function(metaData, toFilter = list())
 }
 
 extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE) {
-  browser()
   if (is.null(colsToSplit) || delimiter == "") {
     return(input_df) 
   }
@@ -350,7 +349,6 @@ excludeVars <- function(metaData, variable, to_exclude) {
     colnames(metaData)[which(colnames(metaData) == "filter_var")] <- variable
   }, error = function(e) {
     print(e)
-    browser()
   })
   rownames(metaData) <- metaData$ID
   metaData <- metaData[-which(colnames(metaData) == "ID")]
