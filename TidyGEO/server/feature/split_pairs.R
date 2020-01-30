@@ -34,4 +34,4 @@ observeEvent(input$undo_split_pairs_feature, {
   undo_last_action("feature")
 })
 
-navigation_set_server("2", "3", "4", "feature_side_panel", "feature_side_panel")
+navigation_set_server("3", "4", "5", "feature_side_panel", "feature_side_panel")

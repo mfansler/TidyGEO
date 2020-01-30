@@ -19,12 +19,6 @@ observeEvent(input$show_broken_cols_example_feature, {
 #  datatable(test_data, rownames = FALSE, options = list(dom = "t"))
 #})
 
-current_colnames_feature <- reactive({
-  if (data_loaded("feature")) {
-    setdiff(colnames(get_data_member("feature", dataname("feature"))), "ID")
-  } 
-})
-
 output$display_cols_to_shift_feature <- renderUI({
   selectInput(inputId = "col_to_shift_feature", label = div("Shift the values from:"), choices = current_colnames_feature())
 })
@@ -148,4 +142,4 @@ observeEvent(input$undo_shift_feature, {
   undo_last_action("feature")
 })
 
-navigation_set_server("1", "2", "3", "feature_side_panel", "feature_side_panel")
+navigation_set_server("2", "3", "4", "feature_side_panel", "feature_side_panel")

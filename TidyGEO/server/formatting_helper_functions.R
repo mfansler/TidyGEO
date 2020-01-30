@@ -303,11 +303,11 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
           results <- shift_cells(new_data, "vals_to_merge", duplicate)
           if (is.null(results[["conflicts"]])) { # make sure the duplicate won't overwrite any values in the original column
             metaData <- results[["result"]]
-            metaData$key <- str_replace_all(metaData$key, duplicate, NA_character_)
+            metaData$key <- str_replace_all(metaData$key, paste0("\\Q", duplicate, "\\E"), NA_character_)
             num_split <- num_split + 1
           } else {# if the duplicate will overwrite values in the original column, make a new column with a unique name
             new_names <- make.unique(c(colnames(metaData), duplicate))
-            metaData$key <- str_replace(metaData$key, duplicate, new_names[length(new_names)])
+            metaData$key <- str_replace(metaData$key, paste0("\\Q", duplicate, "\\E"), new_names[length(new_names)])
           }
         }
         if (all(c("key", "value") %in% colnames(metaData))) { # i.e. these columns weren't removed in the above code
@@ -334,13 +334,13 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
         offendingVals <- paste(metaData[!hasDelim, col], collapse = ", ")
         offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
         
-        errorMessage <- c(errorMessage, paste0(col, " could not be split."),
+        errorMessage <<- c(errorMessage, paste0(col, " could not be split."),
                           paste0("Rows: ", offendingRows),
                           paste0("Values: ", offendingVals))
       }
     }
   }, error = function(e) {
-    errorMessage <<- 'Something went wrong. Try running again with the "Use regex" option <b>unchecked</b>.'
+    errorMessage <<- c('Something went wrong.', paste(e, collapse = ' '))
     metaData <<- input_df
     num_split <<- 0
   })
@@ -348,7 +348,7 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
   
   if (!is.null(errorMessage)) {
     if (in_app) {
-      if (!any(str_detect(errorMessage, 'Something went wrong'))) {
+      if (any(str_detect(errorMessage, 'could not be split'))) {
         errorMessage <- c(paste0('<b>Looks like there are some cells that don\'t contain the delimiter "', delimiter, '".</b>'),
                           errorMessage)
       }
@@ -899,9 +899,9 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
   else {
     data1[which(data1[,id_col1] %in% search_terms),]
   }
-  if (is.null(length(data1_edited) > 0) || is.null(nrow(data1_edited) > 0)) {
-    browser()
-  }
+  #if (is.null(length(data1_edited) > 0) || is.null(nrow(data1_edited) > 0)) {
+  #  browser()
+  #}
   if (length(data1_edited) > 0 && nrow(data1_edited) > 0) {
     if (in_app) {
       showModal(

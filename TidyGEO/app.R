@@ -94,6 +94,7 @@ ui <- dashboardPage(
                    TABS_MESSAGE,
                    tabsetPanel(id = "feature_side_panel",
                      source(file.path("ui", "feature", "feature_info.R"), local = TRUE)$value,
+                     source(file.path("ui", "feature", "select_cols.R"), local = TRUE)$value,
                      source(file.path("ui", "feature", "shift_cells.R"), local = TRUE)$value,
                      source(file.path("ui", "feature", "split_pairs.R"), local = TRUE)$value,
                      source(file.path("ui", "feature", "split_cols.R"), local = TRUE)$value,
@@ -156,8 +157,8 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   
   #look for setting to get it do not disconnect
-  session$allowReconnect(TRUE)
-  session$onSessionEnded(stopApp)
+  #session$allowReconnect(TRUE)
+  #session$onSessionEnded(stopApp)
   
   source(file.path("server", "tidygeo_server_functions.R"), local = TRUE)$value
 
@@ -358,6 +359,7 @@ server <- function(input, output, session) {
 
   # ** ** side panel --------------------------------------------------------------
   source(file.path("server", "feature", "feature_info.R"), local = TRUE)$value
+  source(file.path("server", "feature", "select_cols.R"), local = TRUE)$value
   source(file.path("server", "feature", "shift_cells.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_pairs.R"), local = TRUE)$value
   source(file.path("server", "feature", "split_cols.R"), local = TRUE)$value
@@ -388,14 +390,14 @@ server <- function(input, output, session) {
   # this means that if the disconnect was caused by an error, the error will happen again
   # this causes the session to keep disconnecting and reconnecting
   # this is an attempt to clear the error-causing inputs so we only reconnect once
-  session$onSessionEnded(function(){
-    err <- last_error()
-    if (err$message != "Can't show last error because no error was recorded yet") { # an error caused the disconnect
-      # reset everything
-      session$input <- NULL
-    }
-    # else, the disconnect was likely just a regular time-out
-  })
+  #session$onSessionEnded(function(){
+  #  err <- last_error()
+  #  if (err$message != "Can't show last error because no error was recorded yet") { # an error caused the disconnect
+  #    # reset everything
+  #    session$input <- NULL
+  #  }
+  #  # else, the disconnect was likely just a regular time-out
+  #})
 }
 
 shinyApp(ui = ui, server = server)

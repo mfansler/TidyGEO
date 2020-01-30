@@ -1,4 +1,4 @@
-tabPanel(title = icon("download"), value = "5",
+tabPanel(title = icon("download"), value = "6",
   h4("Saving the feature data"),
   p("Here is where you can download the feature data to your computer."), 
   p("You can also download the R script that produced this data. The R script allows you
@@ -13,6 +13,6 @@ tabPanel(title = icon("download"), value = "5",
                                              style = "color: #fff; background-color: #62c18b; border-color: #62c18b"),
                               help_link("feature", "r_help")))
   ),
-  hr(), tertiary_button(nav("5", "4", "feature"), div(PREV_ICON, 'Back')),
-  secondary_button(nav("5", "assay", "feature"), div('Finish assay data', NEXT_ICON), class = "right_align")
+  hr(), tertiary_button(nav("6", "5", "feature"), div(PREV_ICON, 'Back')),
+  secondary_button(nav("6", "assay", "feature"), div('Finish assay data', NEXT_ICON), class = "right_align")
 )

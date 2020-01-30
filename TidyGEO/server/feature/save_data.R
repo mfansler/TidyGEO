@@ -22,9 +22,9 @@ output$feature_downloadRscript <- downloadHandler(
   }
 )
 
-observeEvent(get_input(nav("5", "4", "feature")), {
+observeEvent(get_input(nav("6", "5", "feature")), {
   updateTabsetPanel(session, "feature_side_panel", selected = "4")
 })
-observeEvent(get_input(nav("5", "assay", "feature")), {
+observeEvent(get_input(nav("6", "assay", "feature")), {
   updateTabItems(session, "top_level", "assay_data")
 })

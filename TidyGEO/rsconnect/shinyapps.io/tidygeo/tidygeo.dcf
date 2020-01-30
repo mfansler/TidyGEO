@@ -5,6 +5,6 @@ account: tidygeo
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 838803
-bundleId: 2637304
+bundleId: 2764448
 url: https://byubioapps.shinyapps.io/tidygeo/
-when: 1575404796.44284
+when: 1580404249.50238
