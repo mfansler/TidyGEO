@@ -35,8 +35,19 @@ BRB Array Tools is a software system that enables researchers do perform compreh
 7. In the `Merge data` > `Saving the data` tab, choose to save the data as "all (zipped)." Save it to a location on your computer where you can find it again. 
 
 #### In BRB Array Tools:
-1. Navigate to `Add-ins` > `ArrayTools` > `Import data` > `Data import wizard`
-2. Select the Data Type for your experiment _How do you tell what datatype it is?_
-3. Select "The expression data are in separate files stored in one folder."
+1. Navigate to `Add-ins` > `ArrayTools` > `Import data` > `General format importer`.
+2. Select "Arrays are saved in a horizontally aligned file."
+3. Select the file you created in the "Assay data" portion of TidyGEO.
+4. Select the number of channels for the samples in your experiment (usually "Single-channel data").
+5. Select the Data Type for your experiment (usually "Affymetrix Probeset-summary data"). This can be found by navigating to the GEO page for the series and clicking on the _platform_ file that you used (starts with "GPL...").
+6. Select "I would like to use my own gene identifiers file rather than the one from Bioconductor."
+7. Input the first row as the header line and the ID column as the Probe Set ID. Each column should represent an array. Usually, there is no "detection call" for each array.
+8. Name the folder and the file for the project you are creating.
+9. Select "The identifiers are stored in a separate file."
+10. Navigate to the file you created in the "Feature data" portion of TidyGEO.
+11. Match up the column names in your file with the fields in the importer. You can find information about the contents of each column on the _platform_ page for your series (starts with "GPL...").
+12. Select "I would like to use these gene identifiers instead of those from the SOURCE database" and select the organism for this series.
+13. For the experiment descriptor file, input the file you made in the "Clinical data" portion of TidyGEO.
+14. Perform any filtering and subsequent analysis according to your research needs.
     
 

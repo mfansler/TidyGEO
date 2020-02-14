@@ -12,3 +12,8 @@ __Version 44, 01/30/2020:__
 Fixed error when splitting key-value pairs, added ability to select columns for feature data.
 
 
+__Version 45, 02/14/2020:__
+
+Finished BRB array tools documentation; minor bug fixes for splitting columns.
+
+

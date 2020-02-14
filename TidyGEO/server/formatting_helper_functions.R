@@ -26,6 +26,7 @@ get_platforms <- function(geoID, session = NULL) {
   return(platforms)
 }
 
+
 # A helper function for getGEO --------------------------------------------
 # Library dependencies: GEOquery
 # Function dependencies:
@@ -53,6 +54,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
                   method = getOption("download.file.method.GEOquery"))
   }
   if (in_app) incProgress(message = "Parsing GSE matrix")
+  
   result <- GEOquery:::parseGSEMatrix(destfile, destdir = destdir, 
                                       AnnotGPL = AnnotGPL, getGPL = getGPL)$eset
   file.remove(destfile)
@@ -697,7 +699,7 @@ process_feature <- function(expressionSet, session = NULL) {
   if (nrow(featureData) == 1) {
     # apply does weird things to datasets with only 1 row
     t(as.matrix(apply(featureData, 2, parse_character)))
-  } else {
+  } else if (nrow(featureData) > 0){
     # parse_double simultaneously gets rid of extra spaces and converts to numeric
     # this is faster than writing to a temp file and reading back with read_csv
     # and faster than getting rid of spaces and using as.numeric

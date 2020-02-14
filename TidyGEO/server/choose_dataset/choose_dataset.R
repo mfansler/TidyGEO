@@ -31,6 +31,25 @@ platforms <- reactive({
   }
 })
 
+output$superseries_suggestion <- renderUI({
+  if (!is.null(values$subseries)) {
+    labs <- if (length(values$subseries) > 0) {
+      c(paste0(values$subseries[1:length(values$subseries) - 1], ","), paste("and", values$subseries[length(values$subseries)]))
+    } else {
+      values$subseries
+    }
+    div(
+      tags$em("You have selected a SuperSeries. If there are problems with this ID, please try one of its SubSeries:"),
+      mapply(actionLink, values$subseries, labs, class = "subseries", USE.NAMES = FALSE, SIMPLIFY = FALSE)
+    )
+  }
+})
+
+observeEvent(input$subseries_selected, {
+  browser()
+  updateSelectizeInput(session, inputId = "geoID", selected = input$subseries_selected)
+})
+
 output$platform_options <- renderUI({
   
   closeAlert(session, "fileError")
@@ -132,6 +151,14 @@ observeEvent(input$geoID, {
         values$paper_information <- NULL
         updateButton(session, inputId = "expand_paper_information", label = "View publication information", icon = icon("caret-right"))
         values$paper_info_expanded <- FALSE
+      }
+      
+      relations <- str_extract_all(summ2, "!Series_relation.*")[[1]]
+      values$subseries <- if (any(str_detect(relations, "[Ss]uper[Ss]eries of"))) {
+        relations <- relations[str_detect(relations, "!Series_relation = SuperSeries of:.*")]
+        str_trim(str_remove_all(relations, "!Series_relation = SuperSeries of:|\r\r\n"))
+      } else {
+        NULL
       }
       
       div(h3(paste(input$geoID, str_match(summ2, "!Series_title = ([^\\r]+)")[2], sep = ": ")),

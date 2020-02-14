@@ -37,7 +37,7 @@ for (i in 2:num_groups) {
 #if (file.exists(file_name)) {
 #  file.remove(file_name)
 #}
-write_feather(data.frame(label = series_list$Accession, value = series_list$Accession, name = series_list$description), "~/R_Code/TidyGEO/TidyGEO/www/series_list.feather")
+write_feather(data.frame(label = series_list$Accession, value = series_list$Accession, name = series_list$description), "TidyGEO/www/series_list.feather")
 #end_time <- Sys.time()
 #print(c("Feather time:", end_time - start_time))
 
@@ -72,4 +72,4 @@ for (i in 2:num_groups) {
 #if (file.exists(file_name)) {
 #  file.remove(file_name)
 #}
-write_feather(platform_list, "~/R_Code/TidyGEO/TidyGEO/www/platform_list.feather")
+write_feather(platform_list, "TidyGEO/www/platform_list.feather")

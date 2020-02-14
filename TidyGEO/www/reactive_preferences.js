@@ -8,6 +8,10 @@
 
 
 $(document).ready(function() {
+  // subseries select listeners
+  $(document).on('click', '.subseries', function () {
+    Shiny.onInputChange('subseries_selected', this.id);
+  });
   // column navigation listeners
   $(document).on('click', '.prev_cols', function () {
     Shiny.onInputChange('prev_cols_clicked', this.id);

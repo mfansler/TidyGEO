@@ -175,7 +175,8 @@ server <- function(input, output, session) {
       paper_info_expanded = FALSE,
       paper_information = NULL,
       pm_id = NULL,
-      regex_dt = NULL
+      regex_dt = NULL,
+      subseries = NULL
     )
   assign(
     varname("clinical"),
