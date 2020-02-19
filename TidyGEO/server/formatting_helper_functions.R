@@ -893,18 +893,23 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
                   else
                     data2[,id_col2]
   
+  some_matches <- FALSE
   data1_edited <- if (grepl("col.*names", id_col1)) {
-    data1[,which(colnames(data1) %in% c(search_terms, "ID"))]
-  } else if (grepl("row.*names", id_col1)) {
-    data1[which(rownames(data1) %in% search_terms),]
-  } 
-  else {
-    data1[which(data1[,id_col1] %in% search_terms),]
+    some_matches <- any(colnames(data1) %in% c(search_terms, "ID"))
+    if (some_matches) data1[,which(colnames(data1) %in% c(search_terms, "ID"))] else data1
+  } else {
+    some_matches <- any(rownames(data1) %in% search_terms)
+    if (some_matches) {
+      d <- data1 %>% mutate(rownames = rownames(data1)) %>%
+        filter(!!sym(id_col1) %in% search_terms)
+      rownames(d) <- d$rownames
+      d %>% select(-rownames)
+    } else {
+      data1
+    }
   }
-  #if (is.null(length(data1_edited) > 0) || is.null(nrow(data1_edited) > 0)) {
-  #  browser()
-  #}
-  if (length(data1_edited) > 0 && nrow(data1_edited) > 0) {
+  
+  if (some_matches) {
     if (in_app) {
       showModal(
         modalDialog(
@@ -914,11 +919,11 @@ find_intersection <- function(data1, data2, id_col1 = "ID", id_col2 = NULL) {
         )
       )
     }
-    data1_edited
   } else {
     stop("No entries in the second dataset matched the entries in the first.")
-    data1
   }
+  
+  data1_edited
 }
 
 # Join up to three datasets -----------------------------------------------
@@ -959,7 +964,7 @@ join_data <- function(df1, df2, join_col1, join_col2, join_behavior) {
   
   if ("rownames" %in% colnames(result)) {
     rownames(result) <- result$rownames
-    result <- result[-"rownames"]
+    result <- result[-which(colnames(result) == "rownames")]
   }
   return(result)
 }

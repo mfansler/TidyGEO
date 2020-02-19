@@ -17,3 +17,8 @@ __Version 45, 02/14/2020:__
 Finished BRB array tools documentation; minor bug fixes for splitting columns.
 
 
+__Version 46, 02/19/2020:__
+
+Fixed matching datasets, joining datasets, and saving zipped datasets.
+
+

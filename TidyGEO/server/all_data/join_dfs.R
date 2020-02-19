@@ -93,13 +93,13 @@ observeEvent(input$join_columns, {
                                       to_knit = c("all", input$data_to_join3))
         if (join2_status != SUCCESS) {
           showModal(
-            error_modal("Error in second join", "Second join not performed.", status)
+            error_modal("Error in second join", "Second join not performed.", join2_status)
           )
         }
       }
     } else {
       showModal(
-        error_modal("Error in first join", "First join not performed.", status)
+        error_modal("Error in first join", "First join not performed.", join1_status)
       )
     }
   })

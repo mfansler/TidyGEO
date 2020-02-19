@@ -18,7 +18,7 @@ observe({
 
 filetype_choices <- reactive({
   if (input$which_data_to_save == "all" || # the joined data (will likely contain transposed assay data)
-      ("assay" %in% datatypes_selected() && get_data_member("assay", id_col) == "colnames")) { # transposed assay data
+      ("assay" %in% datatypes_selected() && get_data_member("assay", "id_col") == "colnames")) { # transposed assay data
     SUPPORTED_FILE_TYPES[which(SUPPORTED_FILE_TYPES != "txt")] # BRB Array Tools does not support transposed assay data
     } else {
       SUPPORTED_FILE_TYPES # All file types available when assay data not transposed
