@@ -11,7 +11,8 @@
     + [Excluding variables](#excluding-variables)
 4. [Assay data](#assay-data)
     + [Formatting the assay data](#formatting-the-assay-data)
-5. [Bugs and suggestions](#bugs-and-suggestions)
+5. [R scripts](#r-scripts)
+6. [Bugs and suggestions](#bugs-and-suggestions)
     
 ### <a name="importing-the-data"></a>Importing the data
 
@@ -131,7 +132,7 @@
     + This data describes the metrics you see in the ID column of the assay data. Depending on the experiment, these could be probe IDs, gene sequences, etc. Feature data is a kind of thesaurus for the assay ID column; it has an ID column in that matches the one in the assay data and all the other columns are like “synonyms” for those IDs. Sometimes, things like probe IDs might not be very useful, and you might want to look at, say, gene names instead. The feature data is where you get that information.
     
 #### <a name="formatting-the-assay-data"></a>Formatting the assay data
-* __The spinner where the data should be just keeps spinning. What's wrong?
+* __The spinner where the data should be just keeps spinning. What's wrong?__
     + Sometimes, loading one dataset after another prevents the app from loading the second dataset. Please try reloading the webpage and downloading the data again. If this doesn't fix the problem, please feel free to contact the developers.
 * __Why are some of the option buttons disabled?__
     + The "Use different ID column" button is disabled when the data is transposed because the ID becomes the column names, which is harder to substitute. If you would still like to replace the ID column, click "Undo" and "Use different column ID" before transposing.
@@ -141,6 +142,23 @@
 
 [&uarr; To top](#contents)
 
+### <a name="r-scripts"></a>R scripts
+
+* __I ran the script exactly as I downloaded it from the app, but now it's showing error messages. What's going wrong?__
+    + Sometimes the script can generate warning messages that look kind of like errors. To see if the entire script ran, check your working directory for the output dataset file. If this file exists, then the warning messages are not important.
+    + If the output dataset file was not created by the script, the script might be outdated. At the top of the script, you can find the version of TidyGEO that generated the script. You can then compare this to the version number on the web app under "About". If the versions do not match, you might consider recreating the script by replicating the steps you took to make the first one.
+
+* __Sometimes when I run the R script I downloaded, I get this error:__
+
+```
+ Error in load_series(geoID, dataSetIndex) : 
+  Error in GEOquery:::parseGSEMatrix(destfile, destdir = destdir, AnnotGPL = AnnotGPL, : parsing failed--expected only one '!series_data_table_begin'
+```
+
+* __What's wrong?__
+    + Sometimes if you've been downloading a lot of datasets from GEO around the same time, GEO starts complaining. Try running the script again or waiting a few minutes and running the script again.
+
+[&uarr; To top](#contents)
 
 ### <a name="bugs-and-suggestions"></a>Bugs and suggestions
 
