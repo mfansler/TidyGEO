@@ -109,7 +109,7 @@ observeEvent(input$evaluate_shift, {
     add_function("shift_cells", "clinical")
     save_lines(paste0(dataname("clinical"), " <- shift_cells(", dataname("clinical"), ", ", 
                                             format_string(input$col_to_shift), ", ",
-                                            format_string(input$destination_col), ")"), "clinical", "body")
+                                            format_string(input$destination_col), ")[['result']]"), "clinical", "body")
   }
 })
 
@@ -130,7 +130,7 @@ observeEvent(input$evaluate_conflicts, {
   save_lines(paste0(dataname("clinical"), " <- shift_cells(", dataname("clinical"), ", ", 
                                           format_string(input$col_to_shift), ", ",
                                           format_string(input$destination_col), ", ",
-                                          format_string(if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option), ")"), 
+                                          format_string(if (input$conflict_option == "delim") input$conflict_delimiter else input$conflict_option), ")[['result']]"), 
                                    "clinical", "body")
 })
 

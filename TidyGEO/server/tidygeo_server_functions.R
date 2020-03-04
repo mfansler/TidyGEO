@@ -146,7 +146,7 @@ get_clinical_data <- function() {
   set_x_equalto_y("orig_data", get_data_member("clinical", dataname("clinical")), "clinical")
   
   #WRITING COMMANDS TO R SCRIPT
-  save_lines(commentify("extract clinical data"), "clinical", "body")
+  save_lines(commentify("extract clinical data"), "clinical", "body", overwrite = TRUE)
   add_function("process_clinical", "clinical")
   save_lines(paste0(dataname("clinical"), " <- process_clinical(", SERIES, ")"), "clinical", "body")
   set_reset_point_script("clinical")
@@ -185,7 +185,7 @@ get_assay_data <- function() {
                     ), 
                     "assay")
     
-    save_lines(commentify("extract expression data"), "assay", "body")
+    save_lines(commentify("extract expression data"), "assay", "body", overwrite = TRUE)
     add_function("process_expression", "assay")
     save_lines(c(paste0("extracted_data <- process_expression(", SERIES, ")"),
                  paste0(dataname("assay"), " <- extracted_data[['expressionData']]")), 
@@ -217,7 +217,7 @@ get_feature_data <- function() {
                     ), 
                     "feature")
     
-    save_lines(commentify("extract feature data"), "feature", "body")
+    save_lines(commentify("extract feature data"), "feature", "body", overwrite = TRUE)
     add_function("process_feature", "feature")
     save_lines(c(paste0("feature_data <- process_feature(", SERIES, ")")), 
                "feature", "body")

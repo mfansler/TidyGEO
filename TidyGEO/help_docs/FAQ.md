@@ -131,6 +131,8 @@
     + This data describes the metrics you see in the ID column of the assay data. Depending on the experiment, these could be probe IDs, gene sequences, etc. Feature data is a kind of thesaurus for the assay ID column; it has an ID column in that matches the one in the assay data and all the other columns are like “synonyms” for those IDs. Sometimes, things like probe IDs might not be very useful, and you might want to look at, say, gene names instead. The feature data is where you get that information.
     
 #### <a name="formatting-the-assay-data"></a>Formatting the assay data
+* __The spinner where the data should be just keeps spinning. What's wrong?
+    + Sometimes, loading one dataset after another prevents the app from loading the second dataset. Please try reloading the webpage and downloading the data again. If this doesn't fix the problem, please feel free to contact the developers.
 * __Why are some of the option buttons disabled?__
     + The "Use different ID column" button is disabled when the data is transposed because the ID becomes the column names, which is harder to substitute. If you would still like to replace the ID column, click "Undo" and "Use different column ID" before transposing.
     + The "Transpose" button is disabled when the entries in the ID column are not all unique. This is because transposing the data makes the ID column the column names, and duplicate column names are not allowed. To enable the "Transpose" button again, click on "Use different column ID" and make sure to use a summarize option other than "keep all". Also make sure to select "Drop NA values" underneath the summarize option.

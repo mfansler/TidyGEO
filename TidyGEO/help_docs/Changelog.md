@@ -22,3 +22,8 @@ __Version 46, 02/19/2020:__
 Fixed matching datasets, joining datasets, and saving zipped datasets.
 
 
+__Version 47, 03/03/2020:__
+
+Fixed some errors in the splitting code; fixed an Rscript error (Rscripts generated before this fix may not be functional.
+
+

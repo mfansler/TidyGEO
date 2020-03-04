@@ -83,6 +83,7 @@ observeEvent(input$download_data_evaluate, {
   feature_vals[[dataname("feature")]] <- NULL
   # WRITING COMMANDS TO R SCRIPT
   for (datatype in ALLOWED_DATATYPES) {
+    reset_script(datatype)
     message <- if (datatype == "all") {
       "No datasets have been joined. Please join some datasets." 
     } else {

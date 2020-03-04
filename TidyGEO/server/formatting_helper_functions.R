@@ -35,6 +35,7 @@ getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE,
 { # Please note: this function was copied from the GEOquery package. It was altered
   # to only download one platform (rather than all the platforms) from GEO and to
   # delete the temp file after downloading.
+  print(platform)
   GEO <- toupper(GEO)
   stub = gsub("\\d{1,3}$", "nnn", GEO, perl = TRUE)
   if (is.null(platform)) {
@@ -329,14 +330,13 @@ extractColNames <- function(input_df, delimiter, colsToSplit, use_regex = FALSE)
           stop("You did something wrong.")
         }
       } else {
-        
         offendingRows <- paste((1:length(hasDelim))[!hasDelim], collapse = ", ")
         offendingRows <- if_else(nchar(offendingRows) > 50, paste0(substr(offendingRows, 1, 50), "... "), offendingRows)
         
         offendingVals <- paste(metaData[!hasDelim, col], collapse = ", ")
         offendingVals <- if_else(nchar(offendingVals) > 50, paste0(substr(offendingVals, 1, 50), "... "), offendingVals)
         
-        errorMessage <<- c(errorMessage, paste0(col, " could not be split."),
+        errorMessage <- c(errorMessage, paste0(col, " could not be split."),
                           paste0("Rows: ", offendingRows),
                           paste0("Values: ", offendingVals))
       }
@@ -399,7 +399,7 @@ splitCombinedVars <- function(input_df, colsToDivide, delimiter, use_regex = FAL
     #browser()
     for (colName in colsToDivide) {
       # Step 3: separate out the rows that actually have the delimiter
-      contains_delim <- str_detect(pull(metaData, colName), regex_delimiter)
+      contains_delim <- str_detect(str_replace_na(pull(metaData, colName)), regex_delimiter)
       dont_split <- metaData[,colName][!contains_delim]
       metaData[,colName][!contains_delim] <- NA
       
@@ -653,7 +653,7 @@ process_expression <- function(expressionSet, session = NULL) {
     intermed_data <- if (typeof(expression_raw) != "double") { # only attempt to convert if character
       if (in_app) incProgress(message = "Attempting to convert data to numeric")
       result <- tryCatch({
-        if (nrow(expressionData) == 1) {
+        if (nrow(expression_raw) == 1) {
           # apply does weird things to datasets with only 1 row
           t(as.matrix(apply(expression_raw, 2, parse_double)))
         } else {
