@@ -27,3 +27,8 @@ __Version 47, 03/03/2020:__
 Fixed some errors in the splitting code; fixed an Rscript error (Rscripts generated before this fix may not be functional.
 
 
+__Version 48, 03/18/2020:__
+
+Sped up loading from GEO and updated FAQ.
+
+

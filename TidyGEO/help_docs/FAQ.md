@@ -18,6 +18,8 @@
 
 * __What is a series?__
     + GEO is a database of experiments that scientists have uploaded to share publicly. One of the ways the experiments are organized is in a Series. A Series is a set of experiments that are closely related. They often pertain to a specific study. If you visit the page for any GEO Series, you can find a link to PubMed where the study has been published.
+* __How long should a series take to load?__
+    + Normally, a series loads in under 10 minutes. The largest ones may take to 45-90 minutes to load. If the series takes over 10 minutes to load, it is likely too large for TidyGEO to handle. You may consider using the <a href="https://bioconductor.org/packages/release/bioc/html/GEOquery.html" target="_blank">GEOquery R package</a> to handle the series instead.
 * __What does "Trouble establishing connection to GEO. Please try again later" mean?__
     + Your GEO ID is likely in the right format, but it doesn't exist on GEO. 
     + Try searching for that dataset on <a href="https://www.ncbi.nlm.nih.gov/gds/" target="_blank">GEO</a> to see if it actually exists. If you're sure it does, try refreshing the app. 
@@ -152,7 +154,7 @@
 
 ```
  Error in load_series(geoID, dataSetIndex) : 
-  Error in GEOquery:::parseGSEMatrix(destfile, destdir = destdir, AnnotGPL = AnnotGPL, : parsing failed--expected only one '!series_data_table_begin'
+  Error in parseGSEMatrix(destfile, destdir = destdir, AnnotGPL = AnnotGPL, : parsing failed--expected only one '!series_data_table_begin'
 ```
 
 * __What's wrong?__

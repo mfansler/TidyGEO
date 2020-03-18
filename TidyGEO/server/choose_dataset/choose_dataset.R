@@ -46,7 +46,6 @@ output$superseries_suggestion <- renderUI({
 })
 
 observeEvent(input$subseries_selected, {
-  browser()
   updateSelectizeInput(session, inputId = "geoID", selected = input$subseries_selected)
 })
 
