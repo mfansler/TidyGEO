@@ -1,0 +1,20 @@
+#!/bin/bash
+
+############################################
+# This script has the logic for building a
+# Docker image based on the Dockerfile.
+############################################
+
+tmpDir=/tmp/TidyGEO_build
+
+rm -rf $tmpDir
+mkdir -p $tmpDir
+
+cp Dockerfile $tmpDir/
+cp TidyGEO/app.R $tmpDir/
+cp -r TidyGEO/www $tmpDir/
+
+cd $tmpDir
+#docker build -t srp33/tidygeo:v1 .
+ls -al www
+cd -
