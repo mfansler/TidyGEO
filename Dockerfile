@@ -17,20 +17,28 @@ RUN apt-get update -qq \
     Rcpp \
     RColorBrewer \
     RCurl \
+    rdrop2 \
     rJava \
     rhandsontable \
+    rlang \
     shinyBS \
     shinycssloaders \
     shinyFiles \
     shinyjs \
+    splitstackshape \
     xlsx \
+    xml2 \
     yaml \
  && R -e "devtools::install_github('AnalytixWare/ShinySky')" \
  && R -e "BiocManager::install('GEOquery')" \
  && rm -rf /srv/shiny-server/* \
- && mkdir /srv/shiny-server/TidyGEO
+ && mkdir /srv/shiny-server/TidyGEO \
+ && ln -s /srv/shiny-server/TidyGEO /TidyGEO
 
 #COPY app.R /srv/shiny-server/TidyGEO/
 #COPY www/ /srv/shiny-server/TidyGEO/www/
+
+#RUN TidyGEO/series_platform/Combine_Series_Platforms.R
+#RUN TidyGEO/generate_rscript_functions.R
 
 USER shiny

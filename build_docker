@@ -15,6 +15,5 @@ cp TidyGEO/app.R $tmpDir/
 cp -r TidyGEO/www $tmpDir/
 
 cd $tmpDir
-#docker build -t srp33/tidygeo:v1 .
-ls -al www
+docker build -t srp33/tidygeo:v1 .
 cd -
