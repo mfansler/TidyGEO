@@ -2,4 +2,9 @@
 .Rhistory
 .RData
 .Ruserdata
-Code_Review_Notes.*
+*.html
+series*.tsv
+platform*.tsv
+*list.feather
+*.Rprofvis
+rsconnect/
