@@ -11,8 +11,7 @@ rm -rf $tmpDir
 mkdir -p $tmpDir
 
 cp Dockerfile $tmpDir/
-cp TidyGEO/app.R $tmpDir/
-cp -r TidyGEO/www $tmpDir/
+cp -r TidyGEO/* $tmpDir/
 
 cd $tmpDir
 docker build -t srp33/tidygeo:v1 .

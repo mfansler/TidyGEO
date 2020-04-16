@@ -3,9 +3,8 @@ FROM rocker/shiny-verse:3.6.1
 # Install necessary R packages and prepare Shiny server dir.
 RUN apt-get update -qq \
   && apt-get -y --no-install-recommends install \
-    lbzip2 \
-    libv8-dev \
-    openjdk-8-jdk liblzma-dev libbz2-dev libicu-dev libssl-dev \
+    lbzip2 libv8-dev libjpeg-dev libgeos-dev libudunits2-0 libudunits2-dev \
+    libgdal-dev openjdk-8-jdk liblzma-dev libbz2-dev libicu-dev libssl-dev \
   && R CMD javareconf \
   && install2.r --error --deps TRUE \
     assertive \
@@ -13,19 +12,21 @@ RUN apt-get update -qq \
     DT \
     feather \
     fs \
+    httr \
+    janitor \
     later \
+    plotly \
     Rcpp \
     RColorBrewer \
     RCurl \
-    rdrop2 \
     rJava \
     rhandsontable \
     rlang \
     shinyBS \
     shinycssloaders \
-    shinyFiles \
+    shinydashboard \
     shinyjs \
-    splitstackshape \
+    shinyWidgets \
     xlsx \
     xml2 \
     yaml \
@@ -35,10 +36,11 @@ RUN apt-get update -qq \
  && mkdir /srv/shiny-server/TidyGEO \
  && ln -s /srv/shiny-server/TidyGEO /TidyGEO
 
-#COPY app.R /srv/shiny-server/TidyGEO/
-#COPY www/ /srv/shiny-server/TidyGEO/www/
+COPY . /srv/shiny-server/TidyGEO/
 
-#RUN TidyGEO/series_platform/Combine_Series_Platforms.R
-#RUN TidyGEO/generate_rscript_functions.R
+WORKDIR /srv/shiny-server
+
+RUN Rscript TidyGEO/Combine_Series_Platforms.R
+RUN Rscript TidyGEO/generate_rscript_functions.R
 
 USER shiny

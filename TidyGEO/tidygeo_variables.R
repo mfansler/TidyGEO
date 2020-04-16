@@ -216,7 +216,7 @@ FILTER_ICON <- icon("filter")
 
 # A list of all the formatting helper functions, their library dependencies, and their
 # function dependencies, for use with R script writing
-FUNC_LISTS <- readRDS("User/rscript_functions.rds")
+FUNC_LISTS <- readRDS("rscript_functions.rds")
 
 # An icon for help buttons
 HELP_ICON <- icon("question-circle")

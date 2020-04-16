@@ -21,5 +21,4 @@
 ## This will execute the container in interactive mode.
 ## Hit Ctrl-C when you want to close the container.
 docker run --rm -i -t --name goodnomen -p 8080:3838 \
-    -v $(pwd):/tmp \
     srp33/tidygeo:v1
