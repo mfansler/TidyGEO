@@ -8,3 +8,4 @@ platform*.tsv
 *list.feather
 *.Rprofvis
 rsconnect/
+rscript_functions.rds
