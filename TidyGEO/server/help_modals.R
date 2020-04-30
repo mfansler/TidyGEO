@@ -93,8 +93,8 @@ observeEvent(input$divide_help_clicked, {
 })
 
 observeEvent(input$substitute_help_clicked, {
-  images <- c("substitute_example.gif", "substitute_numeric_example.gif")
-  image_names <- c("Demo - Substitute Values", "Demo - Substitute Range")
+  images <- c("substitute_letter.gif", "substitute_numeric.gif", "substitute_nothing.gif")
+  image_names <- c("Demo - Substitute", "Demo - Substitute Range", "Demo - Delete Letter")
 
   help_modal("help_docs/Substitute_Vals_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "substitute_help_clicked")
@@ -111,8 +111,8 @@ observeEvent(input$regex_help_clicked, {
 })
 
 observeEvent(input$exclude_help_clicked, {
-  images <- c("exclude_example.gif", "exclude_numeric_example.gif")
-  image_names <- c("Demo - Exclude Values", "Demo - Exclude Range")
+  images <- c("exclude_na.gif", "exclude_numeric.gif")
+  image_names <- c("Demo - Exclude Blank Values", "Demo - Exclude Range")
 
   help_modal("help_docs/Exclude_Vals_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "exclude_help_clicked")
