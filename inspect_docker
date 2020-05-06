@@ -6,4 +6,4 @@
 #   see how it is configured.
 ############################################
 
-docker run -t -i --rm srp33/tidygeo:v1 /bin/bash
+docker run -t -i --rm srp33/tidygeo:v$(cat TidyGEO/VERSION) /bin/bash

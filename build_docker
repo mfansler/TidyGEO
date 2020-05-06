@@ -14,5 +14,5 @@ cp Dockerfile $tmpDir/
 cp -r TidyGEO/* $tmpDir/
 
 cd $tmpDir
-docker build -t srp33/tidygeo:v1 .
+docker build -t srp33/tidygeo:v$(cat VERSION) .
 cd -
