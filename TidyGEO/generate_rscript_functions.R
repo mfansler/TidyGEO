@@ -39,3 +39,4 @@ func_lists <- lapply(1:(length(section_indices)), function(i) { # For each secti
 names(func_lists) <- func_names
 
 saveRDS(func_lists, file = "TidyGEO/rscript_functions.rds")
+

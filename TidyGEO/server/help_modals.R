@@ -132,7 +132,7 @@ observeEvent(input$r_help_clicked, {
 })
 
 observeEvent(input$replace_id_help_clicked, {
-  images <- c("different_id_example.gif")
+  images <- c("different_id_example2.gif")
   image_names <- c("Demo - Replacing the ID Column")
 
   help_modal("help_docs/Different_ID_Documentation.md", images, image_names)
@@ -140,11 +140,27 @@ observeEvent(input$replace_id_help_clicked, {
 })
 
 observeEvent(input$transpose_help_clicked, {
-  images <- c("transpose_example.gif")
+  images <- c("transpose_example2.gif")
   image_names <- c("Demo - Transpose Columns and Rows")
 
   help_modal("help_docs/Transpose_Documentation.md", images, image_names)
   session$sendCustomMessage("resetValue", "transpose_help_clicked")
+})
+
+observeEvent(input$match_help_clicked, {
+  images <- c("matching_datasets_example.gif")
+  image_names <- c("Demo - Matching up datasets")
+  
+  help_modal("help_docs/Match_Dataset_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "match_help_clicked")
+})
+
+observeEvent(input$join_help_clicked, {
+  images <- c("joining_datasets_example.gif")
+  image_names <- c("Demo - Joining datasets")
+  
+  help_modal("help_docs/Join_Dataset_Documentation.md", images, image_names)
+  session$sendCustomMessage("resetValue", "join_help_clicked")
 })
 
 observeEvent(input$filter_help_clicked, {

@@ -9,3 +9,5 @@ platform*.tsv
 *.Rprofvis
 rsconnect/
 rscript_functions.rds
+.DS_Store
+*mytest*.R

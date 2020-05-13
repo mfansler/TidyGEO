@@ -1,5 +1,6 @@
 tabPanel(title = icon("project-diagram"), value = "2",
-  h4("Joining datasets"),
+  #h4("Joining datasets"),
+  div(h4("Joining datasets"), help_link("all", "join_help")),
   p(paste("Here is where you can join clinical, assay, and/or feature data, essentially merging the two datasets",
            "into one new dataset. Please note that the new dataset may be unwieldy and/or not able to be loaded into",
            "Excel.")),
