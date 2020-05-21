@@ -67,4 +67,10 @@ $(document).ready(function() {
   $(document).on('click', '.files_help', function () {
     Shiny.onInputChange('files_help_clicked', this.id);
   });
+  $(document).on('click', '.match_help', function () {
+    Shiny.onInputChange('match_help_clicked', this.id);
+  });
+  $(document).on('click', '.join_help', function () {
+    Shiny.onInputChange('join_help_clicked', this.id);
+  });
 });
