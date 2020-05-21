@@ -1,4 +1,4 @@
-##Joining Datasets
+## Joining Datasets
 
 Joining datasets allows you to combine two or three types of data (clinical, feature, or assay) into a single table, which is displayed on the **View datasets** tab. 
 

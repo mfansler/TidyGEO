@@ -1,4 +1,4 @@
-##Matching Up Datasets
+## Matching Up Datasets
 
 If one dataset for a series (clinical, feature, or assay) contains samples that another dataset does not contain, you may only want to include the samples that are in both datasets. To do this, select the datasets you would like to match from the drop-down lists, followed by the columns in each dataset you are comparing.
 

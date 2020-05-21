@@ -1,5 +1,4 @@
 tabPanel(title = icon("exchange-alt"), value = "1", 
-         #h4("Matching up datasets"),
          div(h4("Matching up datasets"), help_link("all", "match_help")),
          p(paste("Here is where you can make sure the assay data only includes the samples listed",
                   "in the clinical data (and visa versa) and the assay data only has the probes listed in the",
