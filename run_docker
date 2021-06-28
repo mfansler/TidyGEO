@@ -2,14 +2,11 @@
 
 ######################################################
 # This script has the logic for executing
-# Good Nomen within a Docker container after
+# TidyGEO within a Docker container after
 # the Docker image has been created.
 # It will run on port 8080.
 # It should be accessible from a browser at
-#   http://localhost:8080/GoodNomen
-# You must have an API key for BioPortal in
-#   this directory when you execute this script.
-#   This file should be called BioPortalApiKey.txt.
+#   http://localhost:8080/TidyGEO
 #######################################################
 
 set -o errexit
