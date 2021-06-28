@@ -5,7 +5,9 @@
 # Docker image based on the Dockerfile.
 ############################################
 
-tmpDir=/tmp/TidyGEO_build
+set -o errexit
+
+tmpDir=/tmp/TidyGEO_build_${USER}
 
 rm -rf $tmpDir
 mkdir -p $tmpDir

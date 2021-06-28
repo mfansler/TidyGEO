@@ -12,7 +12,15 @@
 #   This file should be called BioPortalApiKey.txt.
 #######################################################
 
-## This will execute the container in interactive mode.
-## Hit Ctrl-C when you want to close the container.
+set -o errexit
+
+# First stop the container if it is currently running.
+./stop_docker
+
+# Then rebuild the container image using the latest code.
+./build_docker
+
+# Now execute the container in interactive mode.
+# Hit Ctrl-C when you want to close the container.
 docker run --rm -i -t --name tidygeo -p 8080:3838 \
     srp33/tidygeo:v$(cat TidyGEO/VERSION)
