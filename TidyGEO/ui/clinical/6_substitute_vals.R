@@ -1,5 +1,5 @@
 tabPanel(title = SUBSTITUTE_ICON, value = "6",
-         h4("Substituting values"),
+         h4("Substitute values"),
          p("In order to achieve the uniformity required to combine datasets, it may be helpful to substitute 
            some of the values in the data for other values."), 
          p("Here, you can identify values you would like to replace and an alternative to replace them with."),
