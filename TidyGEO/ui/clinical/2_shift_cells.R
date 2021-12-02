@@ -1,10 +1,10 @@
 tabPanel(title = SHIFT_ICON, value = "2",
-         h4("Shifting cells"),
+         h4("Extract shifted values"),
          p('Sometimes, missing values can cause data from a single variable (such as "Sex" and "Freq" in ', 
            actionLink(inputId = "show_broken_cols_example", label = "this example"),
            ') to be scattered across multiple columns. This makes it difficult to extract data for the single variable.'),
-         p("Here, you can identify columns whose values are in the incorrect columns, choose a common (something), and organize it 
-           according to their (something)." 
+         p("Here, you can identify columns whose values are in the incorrect columns, choose a common pattern, and organize it 
+           according to it." 
            ),
            
 
