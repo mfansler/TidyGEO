@@ -401,3 +401,26 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
   results[["result"]] <- data
   return(results)
 }
+
+shifting_cells = function(all_data, pattern, col_names, new_colum_name) {
+  data_needed = all_data[col_names]
+  x = function(a) {
+    b = grep(pattern, a, value = TRUE)
+    #print(pattern)
+    #print(b)
+    if (length(b) == 0) {
+      return (NA)
+    } else if (length(b) > 1){
+      return (b[1])
+    } else {
+    return (b)}
+  }
+ 
+  last_col = length(col_names)
+  new_colum = apply(data_needed, 1, x)
+  all_data = add_column(all_data, new_colum, .after = col_names[last_col])
+ # all_data$new_colum_name = apply(data_needed, 1, x)
+  colnames(all_data)[colnames(all_data) == "new_colum"] = new_colum_name
+  return (all_data)
+}
+

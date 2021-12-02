@@ -41,6 +41,7 @@ suppressPackageStartupMessages({
   
   # T
   library(tidyr)
+  library(tidyverse)
 })
 
 libs <- c(
@@ -75,7 +76,8 @@ libs <- c(
   "stringr",
   
   # T
-  "tidyr"
+  "tidyr",
+  "tidyverse"
 )
 
 # An expression that will attach GEOquery if it is installed, otherwise it will install and attach
