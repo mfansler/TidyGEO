@@ -1,5 +1,5 @@
 tabPanel(title = SPLIT_PAIRS_ICON, value = "3",
-         h4("Splitting key-value pairs"),
+         h4("Split key-value pairs"),
          p('Sometimes a single column contains key-value pairs in each cell. This makes it more difficult to analyze the data.'),
          p('If you see any columns in your data that contain key-value pairs separated by a delimiter
           (e.g., "treatment:control" or "sex = female"), 
