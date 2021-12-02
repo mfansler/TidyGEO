@@ -1,5 +1,5 @@
 tabPanel(RENAME_ICON, value = "5",
-         h4("Renaming columns"),
+         h4("Rename columns"),
          p("In order to integrate the data with other data sources or for humans to be able to understand the data,
            it may be helpful to replace the existing column names with more accurate/descriptive ones."),
          p("Here, you can give any column a new name."),
