@@ -1,5 +1,5 @@
 tabPanel(title = FILTER_ICON, value = "1",
-         h4("Selecting informative columns"),
+         h4("Select informative columns"),
          p("It can be helpful to filter out unneeded columns for better storage capacity and improved
            human readability."), 
          p("Here, you can choose which columns are most important for you to keep
