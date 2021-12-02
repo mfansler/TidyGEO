@@ -1,5 +1,5 @@
 tabPanel(title = SPLIT_COLS_ICON, value = "4",
-         h4("Splitting columns"),
+         h4("Split columns"),
          p('Sometimes a single column contains multiple values in each cell. This makes it more difficult to analyze the data.'),
          p('If you see any columns in your data that contain multiple values in a column (e.g., "control;geneA;female" or "time 0, treatment1"), 
            you can indicate that here and separate them.'),
