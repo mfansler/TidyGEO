@@ -150,7 +150,6 @@ get_clinical_data <- function() {
   add_function("process_clinical", "clinical")
   save_lines(paste0(dataname("clinical"), " <- process_clinical(", SERIES, ")"), "clinical", "body")
   set_reset_point_script("clinical")
-  
 }
 
 get_assay_data <- function() {

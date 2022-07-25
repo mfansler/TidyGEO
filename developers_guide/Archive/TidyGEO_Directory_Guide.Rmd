@@ -1,18 +1,91 @@
 ---
-title: "An Overview of TidyGEO"
+title: "An Overview of TidyGEO and Some Helpful Resources"
+author: "Avery Bell"
+date: "June 25, 2019"
 output:
   html_document: default
 ---
 
-## Introduction
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
 
+## Table of Contents {#contents}
+1. __[Introduction to TidyGEO](#intro-to-tidygeo)__
+   + [Introduction to Gene Expression Omnibus](#intro-to-geo)
+   + [Motivation for the app](#app-motivation)
+2. __[Use Case](#use-case)__
+   + [Cleaning up a GEO dataset](#geo-cleaning-steps)
+   + [Possible application](#example)
+3. __[Shiny Apps](#shiny-apps)__
+   + [Basic format](#shiny-apps-overview)
+   + [Resources](#shiny-apps-resources)
+4. __[TidyGEO Code](#tidygeo-code)__
+   + [Directory structure](#directory-structure)
+   + [File contents](#file-contents)
+   + [Style guide](#style-guide)
+   + [Functions and how to use them](#tidygeo-functions)
+5. __[Next Steps](#next-steps)__
+   + [Known bugs](#known-bugs)
+   + [TODO items](#todo-items)
+   + [Possible future features](#future-features)
+5. __[Miscellaneous](#misc)__
+   + [Error log](#error-log)
+   + [Shiny/R tips and observations](#observations)
+   + [Tips for time testing](#time-testing)
+   + [Tips for screen recording GIFs](#gifs)
+   + [Tips for drawing logos](#logos)
+   + [Other resources](#other-resources)
+       - [On RMarkdown](#Rmarkdown-resource)
+
+------------------------
+
+## Introduction {#intro-to-tidygeo}
+
+### Gene Expression Omnibus {#intro-to-geo}
+An online repository of array- and sequence-based data. Scientists can go here for publicly available data to look at genes, proteins, etc. that interest them. One of the largest databases of its kind. Submissions are [MIAME](https://www.ncbi.nlm.nih.gov/geo/info/MIAME.html) compliant but the metadata associated with the submissions (i.e., descriptions of the sample sources, such as patient age and disease assessment) are not regulated, so they are often messy and hard to analyse using computational tools.
+
+GEO data can be accessed via an R package called GEOQuery, but scientists with no R coding experience must learn the language in order to use this tool, and manual data extraction can often be tedious and error-prone, especially with large batches of datasets that are necessary for certain computational tools to perform their analysis.
+
+There are some tools that have attempted to clean up the metadata and to enable scientists to access it, but these tools either perform the analysis for the user (not giving them access to the cleaned-up data) or rely on crowd-curating efforts, which are not able to keep up with the growing number of datasets on GEO.
+
+### TidyGEO {#app-motivation}
 TidyGEO is an app that lets scientists (even those with little coding experience) download and clean up GEO data to use for their own purposes.
 
-## Shiny Apps
+[&uarr; To top](#contents)
 
+------------------------
+
+## Use case {#use-case}
+[GSE112914](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE112914): Differential gene expression analysis of MYCN-amplified neuroblastoma cells after Doxycycline inducible shRNA knockdown of JMJD6 gene expression
+
+### [BRB Array Tools](https://brb.nci.nih.gov/BRB-ArrayTools/)
+A package that helps visualize and perform statistical analysis on Microarray gene expression, copy number, methylation and RNA-Seq data.
+
+### Cleaning up the data {#geo-cleaning-steps}
+[TidyGEO](https://tidygeo.shinyapps.io/tidygeo/)
+
+1. Filter out unnecessary columns (to be less overwhelming)
+2. Split key-value pairs
+3. Split multiple values in a column
+3. Shift cells
+4. Substitute doxy and control in replicate for NA
+5. Substitute "repeat" for ""
+6. Filter out NAs in replicate, or maybe duplicates in replicate
+7. Download clinical data
+8. Briefly look at assay and feature data
+
+### Analysis {#example}
+Now you can look at the effect of replicates on the expression measurements.
+
+[&uarr; To top](#contents)
+
+------------------------
+
+## Shiny Apps {#shiny-apps}
 Shiny is an R package that makes it easy to build interactive web apps straight from R.
 
-### The basics
+### The basics {#shiny-apps-overview}
 * [Structure of a Shiny App](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/)
 * UI
     + The UI lays out what the app looks like. It is made up of [widgets](https://shiny.rstudio.com/gallery/widget-gallery.html) that allow the user to interact with the app and [layouts](https://shiny.rstudio.com/articles/layout-guide.html) that define how the widgets are arranged on the page.
@@ -46,41 +119,77 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
         - kept in the www/ directory
         - may include browser icon, logos, icons, etc.
 
-### Resources
+### Resources {#shiny-apps-resources}
 * [Introduction to Shiny video](https://www.rstudio.com/resources/webinars/introduction-to-shiny/)
 * [Shiny Video and Written Tutorials](https://shiny.rstudio.com/tutorial/)
 * [R Style Guide](https://style.tidyverse.org/)
 
-## TidyGEO Code
+[&uarr; To top](#contents)
 
-### TidyGEO structure
+------------------------
 
-* Level 1 - TidyGEO directory
+## TidyGEO Code {#tidygeo-code}
+
+### TidyGEO structure {#directory-structure}
+* Root
+    + `.gitignore`
+        - Lists files that should not be updated on GitHub
+    + `Code_Review_Notes.Rmd`
+        - Some notes from my Code Review--pretty much the same as this document except less detailed
+    + `geocurate_repo.Rproj`
+        - Some settings for the old Rproject (an RStudio thing)
+    + `README.md`
+        - The readme for the GitHub repo
+    + `TidyGEO/`
+        - Contains all the code
+    + `TidyGEO_Directory_Guide.Rmd`
+        - This file
+* Level 1 - TidyGEO
     + `app.R`
         - sources all the R scripts from the ui and server directories
         - creates the ui object and the server function
         - creates some lists of reactiveValues that are used in the app
         - contains some instructions for how column navigation should work
         - contains shinyApp function to knit UI and server
+    + `deploy_app.R`
+        - updates the list of available GEO series to choose from
+        - updates the list of formatting functions that can be included in the scripts the user can download
+        - launches the app to shinyapps.io
+    + `error_log.md`
+        - a list of errors I have encountered and how I fixed them
+    + `file_manifest.txt`
+        - defines which files are necessary when publishing the app to the web
+    + `generate_profile.R`
+        - generates a profile for the app, see the [time testing tips](#time-testing) section
     + `generate_rscript_functions.R`
         - generates a list of functions that can be used in the scripts the user can download
+    + `tidygeo-install.R`
+        - contains the packages needed to run the app and use any of the functions in the app (some packages may be extraneous--this hasn't been updated in a while)
     + `tidygeo_functions.R`
         - some functions for the app that don't really fall under the "ui", "server", or "variables" categories; mostly for script writing
     + `tidygeo_variables.R`
         - consists of two parts: global variables and naming conventions
         - global variables are constants used by multiple parts of the app
         - naming conventions are patterns for which variables in the app are named; these are useful because the same name will often be referenced by both the server and the ui portions, so naming conventions make it so you don't have to remember as many variable names; these are also useful because similar variables will often appear for each of the datatypes (clinical, assay, feature, all) and naming conventions make it so you can name these all similarly and reference each of them without having to remember how you named them
+    + `time_testing.R`
+        - basically a sandbox for optimizing various pieces of code; se the [time testing tips](#time-testing) section
     + `VERSION`
         - defines the version of the app, updates with every commit
     + `help_docs/`
         - Markdown files for the help icons in the app
         - (Generally it's a good idea to separate out large portions of text from code that actually does work.)
+    + `rsconnect/`
+        - an automatically-generated directory that I do not touch; necessary to publish the app to shinyapps.io
+    + `series_platform/`
+        - contains a script that populates the dropdown you see on the first tab
     + `server/`
         - contains all the code for the server function
         - subsectioned by datatype (clinical, assay, feature, all)
     + `ui/`
         - contains all the code for the ui object
         - subsectioned by datatype (clinical, assay, feature, all)
+    + `User/`
+        - pretty much everything in this directory is useless except rscript_functions.rds--it is the list of the functions that can be included in the script the user can download
     + `www/`
         - resources for the app, including help gifs, the series and platform lists, the javascript file, and the css styling file
 * Level 2 - `server`
@@ -115,30 +224,26 @@ Shiny is an R package that makes it easy to build interactive web apps straight 
         - for each chunk, you'll see a dot followed by the name of a class followed by some attributes for the class
         - it's generally good practice to put any styling HTML in a separate script such as this one so that your R code doesn't look as cluttered
 
-### Style guide and naming practices
-
-We aspire to follow the [tidyverse style guide](https://style.tidyverse.org/).
+### Style guide and naming practices {#style-guide}
+I tried my best to follow the tidyverse style guide written by Hadley Wickham as it appears in [this article](https://style.tidyverse.org/).
 
 #### Naming conventions
-
-1. Most variable and function names are lowercase with underscores separating the words. If you ever want to change this convention, change the `SEP` variable in `tidygeo_variables.R`.
-2. Much of the app is built using functions, and these functions use specific names to reference certain variable names in the app. Rather than having the programmer memorize how the functions reference the variable names, we created naming patterns in `tidygeo_variables.R` that define how certain types of variables are named. To change the naming pattern, one simply changes `tidygeo_variables.R` and all the variable names in the app will be updated. In this way, the naming conventions in `tidygeo_variables.R` also prevent extensive refactoring.
+1. Most variable and function names are all undercase with underscores separating the words. If you ever want to change this convention, please change the `SEP` variable in `tidygeo_variables.R`.
+2. Much of the app is built using functions, and these functions use specific names to reference certain variable names in the app. Rather than having the programmer memorize how the functions reference the variable names, I created naming patterns in `tidygeo_variables.R` that define how certain types of variables are named. To change the naming pattern, one simply changes `tidygeo_variables.R` and all the variable names in the app will be updated. In this way, the naming conventions in `tidygeo_variables.R` also prevent extensive refactoring.
 3. In general, variables are named using three parts: the general name for the variable, the datatype the variable corresponds to (clinical, assay, feature, all), and some kind of extra tag to make that variable unique, in case it is used for the same datatype in multiple sections.
 
 #### Organization
-
-1. Tabs are organized by datatype and by what the user can do to that data in the tab.
+1. Tabs are organized by datatype and by what the user can do to that data in the tab. 
 2. Code is usually organized by datatype and tab. Code chunks are separated by a comment ending in three or more dashes, which can be easily produced in RStudio using `Ctrl` + `Shift` + `R`.
 3. Chunks of text for the app are usually kept in separate files, not in the R code.
 4. All global variables are defined in `tidygeo_variables.R`, not in app.R or any of the scripts that build the app.
 5. All libraries needed for the app to run are loaded in `tidygeo_variables.R`.
 6. Functions are always defined outside the tab R scripts. Functions that are used in the UI portion are defined in `tidygeo_ui_functions.R`. Functions that make changes to the data are defined in `formatting_functions.R`. Functions that are used in the Server portion are defined in `tidygeo_server_functions.R`. Functions that do not fit into a category are defined in `tidygeo_functions.R`.
 
-### Functions and how to use them
+### Functions and how to use them {#tidygeo-functions}
+There are two reasons that I would __strongly encourage__ any programmer working on this app to use the existing functions rather than writing things from scratch.
 
-Where possible, it is best to use existing functions rather than writing things from scratch.
-
-1. Pieces of UI code often correspond to similarly-named pieces of server code.
+1. Pieces of UI often correspond to similarly-named pieces of Server.
 
 Just like you pair a `textOutput` in the UI with a `renderText` in the Server, I have created pieces of UI that correspond to pieces of the Server, and these corresponding pieces have similar names. One example is with the column navigation you might notice above each of the datatables in the app. The UI for the column navigation looks like this:
 ```{r eval=FALSE}
@@ -154,9 +259,7 @@ fluidRow( # A row for all these elements
     )
   )
 ```
-
 and the server looks like this:
-
 ```{r eval=FALSE}
 # This fills in the spot with the text showing what subset the user is viewing
 output[["cols_visible_clinical_data_viewer"]] <- renderText({
@@ -167,9 +270,7 @@ output[["cols_visible_clinical_data_viewer"]] <- renderText({
         "columns")
 })
 ```
-
 See how the variable names in the UI and Server look similar? They all have the name of the element ("prev_cols", "cols_visble", or "next_cols"), then the datatype, then the section where the element appears ("data_viewer"), all separated by an underscore. Now, rather than repeating these chunks of UI and Server for every single datatype, I made functions that will create these pieces for me:
-
 ```{r eval=FALSE}
 # ui functions
 # The "extra tag" specifies the section for the element; it helps make the element unique
@@ -202,7 +303,6 @@ col_navigation_set("clinical", "data_viewer")
 # server
 col_navigation_set_server("clinical", "data_viewer")
 ```
-
 2. The use of functions makes variable names very important
 
 You might have noticed how the functions above had to know a little bit about how the variables would be named in order to reference them. For example, the server function had to know that the textOutput spot would start with "cols_visible" and end in the datatype and an extra tag. Rather than forcing the programmer to memorize this naming schema, I created functions that replicate the naming schema--for this example, a function called `visible` that creates the string `cols_visible_clinical_data_viewer` given the datatype `clinical` and the section `data_viewer`. Functions like this are also helpful when the programmer wants to change the naming schema. For example, if the programmer wanted to change the prefix from `cols_visible` to `view_subset`, they would simply need to change one line in`tidygeo_variables.R` rather than refactoring all of the ui and server code.
@@ -211,15 +311,78 @@ You might have noticed how the functions above had to know a little bit about ho
 
 This app currently only has four datatypes: clinical, assay, feature, and all, and if one references a datatype that does not exist, say they tried to call `expression_vals$viewing_subset`, they will get an error. Referencing the datatypes by hand (i.e. [datatype]`_vals$`[datatype]`_data`) will throw a generic "variable not found" error that may be difficult to track down, but using functions (i.e. get_data_member(datatype, dataname(datatype))) will make use of my built-in error checking that indicates which function caused the error and keeps the app from crashing.
 
-### Shiny/R tips and observations
+[&uarr; To top](#contents)
+
+------------------------
+
+## Next Steps {#next-steps}
+
+### Known bugs {#known-bugs}
+
+1. (none)
+
+### TODO items {#todo-items}
+
+1. Loading assay data into the app is ridiculously slow because the loading function must perform the O(n^2) operation of checking whether each cell is a blank string " " and replacing it with NA if so.
+2. If the user wants to load the data into BRB array tools, the assay data can't have been transposed. There is currently nothing to prevent the user from doing this.
+3. Credit Nicke Manarin and ScreenToGif for the GIFs
+4. Update the following help documentation:
+    + About
+    + Apply Filters
+    + Different ID
+    + Divide Vars
+    + Download Data
+    + Exclude Vals
+    + Expression Data
+    + FAQ
+    + File Types (esp. on BRB Array Tools)
+    + Filter Data
+    + R Help
+    + Regular Expressions
+    + Shift cells
+    + Split vars
+    + Substitute vals
+    + Transpose
+
+### Possible future features {#future-features}
+
+1. Sometimes, as is the case for GSE20181, datasets will have subsets of rows that should be treated differently from the other rows. Currently the app only supports edits on entire columns. Perhaps we could add a feature to select which rows the user would like to reformat.
+2. There are no data analysis options for the assay data. We could look into some common data analysis things like the ones BRB Array Tools expects the data to already have when it is loaded.
+3. There are very few formatting options for the feature data.
+4. We could add options to create graphs besides bar plots/histograms.
+5. We could add standardization options such as those that appear in GoodNomen.
+6. We could suggest certain edits based on what we find in the data. For example, if a column has a non-word character, we could suggest that the user split columns on a delimiter.
+7. If not all rows in a column contain a delimiter when the user wants to split the column, the entire column is not split. We could make this smarter so it only splits the rows that contain the delimiter and leaves the rest in the first column.
+8. There's probably a better way to summarize the data so the user can see what's in all the rows than the bar plots. The labels in the bar plots are often cut off so it's hard to see the unique values.
+9. We could add an option to transpose/summarize clinical data like in the assay data tab.
+10. We could make it so the series and platform lists don't have to be udpated manually.
+11. The rownames on the clinical data aren't really necessary since there's always a `geo_accession` column. We could drop the rownames and make the `geo_accession` column an ID like the IDs in the assay and feature data tabs.
+12. We could add a way to combine two different series.
+
+[&uarr; To top](#contents)
+
+------------------------
+
+## Miscellaneous {#misc}
+
+### Error log {#error-log}
+When I run into a tricky error, I make note of it in `error_log.md`, so when I encounter the error again, I can know how to fix it quickly. Here are some of the errors I have encountered so far.
+
+------------------------
+
+```{r child = 'TidyGEO/error_log.md'}
+```
+
+------------------------
+
+### Shiny/R tips and observations {#observations}
 
 #### On renderUI vs updateInput
 `renderUI`s are, in general, better than observes with `update[]Input`s in them. This is because observes are called more often--whenever their dependencies are updated--rather than only when we need to use them in the UI. I have a hypothesis, though, that with computationally-intensive UIs that we need to use often and that update often, an `update[]Input` might outperform a `renderUI` since it only has to update a part of the UI rather than render the entire thing again. However, I have never encountered a UI so difficult to render that `renderUI` lagged down the code. So IDK.
 
-### Tips for performance testing
+### Tips for time testing {#time-testing}
 
 There is an R package called profvis that can perform profiling for Shiny apps, i.e., it watches the app as the app runs and when the app stops, outputs data on which parts of the code took the longest and which were called the most. This package usually didn't work for me because the output file is too big (there are fixes for this that I found on Google but these worked once and stopped working). I usually just copy-and-pasted sections of code into `time_testing.R`, used Sys.time() calls before and after each section to check how long it took, and printed out the time to see how many times it was called. All the Sys.time() calls should be removed but there might be some I forgot about.
-
 ```{r time_testing_example}
 
 start <- Sys.time()
@@ -231,15 +394,17 @@ print(end - start)
 
 ```
 
-### Tips for screen recording GIFs
+### Tips for screen recording GIFs {#gifs}
 
 I used the free software ScreenToGif developed by Nicke Manarin (we might consider crediting him somewhere in the app). It is available for download [here](https://www.screentogif.com/). It's pretty easy to use, and the help docs are self-explanatory. I recorded all the GIFs by running the app on my machine using Google Chrome.
 
-### Tips for drawing logos
+### Tips for drawing logos {#logos}
 
 I used the free, open-source software Inkscape to draw the arrow logo for TidyGEO. It is available for download [here](https://inkscape.org/release/inkscape-0.92.4/).
 
-### Other resources
+### Other resources {#other-resources}
 
-#### On Rmarkdown
+#### On Rmarkdown {#Rmarkdown-resource}
 Pimp my RMD: a few tips for R Markdown, by Yan Holtz [(link)](https://holtzy.github.io/Pimp-my-rmd/)
+
+[&uarr; To top](#contents)
