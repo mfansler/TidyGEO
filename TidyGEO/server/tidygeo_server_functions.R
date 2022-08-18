@@ -147,7 +147,9 @@ get_clinical_data <- function() {
   
   #WRITING COMMANDS TO R SCRIPT
   save_lines(commentify("extract clinical data"), "clinical", "body", overwrite = TRUE)
+  
   add_function("process_clinical", "clinical")
+  #print(scripts)
   save_lines(paste0(dataname("clinical"), " <- process_clinical(", SERIES, ")"), "clinical", "body")
   set_reset_point_script("clinical")
 }

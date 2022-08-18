@@ -167,6 +167,7 @@ save_to_rscript <- function(datatype, file_path = file.path(tempdir(), "script_t
     libs <- do.call("c", lapply(unique(scripts[[datatype]][["libraries"]]), format_library))
     # format functions
     funcs <- do.call("c", lapply(unique(scripts[[datatype]][["functions"]]), format_function))
+    
     # put all the sections together
     whole_script <- c(
       START_MESSAGE, 
@@ -181,7 +182,7 @@ save_to_rscript <- function(datatype, file_path = file.path(tempdir(), "script_t
     # write script to file
     sink(file_path)
     for (i in 1:length(whole_script)) cat(whole_script[i], fill = T)
-    sink()
+      sink()
     
   } else {
     stop(paste("Error in save_to_rscript.", INVALID_DATATYPE_MESSAGE))
@@ -360,6 +361,7 @@ save_rscript <- function(datatype, file, file_name, file_type) {
   file_names <- if (length(datatype) > 1) paste0(file_dir, "/", file_name, ".R") else file
   lapply(1:length(datatype), function(i) {
     save_lines(commentify("save data"), datatype[i], "end", overwrite = TRUE)
+    
     if (datatype[i] == "clinical") {
       save_lines(c("myData <- cbind(rownames(clinical_data), clinical_data)", 
                    "colnames(myData)[1] <- ''", 
@@ -408,35 +410,3 @@ save_rscript <- function(datatype, file, file_name, file_type) {
     setwd(current_dir)
   }
 }
-
-# Deprecated functions ----------------------------------------------------
-
-
-saveDataRDS <- function(data, fileName) {
-  token <- readRDS("droptoken.rds")
-  
-  filePath <- file.path(tempdir(), fileName)
-  write_rds(x = data, path = filePath)
-  drop_upload(filePath, path = "Shiny", dtoken = token)
-}
-
-loadRdsFromDropbox <- function(geoID) {
-  token <- readRDS("droptoken.rds")
-  
-  currPath <- paste0("/Shiny/", geoID, ".rds")
-  localPath <- file.path(tempdir(), paste0(geoID, ".rds"))
-  
-  filesInfo <- drop_dir("Shiny")
-  filePaths <- filesInfo$path_display
-  if (currPath %in% filePaths) {
-    print("RDS found")
-    filePath <- filePaths[which(filePaths == currPath)]
-    drop_download(path = filePath, local_path = localPath, dtoken = token, overwrite = TRUE)
-    data <- read_rds(localPath)
-    return(data)
-  }
-  return(NULL)
-}
-
-
-

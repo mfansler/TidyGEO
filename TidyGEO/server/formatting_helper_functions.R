@@ -28,10 +28,9 @@ get_platforms <- function(geoID, session = NULL) {
 }
 
 # Parse the matrix files from GEO -----------------------------------------
-# Library dependencies:
-# Function dependencies: purrr, dplyr, readr, tidyr
-parseGSEMatrix <- function (fname, AnnotGPL = FALSE, destdir = tempdir(), getGPL = TRUE, 
-                            parseCharacteristics = TRUE) 
+# Library dependencies: purrr; dplyr; readr; tidyr
+# Function dependencies:
+parseGSEMatrix <- function(fname, AnnotGPL = FALSE, destdir = tempdir(), getGPL = TRUE, parseCharacteristics = TRUE) 
 {
   dat <- read_lines(fname)
   i <- 1
@@ -154,11 +153,9 @@ parseGSEMatrix <- function (fname, AnnotGPL = FALSE, destdir = tempdir(), getGPL
                                                    colnames(sampledat), ignore.case = TRUE)]), eset = eset))
 }
 
-
-
 # A helper function for getGEO --------------------------------------------
 # Library dependencies: GEOquery
-# Function dependencies:
+# Function dependencies: parseGSEMatrix
 getAndParseGSEMatrices <- function(GEO, destdir, AnnotGPL, getGPL = TRUE, 
                                    parseCharacteristics = TRUE, platform = NULL) 
 { # Please note: this function was copied from the GEOquery package. It was altered
@@ -226,13 +223,8 @@ getGEO <- function(GEO = NULL, filename = NULL, destdir = tempdir(),
 
 # Get expressionSet object for a given GSE and platform -------------------
 # Library dependencies: GEOquery
-# Function dependencies: getGEO
+# Function dependencies: getGEO; read_lines
 load_series <- function(geoID, platform, session = NULL) {
-  
-  #expressionSet <- loadRdsFromDropbox(geoID)
-  #expressionSet <- NULL
-  
-  #if (is.null(expressionSet)) {
     eSet_status <- tryCatch({
       if (!grepl("GSE", geoID, ignore.case = TRUE)) {
         stop('Please enter an ID that begins with "GSE".', call. = FALSE)
@@ -241,7 +233,6 @@ load_series <- function(geoID, platform, session = NULL) {
       #browser()
       if (in_app) incProgress(message = "Loading series files")
       expressionSet <- getGEO(geoID, platform = platform)
-      #saveDataRDS(expressionSet, paste0(geoID, ".rds"))
       list(eSet = expressionSet, status = "pass")
     }, error = function(e){
       if (grepl("open\\.connection", paste0(e))) {
@@ -273,7 +264,6 @@ load_series <- function(geoID, platform, session = NULL) {
     } else if (eSet_status$status != "pass") {
         stop(eSet_status$status)
     }
-  #}
   return(eSet_status$eSet)
 }
 
@@ -767,13 +757,12 @@ shift_cells <- function(data, col1, col2, conflicts = NULL) {
 
 # Move values into the correct column -------------------------------------
 # Library dependencies: tidyr; stringr; dplyr; tidyverse
-# Function dependencies
-shifting_cells = function(all_data, pattern, col_names, new_colum_name) {
+# Function dependencies:
+shifting_cells <- function(all_data, pattern, col_names, new_colum_name) {
   data_needed = all_data[col_names]
   x = function(a) {
     b = grep(pattern, a, value = TRUE)
-    #print(pattern)
-    #print(b)
+
     if (length(b) == 0) {
       return (NA)
     } else if (length(b) > 1){
@@ -789,8 +778,6 @@ shifting_cells = function(all_data, pattern, col_names, new_colum_name) {
   colnames(all_data)[colnames(all_data) == "new_colum"] = new_colum_name
   return (all_data)
 }
-
-
 
 # Extract assay data from expressionSet object --------------------------
 # Library dependencies: GEOquery
@@ -1125,10 +1112,3 @@ join_data <- function(df1, df2, join_col1, join_col2, join_behavior) {
   }
   return(result)
 }
-
-
-
-# Join up to three datasets -----------------------------------------------
-# Library dependencies:
-# Function dependencies:
-

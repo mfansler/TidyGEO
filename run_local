@@ -3,6 +3,6 @@
 #Rscript install_for_local_dev.R
 
 #Rscript TidyGEO/Combine_Series_Platforms.R
-#Rscript TidyGEO/generate_rscript_functions.R
+Rscript TidyGEO/generate_rscript_functions.R
 
 R -e "shiny::runApp('TidyGEO', port=8080)"

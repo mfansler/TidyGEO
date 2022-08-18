@@ -5,6 +5,7 @@ library(readr)
 func_strings <- read_lines("TidyGEO/server/formatting_helper_functions.R")
 # Find the section delimiters of the file
 section_indices <- which(str_detect(func_strings, "# .+-{3}"))
+
 # Initialize an empty list of function names
 func_names <- NULL
 
@@ -17,6 +18,7 @@ func_lists <- lapply(1:(length(section_indices)), function(i) { # For each secti
   # Extract the function name
   search_str <-  " ?\\<\\- ?function\\(.*"
   func_name <- str_remove(this_section[which(str_detect(this_section, search_str))], search_str)
+
   # Add the function name to the list of function names
   func_names <<- c(func_names, func_name)
   
@@ -32,11 +34,9 @@ func_lists <- lapply(1:(length(section_indices)), function(i) { # For each secti
   
   # Return a list with the pieces of the function
   list(func_text = this_section, lib_dependencies = lib_dependencies, func_dependencies = func_dependencies)
-  
 })
 
 # Name the items in the list by their function name
 names(func_lists) <- func_names
 
 saveRDS(func_lists, file = "TidyGEO/rscript_functions.rds")
-
