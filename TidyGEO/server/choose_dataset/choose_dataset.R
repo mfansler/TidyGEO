@@ -86,7 +86,7 @@ observeEvent(input$download_data_evaluate, {
     message <- if (datatype == "all") {
       "No datasets have been joined. Please join some datasets." 
     } else {
-      paste("Please load some", datatype, "data.")
+      paste("Please load some", datatype, "data. It is possible that you have not yet selected a GEO series or that you filtered the data such that no data remained. If so, you can undo your latest change.")
     }
     set_x_equalto_y("display_default", data.frame(message), datatype)
     

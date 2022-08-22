@@ -343,7 +343,7 @@ process_clinical <- function(expressionSet, session = NULL) {
 # Mark which columns in the dataset are informative -----------------------
 # Library dependencies:
 # Function dependencies: isAllNum
-evaluate_cols_to_keep <- function(col, toFilter = list()) {
+evaluate_cols_to_keep <- function(col_values, toFilter = list()) {
   functions <- list("reanalyzed" = function(x) all(!grepl("Reanaly[sz]ed ", x)),
                     "url" = function(x) all(!grepl("(((https?)|(ftp)):\\/\\/)|www\\.", x)),
                     "dates" = function(x) all(!grepl("[A-Za-z]+ [0-9]{1,2},? [0-9]{2,4}", x)),
@@ -353,16 +353,20 @@ evaluate_cols_to_keep <- function(col, toFilter = list()) {
                       isTooLong <- as.logical(nchar(x) > 100)
                       sum(isTooLong) < (length(x) / 2)
                     })
-  col_no_NA <- if (any(is.na(col)) || any(col == "")) col[-which(is.na(col) | col == "")] else col
-  total_rows <- length(col)
+  
+  col_no_NA <- if (any(is.na(col_values)) || any(col_values == "")) col_values[-which(is.na(col_values) | col_values == "")] else col_values
+  total_rows <- length(col_values)
+  
   if (length(col_no_NA) > 0) {
     if (length(toFilter > 0)) {
       return(all(sapply(toFilter, function(x) {
         do.call(what = functions[x][[1]], args = list("x" = col_no_NA))
       })))
     }
+    
     return(TRUE)
   }
+  
   return(FALSE)
 }
 
@@ -374,12 +378,11 @@ filterUninformativeCols <- function(metaData, toFilter = list())
   metaData <- metaData[!duplicated(as.list(metaData))]
   
   if (ncol(metaData) > 1) {
-    
     cols_to_keep <- apply(metaData, 2, evaluate_cols_to_keep, toFilter = toFilter)
-    
+
     if (all(!cols_to_keep)) {
-      print("No informative columns found.")
-      NULL
+      #print("No informative columns found.")
+      metaData <- NULL
     } else {
       metaData <- metaData[cols_to_keep]
     }
