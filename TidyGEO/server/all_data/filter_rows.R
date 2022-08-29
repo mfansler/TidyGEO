@@ -94,7 +94,7 @@ filter_rows_ui <- tagList(
            br(),
            br(),
            br(),
-           icon("times", class = "center_align")
+           icon("code-merge", class = "center_align")
     ),
     column(4,
            DTOutput("col_to_match2_preview"),

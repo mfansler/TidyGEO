@@ -261,7 +261,7 @@ create_plot <- function(value, plot_color, plot_binwidth, title, is_numeric = FA
       geom_bar(data = as.data.frame(table(value, useNA = "ifany")), aes(x = value, y = Freq), 
                stat = "identity", fill = plot_color) +
       ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(value)), shorten_labels, 10))
+      scale_x_discrete(labels = sapply(unique(as.character(value)), shorten_labels, 35))
   }
   ggplotly(p) %>% config(displayModeBar = F)
 }
@@ -280,7 +280,7 @@ create_plot_to_save <- function(variable, plot_color, plot_binwidth, title, base
       geom_bar(data = as.data.frame(table(variable, useNA = "ifany")), aes(x = variable, y = Freq), 
                stat = "identity", fill = plot_color) +
       ggtitle(title) +
-      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 10))
+      scale_x_discrete(labels = sapply(unique(as.character(variable)), shorten_labels, 35))
   }
 }
 

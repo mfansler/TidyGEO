@@ -18,7 +18,8 @@ tabPanel(title = FILTER_ICON, value = "1",
                                                                 "Is unique",
                                                                 "Contains a date", 
                                                                 "Is a web address"),
-                                             choiceValues = list("same_vals", "all_diff", "dates", "url"))
+                                             choiceValues = list("same_vals", "all_diff", "dates", "url"),
+                                             select = c("same_vals", "dates", "url"))
          ),
          conditionalPanel(condition = "input.filter_option == 'column_filters'",
                           div(tags$b("By column name"),

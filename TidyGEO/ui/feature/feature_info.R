@@ -1,4 +1,4 @@
-tabPanel(title = icon("question-circle"), value = "1",
+tabPanel(title = icon("circle-question"), value = "1",
          h4("Formatting the feature data"),
          HTML('<p>In the <b>assay data</b> table, you will see a column labeled <b>"ID"</b>. This is a unique identifier that usually
               corresponds to the <b>probe set</b> used to take some measurement for the given sample ("GSM"). 

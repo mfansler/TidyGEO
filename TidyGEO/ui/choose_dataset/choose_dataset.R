@@ -13,7 +13,7 @@ sidebarLayout(
                                                   help_link("choose", "download_help")), choices = NULL),
     uiOutput("superseries_suggestion"),
     uiOutput("platform_options"),
-    primary_button(id = "download_data_evaluate", label = div(icon("sign-in-alt"), "Import")),
+    primary_button(id = "download_data_evaluate", label = div(icon("right-to-bracket"), "Import")),
     hr(), 
     
     div(

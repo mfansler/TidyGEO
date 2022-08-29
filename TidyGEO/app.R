@@ -5,6 +5,8 @@ source("server/formatting_helper_functions.R")
 
 #source(file.path("server", "help_modals.R"))
 
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 32)
+
 options(shiny.autoreload = F)
 
 # UI ----------------------------------------------------------------------
@@ -15,7 +17,7 @@ ui <- dashboardPage(
   ),
   dashboardSidebar(collapsed = TRUE,
     sidebarMenu(id = "top_level",
-      menuItem("Choose dataset", tabName = "choose_dataset"),
+      menuItem("Choose dataset", icon = CHOOSE_DATASET_ICON, tabName = "choose_dataset"),
       menuItem("Clinical data", icon = CLINICAL_ICON, tabName = "clinical_data"),
       menuItem("Assay data", icon = ASSAY_ICON, tabName = "assay_data"),
       menuItem("Feature data", icon = FEATURE_ICON, tabName = "feature_data"),

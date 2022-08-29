@@ -1,4 +1,4 @@
-tabPanel(title = icon("edit"), value = "1",
+tabPanel(title = icon("pen-to-square"), value = "1",
          h4("Formatting the assay data"),
          p("This portion of the application can reformat the assay data
            associated with the specified GEO ID."), 

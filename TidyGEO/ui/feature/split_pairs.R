@@ -1,4 +1,4 @@
-tabPanel(title = icon("th-list"), value = "4",
+tabPanel(title = icon("table-list"), value = "4",
          h4("Splitting key-value pairs"),
          p('Sometimes a single column contains key-value pairs in each cell. This makes it more difficult to analyze the data.'),
          p('If you see any columns in your data that contain key-value pairs separated by a delimiter
@@ -15,7 +15,7 @@ tabPanel(title = icon("th-list"), value = "4",
            "Use regex", regex_help_link("feature", "split_pairs")
          )), 
          div(
-           primary_button(id = "split_pairs_feature", label = div(icon("th-list"), "Split pairs")),
+           primary_button(id = "split_pairs_feature", label = div(icon("table-list"), "Split pairs")),
            undo_button("undo_split_pairs_feature")
          ),
          hr(), navigation_set("3", "4", "5", "feature_side_panel", "feature_side_panel"))

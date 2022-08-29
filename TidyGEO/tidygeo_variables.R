@@ -144,7 +144,7 @@ ASSAY_NONNUMERIC_MESSAGE <- paste("Some of the data is non-numeric.",
                                   "For more data analysis options, feel free to download the data to edit with another application.")
 
 # The font size for the graphs
-BASE_SIZE <- 18
+BASE_SIZE <- 12
 
 # A template for the barplots in the graphical summary
 BASE_BARPLOT <- ggplot() +
@@ -158,7 +158,7 @@ BASE_BARPLOT_TO_SAVE <- expr(
   ggplot() +
     labs(x = "Values",
          y = "Count") +
-    theme_bw(base_size = base_size) +
+    theme_bw(base_size = BASE_SIZE) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
           plot.title = element_text(hjust = 0.5))
 )
@@ -198,8 +198,11 @@ BASIC_TABLE_OPTIONS <- list(
   )
 )
 
+# Icon that represents user choice
+CHOOSE_DATASET_ICON = icon("calendar")
+
 # Icon used to represent clinical data
-CLINICAL_ICON <- icon("clipboard")
+CLINICAL_ICON <- icon("notes-medical")
 
 # The length of a section header (in the format "# [] ------") that will be written to the R script
 COMMENT_LENGTH <- 75
@@ -208,20 +211,20 @@ COMMENT_LENGTH <- 75
 DEFAULT_PAGELEN <- 10
 
 # An icon used to represent excluding (filtering) values from a column
-EXCLUDE_ICON <- icon("cut")
+EXCLUDE_ICON <- icon("filter")
 
 # Icon used to represent feature data
 FEATURE_ICON <- icon("dna")
 
 # An icon used to represent filtering features
-FILTER_ICON <- icon("filter")
+FILTER_ICON <- icon("square-minus")
 
 # A list of all the formatting helper functions, their library dependencies, and their
 # function dependencies, for use with R script writing
 FUNC_LISTS <- readRDS("rscript_functions.rds")
 
 # An icon for help buttons
-HELP_ICON <- icon("question-circle")
+HELP_ICON <- icon("circle-question")
 
 # A regex to find invalid characters for column names. 
 # These correspond to the characters not allowed in BRB array tools
@@ -232,7 +235,7 @@ INVALID_NAME_CHARS <- "[\\\\\\/:\\*\\?\\<\\>\\=\\+\\#\\~\\`\\'\\;\\&\\%\\$\\@\\!
 VALID_REPLACEMENT <- "_"
 
 # An icon for links which lead outside the application
-LINK_OUT_ICON <- icon("external-link")
+LINK_OUT_ICON <- icon("arrow-up-right-from-square")
 
 # The maximum number of bins a user can see in a graph
 MAX_BINS <- 80
@@ -258,13 +261,13 @@ PREV_ICON <- icon("arrow-left")
 
 # An icon used to represent replacing a column from one DataType with a column
 # from another
-REPLACE_ID_ICON <- icon("exchange-alt")
+REPLACE_ID_ICON <- icon("right-left")
 
 # An icon used to represent renaming something
-RENAME_ICON <- icon("pencil-alt")
+RENAME_ICON <- icon("pencil")
 
 # An icon for reset buttons
-RESET_ICON <- icon("history")
+RESET_ICON <- icon("backward-step")
 
 # An icon used to represent downloading data from the app to a personal machine
 SAVE_ICON <- icon("download")
@@ -274,16 +277,17 @@ SAVE_ICON <- icon("download")
 SERIES_LIST <- read_feather("www/series_list.feather")
 
 # An icon used to represent shifting values from one column to another
-SHIFT_ICON <- icon("angle-double-right")
+SHIFT_ICON <- icon("angles-right")
 
 # The type of spinner to display for items with a loading spinner
 SPINNER_TYPE <- 5
 
 # An icon used to represent splitting a column that contains multiple variables
-SPLIT_COLS_ICON <- icon("columns")
+SPLIT_COLS_ICON <- icon("table-list")
 
 # An icon used to represent splitting pairs of items
-SPLIT_PAIRS_ICON <- icon("th-list")
+#SPLIT_PAIRS_ICON <- icon("align-justify", lib="glyphicon")
+SPLIT_PAIRS_ICON <- icon("map")
 
 # The message at the beginning of the outputted R script
 START_MESSAGE <- c(paste("# Script generated using version", VERSION, 
@@ -294,7 +298,7 @@ START_MESSAGE <- c(paste("# Script generated using version", VERSION,
                    "")
 
 # An icon used to represent substituting one value for another
-SUBSTITUTE_ICON <- icon("exchange-alt")
+SUBSTITUTE_ICON <- icon("right-left")
 
 # The string that will be returned when a function is evaluated successfully
 SUCCESS <- "completed"
@@ -313,7 +317,7 @@ TABS_MESSAGE <- div(icon("arrow-left"), " tools (visit in any order) ", icon("ar
 TRANSPOSE_ICON <- icon("retweet")
 
 # An icon for undo buttons
-UNDO_ICON <- icon("undo")
+UNDO_ICON <- icon("backward", lib="glyphicon")
 
 
 
