@@ -1,4 +1,4 @@
-Upon loading the clinical data, you may notice some columns that are not useful for your research purposes. Here, you can drop those columns from the data. There are some preset options for columns to exclude, which are:
+Upon loading the phenotype data, you may notice some columns that are not useful for your research purposes. Here, you can drop those columns from the data. There are some preset options for columns to exclude, which are:
 
 * *Columns in which every row has the same value*
     + Columns with all the same value are often unhelpful because they don't measure meaningful change. If you select this option, columns with the same value for every row will be dropped from the data. 

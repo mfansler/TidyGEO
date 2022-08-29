@@ -146,7 +146,7 @@ get_clinical_data <- function() {
   set_x_equalto_y("orig_data", get_data_member("clinical", dataname("clinical")), "clinical")
   
   #WRITING COMMANDS TO R SCRIPT
-  save_lines(commentify("extract clinical data"), "clinical", "body", overwrite = TRUE)
+  save_lines(commentify("extract phenotype data"), "clinical", "body", overwrite = TRUE)
   
   add_function("process_clinical", "clinical")
   #print(scripts)

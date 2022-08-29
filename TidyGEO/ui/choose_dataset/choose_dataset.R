@@ -17,7 +17,7 @@ sidebarLayout(
     hr(), 
     
     div(
-      secondary_button(nav("choose", "clinical"), div(CLINICAL_ICON, HTML('Process <br/> clinical data'))),
+      secondary_button(nav("choose", "clinical"), div(CLINICAL_ICON, HTML('Process <br/> phenotype data'))),
       tertiary_button(nav("choose", "assay"), div(ASSAY_ICON, HTML('Process <br/> assay data')), class = "right_align"),
       br()
     )

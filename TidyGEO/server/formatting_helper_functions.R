@@ -257,7 +257,7 @@ load_series <- function(geoID, platform, session = NULL) {
         content <- eSet_status$status
       } else {
         title <- "Success!"
-        content <- "Series data successfully downloaded. You may now work with the Clinical and/or Assay data using the buttons and menu options to the left."
+        content <- "Series data successfully downloaded. You may now work with the phenotype and/or assay data using the buttons and menu options to the left."
       }
       createAlert(session, "alert", "fileError", title = title,
                   content = content, append = FALSE)
@@ -315,7 +315,7 @@ replace_blank_cells <- function(values) {
   }
 }
 
-# Extract clinical data from expressionSet object -------------------------
+# Extract phenotype data from expressionSet object -------------------------
 # Library dependencies: GEOquery
 # Function dependencies: replace_blank_cells; filterUninformativeCols
 process_clinical <- function(expressionSet, session = NULL) {

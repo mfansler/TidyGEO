@@ -201,7 +201,7 @@ BASIC_TABLE_OPTIONS <- list(
 # Icon that represents user choice
 CHOOSE_DATASET_ICON = icon("calendar")
 
-# Icon used to represent clinical data
+# Icon used to represent phenotype data
 CLINICAL_ICON <- icon("notes-medical")
 
 # The length of a section header (in the format "# [] ------") that will be written to the R script

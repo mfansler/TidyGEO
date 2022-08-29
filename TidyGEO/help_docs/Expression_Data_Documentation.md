@@ -1,6 +1,6 @@
 ## Formatting the expression data
 
-Each Series file on GEO contains both clinical data and expression (assay) data. The expression data can be a helpful in determining differential expression. Sometimes, the expression data is not in a format that is easy to analyze.
+Each Series file on GEO contains both phenotype data and expression (assay) data. The expression data can be a helpful in determining differential expression. Sometimes, the expression data is not in a format that is easy to analyze.
 
 This tool allows users to do four things:
 

@@ -22,7 +22,7 @@ BRB Array Tools is a software system that enables researchers do perform compreh
 2. Load the plugin using the instructions linked <a href="https://brb.nci.nih.gov/BRB-ArrayTools/download.html" target="_blank">here</a>
 
 #### In TidyGEO:
-1. Format the clinical data so every __column__ is a __variable__ and every __row__ is a __value.__ This is only necessary for the columns you need in your analysis.
+1. Format the phenotype data so every __column__ is a __variable__ and every __row__ is a __value.__ This is only necessary for the columns you need in your analysis.
 2. Feel free to reformat the assay data, but make sure __not__ to transpose it. Every __column__ should be a __sample__ and every __row__ should be a protein/sequence/etc.
 3. Format the feature data so every __column__ is a __variable__ and every __row__ is a __value.__ This is only necessary for the columns you need in your analysis.
 4. Make sure that none of the column names have any of the following characters:
@@ -30,7 +30,7 @@ BRB Array Tools is a software system that enables researchers do perform compreh
 ```
 \ / : * ? < > = + # ~ ` ' ; & % $ @ !
 ```
-5. In the `Merge data` > `Matching up datasets` tab, match the __clinical data rownames__ to the __assay data column names.__
+5. In the `Merge data` > `Matching up datasets` tab, match the __phenotype data rownames__ to the __assay data column names.__
 6. You may also choose to match the __assay data ID column__ to the __feature data ID column__ but this is not strictly necessary.
 7. In the `Merge data` > `Saving the data` tab, choose to save the data as "all (zipped)." Save it to a location on your computer where you can find it again. 
 
@@ -47,7 +47,7 @@ BRB Array Tools is a software system that enables researchers do perform compreh
 10. Navigate to the file you created in the "Feature data" portion of TidyGEO.
 11. Match up the column names in your file with the fields in the importer. You can find information about the contents of each column on the _platform_ page for your series (starts with "GPL...").
 12. Select "I would like to use these gene identifiers instead of those from the SOURCE database" and select the organism for this series.
-13. For the experiment descriptor file, input the file you made in the "Clinical data" portion of TidyGEO.
+13. For the experiment descriptor file, input the file you made in the "Phenotype data" portion of TidyGEO.
 14. Perform any filtering and subsequent analysis according to your research needs.
     
 

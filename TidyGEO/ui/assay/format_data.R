@@ -25,6 +25,6 @@ tabPanel(title = icon("pen-to-square"), value = "1",
            undo_button("undoEvalExpr"),
            br()
          ),
-         hr(), tertiary_button(nav("assay", "clinical"), div(PREV_ICON, "Back to clinical data")),
+         hr(), tertiary_button(nav("assay", "clinical"), div(PREV_ICON, "Back to phenotype data")),
          secondary_button(nav("1", "2", "assay"), div("Next", NEXT_ICON), class = "right_align")
 )

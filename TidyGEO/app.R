@@ -18,7 +18,7 @@ ui <- dashboardPage(
   dashboardSidebar(collapsed = TRUE,
     sidebarMenu(id = "top_level",
       menuItem("Choose dataset", icon = CHOOSE_DATASET_ICON, tabName = "choose_dataset"),
-      menuItem("Clinical data", icon = CLINICAL_ICON, tabName = "clinical_data"),
+      menuItem("Phenotype data", icon = CLINICAL_ICON, tabName = "clinical_data"),
       menuItem("Assay data", icon = ASSAY_ICON, tabName = "assay_data"),
       menuItem("Feature data", icon = FEATURE_ICON, tabName = "feature_data"),
       menuItem("Merge data", icon = ALL_ICON, tabName = "all_data"),
@@ -64,7 +64,7 @@ ui <- dashboardPage(
                    ) # tabset panel in main panel
                  ) # clinical main panel
                ) #sidebar layout
-      ), #clinical data tab panel
+      ), #phenotype data tab panel
       # ** assay data ---------------------------------------------------------
       
       tabItem(dataname("assay"),
@@ -329,7 +329,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # ** clinical data -----------------------------------------------------------
+  # ** phenotype data -----------------------------------------------------------
   
   # ** ** side panel --------------------------------------------------------------
   source(file.path("server", "clinical", "1_select_cols.R"), local = TRUE)$value

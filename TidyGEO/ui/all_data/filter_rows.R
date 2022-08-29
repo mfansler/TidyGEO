@@ -1,7 +1,7 @@
 tabPanel(title = icon("right-left"), value = "1", 
          div(h4("Matching up datasets"), help_link("all", "match_help")),
          p(paste("Here is where you can make sure the assay data only includes the samples listed",
-                  "in the clinical data (and visa versa) and the assay data only has the probes listed in the",
+                  "in the phenotype data (and visa versa) and the assay data only has the probes listed in the",
                   "feature data (and visa versa). Please note that this will not combine any of these datasets,",
                   "only filter the rows so that the data is concordant. To actually combine datasets,",
                  "please use the join tool in the next tab.")),

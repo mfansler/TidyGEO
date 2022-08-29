@@ -2,7 +2,7 @@
 
 1. [Importing the data](#importing-the-data)
 2. [General questions](#general-questions)
-3. [Clinical data](#clinical-data)
+3. [Phenotype data](#phenotype-data)
     + [Selecting informative columns](#selecting-informative-columns)
     + [Shifting cells](#shifting-cells)
     + [Splitting pairs and splitting columns](#splitting-pairs-and-splitting-columns)
@@ -59,10 +59,10 @@
 [&uarr; To top](#contents)
 
     
-### <a name="clinical-data"></a>Clinical data
+### <a name="phenotype-data"></a>Phenotype data
 
-* __What is clinical data?__
-    + This data describes the samples that were used in the study. Each sample has an ID starting with “GSM”. The clinical data may include information about treatments (e.g. case vs control), demographic information (e.g. male vs female) or information about the experiment itself (e.g. the research institution). Knowing clinical information about a sample can be useful in interpreting patterns in the assay data. For example, if you know which samples are the cases and which are the controls, you can look at the differences between their assay measurements.
+* __What is phenotype data?__
+    + This data describes the samples that were used in the study. Each sample has an ID starting with “GSM”. The phenotype data may include information about treatments (e.g. case vs control), demographic information (e.g. male vs female) or information about the experiment itself (e.g. the research institution). Knowing phenotype information about a sample can be useful in interpreting patterns in the assay data. For example, if you know which samples are the cases and which are the controls, you can look at the differences between their assay measurements.
     
 #### <a name="selecting-informative-columns"></a>Selecting informative columns
 * __I selected some preset filters to remove columns from the data, but after I clicked "Filter columns", nothing happened. Why?__
@@ -129,7 +129,7 @@
 ### <a name="assay-data"></a>Assay data
 
 * __What is assay data?__
-    + This is the actual raw data of the experiment. Depending on the type of experiment, it may be protein or RNA expression levels, or any other kind of metric. The column names are the samples (“GSM”) and the values in the ID column are the metrics we are measuring. This data in conjunction with the clinical data is useful in answering research questions, such as, what kinds of patterns to we see in the RNA expression for cancer patients with stage III prostate cancer vs those with stage I prostate cancer?
+    + This is the actual raw data of the experiment. Depending on the type of experiment, it may be protein or RNA expression levels, or any other kind of metric. The column names are the samples (“GSM”) and the values in the ID column are the metrics we are measuring. This data in conjunction with the phenotype data is useful in answering research questions, such as, what kinds of patterns to we see in the RNA expression for cancer patients with stage III prostate cancer vs those with stage I prostate cancer?
 * __What is feature data?__
     + This data describes the metrics you see in the ID column of the assay data. Depending on the experiment, these could be probe IDs, gene sequences, etc. Feature data is a kind of thesaurus for the assay ID column; it has an ID column in that matches the one in the assay data and all the other columns are like “synonyms” for those IDs. Sometimes, things like probe IDs might not be very useful, and you might want to look at, say, gene names instead. The feature data is where you get that information.
     
