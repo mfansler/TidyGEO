@@ -1,4 +1,4 @@
-FROM rocker/shiny-verse:4.2.1
+FROM rocker/shiny-verse:4.2.2
 
 # Install necessary R packages and prepare Shiny server dir.
 RUN apt-get update -qq \
