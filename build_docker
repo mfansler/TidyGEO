@@ -15,6 +15,10 @@ mkdir -p $tmpDir
 cp Dockerfile $tmpDir/
 cp -r TidyGEO/* $tmpDir/
 
-cd $tmpDir
-docker build -t srp33/tidygeo:v$(cat VERSION) .
-cd -
+pushd $tmpDir
+if [ $(arch) = "arm64" ]; then
+    docker buildx build --platform linux/arm64 -t srp33/tidygeo:v$(cat VERSION) .
+else
+    docker build -t srp33/tidygeo:v$(cat VERSION) .
+fi
+popd
